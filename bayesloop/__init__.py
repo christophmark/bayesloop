@@ -3,7 +3,6 @@
 __init__.py
 """
 
-from .example import *
 from .study import *
 from .observationModel import *
 from .transitionModel import *
