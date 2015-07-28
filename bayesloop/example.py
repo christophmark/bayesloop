@@ -44,6 +44,7 @@ def plotResults(study):
 # run analysis using different transition models
 # ----------------------------------------------
 log10EvidenceList = []  # keep track of evidence
+localEvidenceList = []  # keep track of local evidence
 
 gs = gridspec.GridSpec(3, 4)  # subplot alignment
 gs.update(left=0.06, right=0.995, bottom=0.1, top=0.995, hspace=0., wspace=0.)
@@ -60,6 +61,7 @@ disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
 log10EvidenceList.append(disasterStudy.logEvidence / np.log(10))
+localEvidenceList.append(disasterStudy.localEvidence)
 
 plt.subplot(gs[0, :3])  # fill subplot
 plotResults(disasterStudy)
@@ -73,6 +75,7 @@ disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
 log10EvidenceList.append(disasterStudy.logEvidence / np.log(10))
+localEvidenceList.append(disasterStudy.localEvidence)
 
 plt.subplot(gs[1, :3])  # fill subplot
 plotResults(disasterStudy)
@@ -86,6 +89,7 @@ disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
 log10EvidenceList.append(disasterStudy.logEvidence / np.log(10))
+localEvidenceList.append(disasterStudy.localEvidence)
 
 plt.subplot(gs[2, :3])  # fill subplot
 plotResults(disasterStudy)
@@ -103,6 +107,12 @@ plt.yticks([])
 plt.grid('off')
 ax = plt.gca()
 ax.set_axis_bgcolor((237 / 255., 241 / 255., 247 / 255.))
+
+fig2 = plt.figure(figsize=[7, 4])
+for i, localEvidence in enumerate(localEvidenceList):
+    plt.plot(np.arange(1851, 1962), localEvidence, label=str(i)+' --- log10-evidence = '+str(log10EvidenceList[i]), lw=2)
+    plt.title('Local evidence')
+    plt.legend()
 
 plt.show()
 
