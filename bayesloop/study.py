@@ -129,46 +129,49 @@ class Study:
         self.logEvidence = 0
         self.localEvidence = np.empty(len(self.formattedData))
 
-        # forward pass (create forward priors for all time steps)
-        forwardPrior = np.ones(self.gridSize)/np.prod(np.array(self.gridSize)) # initial flat prior
+        # forward pass
+        alpha = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # initial flat prior
         for i in np.arange(0, len(self.formattedData)):
-            self.posteriorSequence[i] = forwardPrior
 
+            # compute likelihood
             likelihood = self.observationModel.pdf(self.grid, self.formattedData[i])
-            posterior = forwardPrior*likelihood
-            norm = np.sum(posterior) # forward normalization constant
-            self.logEvidence += np.log(norm)
-            posterior /= norm
 
-            forwardPrior = self.transitionModel.computeForwardPrior(posterior, i)
+            # update alpha based on likelihood
+            alpha *= likelihood
+
+            # normalization constant of alpha is used to compute evidence
+            norm = np.sum(alpha)
+            self.logEvidence += np.log(norm)
+
+            # normalize alpha (for numerical stability)
+            alpha /= norm
+
+            # alphas are stored as preliminary posterior distributions
+            self.posteriorSequence[i] = alpha
+
+            # compute alpha for next iteration
+            alpha = self.transitionModel.computeForwardPrior(alpha, i)
 
         print '    + Finished forward pass.'
 
         # backward pass
-        backwardPrior = np.ones(self.gridSize)/np.prod(np.array(self.gridSize)) # initial flat prior
+        beta = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # initial flat prior
         for i in np.arange(0, len(self.formattedData))[::-1]:
-            # re-compute likelihood
-            likelihood = self.observationModel.pdf(self.grid, self.formattedData[i])
+            # posterior ~ alpha*beta
+            self.posteriorSequence[i] *= beta  # alpha*beta
 
-            # backward posterior
-            posterior = backwardPrior*likelihood
-            # backward normalization constant
-            norm = np.sum(posterior)
-            posterior /= norm
-
-            # combined posterior = likelihood * combined prior; with combined prior = forward prior * backward prior
-            forwardPrior = self.posteriorSequence[i]
-            combinedPrior = forwardPrior*backwardPrior
-            combinedPrior /= np.sum(combinedPrior)
-
-            self.posteriorSequence[i] = likelihood*combinedPrior
-
-            # compute evidence (before normalizing posterior wrt the parameters)
+            # compute local evidence (before normalizing posterior wrt the parameters)
             self.localEvidence[i] = np.sum(self.posteriorSequence[i])
             self.posteriorSequence[i] /= self.localEvidence[i]
 
-            # generate new backward prior for next iteration
-            backwardPrior = self.transitionModel.computeBackwardPrior(posterior, i-1)
+            # re-compute likelihood
+            likelihood = self.observationModel.pdf(self.grid, self.formattedData[i])
+
+            # compute beta for next iteration
+            beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i-1)
+
+            # normalize beta (for numerical stability)
+            beta /= np.sum(beta)
 
         print '    + Finished backward pass.'
         print '    + Log10-evidence:', str(self.logEvidence/np.log(10))
