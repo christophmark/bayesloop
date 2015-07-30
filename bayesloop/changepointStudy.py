@@ -53,3 +53,6 @@ class changepointStudy(Study):
         self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
         for i in range(len(self.grid)):
             self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
+
+        # local evidence is not supported at the moment
+        self.localEvidence = None
