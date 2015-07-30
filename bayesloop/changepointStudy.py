@@ -48,3 +48,8 @@ class changepointStudy(Study):
         # compute change-point distribution
         self.changepointDistribution = np.exp(np.array(logEvidenceList))*self.changepointPrior
         self.changepointDistribution /= np.sum(self.changepointDistribution)
+
+        # compute posterior mean values
+        self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
+        for i in range(len(self.grid)):
+            self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
