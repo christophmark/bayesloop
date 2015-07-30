@@ -7,7 +7,7 @@ import numpy as np
 from .preprocessing import *
 
 
-class Study:
+class Study(object):
     def __init__(self):
         self.observationModel = None
         self.transitionModel = None
