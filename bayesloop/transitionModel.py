@@ -6,7 +6,7 @@ import numpy as np
 from scipy.ndimage.filters import gaussian_filter1d
 
 class Static:
-    def __init__(self, sigma=None):
+    def __init__(self):
         self.latticeConstant = None
         self.name = 'Static/constant parameter values'
 
@@ -44,3 +44,25 @@ class GaussianRandomWalk:
 
     def computeBackwardPrior(self, posterior, t):
         return self.computeForwardPrior(posterior, t)
+
+class ChangePoint:
+    def __init__(self, tChange=None):
+        self.latticeConstant = None
+        self.tChange = tChange
+        self.name = 'Change-point model'
+
+    def computeForwardPrior(self, posterior, t):
+        """
+        Compute new prior from old posterior.
+
+        :param posterior: grid-like posterior distribution
+        :param t: integer time step
+        :return: grid-like prior distribution
+        """
+        if t == self.tChange:
+            return np.ones_like(posterior)/np.sum(np.ones_like(posterior))  # return flat distribution
+        else:
+            return posterior.copy()
+
+    def computeBackwardPrior(self, posterior, t):
+        return self.computeForwardPrior(posterior, t-1)

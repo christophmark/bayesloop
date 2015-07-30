@@ -168,7 +168,7 @@ class Study:
             likelihood = self.observationModel.pdf(self.grid, self.formattedData[i])
 
             # compute beta for next iteration
-            beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i-1)
+            beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i)
 
             # normalize beta (for numerical stability)
             beta /= np.sum(beta)

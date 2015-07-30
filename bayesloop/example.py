@@ -46,10 +46,10 @@ def plotResults(study):
 log10EvidenceList = []  # keep track of evidence
 localEvidenceList = []  # keep track of local evidence
 
-gs = gridspec.GridSpec(3, 4)  # subplot alignment
+gs = gridspec.GridSpec(4, 5)  # subplot alignment
 gs.update(left=0.06, right=0.995, bottom=0.1, top=0.995, hspace=0., wspace=0.)
 
-fig = plt.figure(figsize=[7, 4])
+fig = plt.figure(figsize=[7, 5])
 fig.text(0.4, 0.01, 'Year')
 fig.text(0.8, 0.12, 'log10-evidence')
 fig.text(0.01, 0.75, 'No. of disasters per year', rotation='vertical')
@@ -63,12 +63,26 @@ disasterStudy.fit()  # fit this model
 log10EvidenceList.append(disasterStudy.logEvidence / np.log(10))
 localEvidenceList.append(disasterStudy.localEvidence)
 
-plt.subplot(gs[0, :3])  # fill subplot
+plt.subplot(gs[0, :4])  # fill subplot
 plotResults(disasterStudy)
 plt.xticks(fontsize=12)
 plt.yticks([1, 3, 5], fontsize=12)
 
-# second assumption: gradual parameter variations with small rate
+# second assumption: change point model
+# ---------------------------------------------------------------
+K = bl.ChangePoint(tChange=40)
+disasterStudy.setTransitionModel(K)
+
+disasterStudy.fit()  # fit this model
+log10EvidenceList.append(disasterStudy.logEvidence / np.log(10))
+localEvidenceList.append(disasterStudy.localEvidence)
+
+plt.subplot(gs[1, :4])  # fill subplot
+plotResults(disasterStudy)
+plt.xticks(fontsize=12)
+plt.yticks([1, 3, 5], fontsize=12)
+
+# third assumption: gradual parameter variations with small rate
 # ---------------------------------------------------------------
 K = bl.GaussianRandomWalk(sigma=0.2)
 disasterStudy.setTransitionModel(K)
@@ -77,12 +91,12 @@ disasterStudy.fit()  # fit this model
 log10EvidenceList.append(disasterStudy.logEvidence / np.log(10))
 localEvidenceList.append(disasterStudy.localEvidence)
 
-plt.subplot(gs[1, :3])  # fill subplot
+plt.subplot(gs[2, :4])  # fill subplot
 plotResults(disasterStudy)
 plt.xticks(fontsize=12)
 plt.yticks([1, 3, 5], fontsize=12)
 
-# third assumption: gradual parameter variations with large rate
+# 4th assumption: gradual parameter variations with large rate
 # --------------------------------------------------------------
 K = bl.GaussianRandomWalk(sigma=0.4)
 disasterStudy.setTransitionModel(K)
@@ -91,14 +105,14 @@ disasterStudy.fit()  # fit this model
 log10EvidenceList.append(disasterStudy.logEvidence / np.log(10))
 localEvidenceList.append(disasterStudy.localEvidence)
 
-plt.subplot(gs[2, :3])  # fill subplot
+plt.subplot(gs[3, :4])  # fill subplot
 plotResults(disasterStudy)
 plt.xticks(fontsize=12)
 plt.yticks([1, 3, 5], fontsize=12)
 
 # log10-evidence subplot
 # ----------------------
-plt.subplot(gs[:, 3])
+plt.subplot(gs[:, 4])
 plt.plot(log10EvidenceList[::-1], np.arange(len(log10EvidenceList)), c=cpal[1], lw=2)
 plt.scatter(log10EvidenceList[::-1], np.arange(len(log10EvidenceList)), facecolor=cpal[1], s=100, lw=0)
 plt.ylim([-.5, len(log10EvidenceList) - 1 + .5])
@@ -108,7 +122,7 @@ plt.grid('off')
 ax = plt.gca()
 ax.set_axis_bgcolor((237 / 255., 241 / 255., 247 / 255.))
 
-fig2 = plt.figure(figsize=[7, 4])
+fig2 = plt.figure(figsize=[7, 5])
 for i, localEvidence in enumerate(localEvidenceList):
     plt.plot(np.arange(1851, 1962), localEvidence, label=str(i)+' --- log10-evidence = '+str(log10EvidenceList[i]), lw=2)
     plt.title('Local evidence')
