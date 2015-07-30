@@ -4,5 +4,6 @@ __init__.py
 """
 
 from .study import *
+from .changepointStudy import *
 from .observationModel import *
 from .transitionModel import *
