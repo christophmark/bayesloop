@@ -42,6 +42,9 @@ class changepointStudy(Study):
         normalization = self.averagePosteriorSequence.sum(axis=1)
         self.averagePosteriorSequence /= normalization[:,None]
 
+        # set self.posteriorSequence to average posterior sequence for plotting reasons
+        self.posteriorSequence = self.averagePosteriorSequence
+
         # compute log-evidence of averaged model
         self.logEvidence = np.log(np.sum(np.exp(np.array(logEvidenceList))*self.changepointPrior))
 
