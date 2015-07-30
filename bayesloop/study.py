@@ -42,7 +42,7 @@ class Study(object):
                                  3, 3, 1, 1, 2, 1, 1, 1, 1, 2, 4, 2, 0, 0, 1, 4,
                                  0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1])
 
-        print '+ Successfully imported example data.'
+        print '    + Successfully imported example data.'
 
     def loadData(self, array):
         """
@@ -52,7 +52,7 @@ class Study(object):
         :return:
         """
         self.rawData = array
-        print '+ Successfully imported array.'
+        print '    + Successfully imported array.'
 
     def createGrid(self):
         """
@@ -88,7 +88,7 @@ class Study(object):
         self.gridSize = newGridSize
         self.createGrid()
 
-    def setObservationModel(self, M):
+    def setObservationModel(self, M, silent=False):
         """
         Set observation model (likelihood function) for analysis.
 
@@ -100,9 +100,10 @@ class Study(object):
         self.gridSize = M.defaultGridSize
         self.boundaries = M.defaultBoundaries
 
-        print '+ Observation model:', M
+        if not silent:
+            print '    + Observation model:', M
 
-    def setTransitionModel(self, K):
+    def setTransitionModel(self, K, silent=False):
         """
         Set transition model (for parameter variations).
 
@@ -111,16 +112,20 @@ class Study(object):
         """
         self.transitionModel = K
         self.transitionModel.latticeConstant = self.latticeConstant
-        print '+ Transition model:', K
 
-    def fit(self):
+        if not silent:
+            print '    + Transition model:', K
+
+    def fit(self, silent=False):
         """
         Computes the posterior sequence and evidence of a data set + models
         """
-        print '+ Started new fit:'
+        if not silent:
+            print '+ Started new fit:'
 
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
-        print '    + Formatted data.'
+        if not silent:
+            print '    + Formatted data.'
 
         # initialize array for posterior distributions
         self.posteriorSequence = np.empty([len(self.formattedData)]+self.gridSize)
@@ -152,7 +157,8 @@ class Study(object):
             # compute alpha for next iteration
             alpha = self.transitionModel.computeForwardPrior(alpha, i)
 
-        print '    + Finished forward pass.'
+        if not silent:
+            print '    + Finished forward pass.'
 
         # backward pass
         beta = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # initial flat prior
@@ -173,12 +179,14 @@ class Study(object):
             # normalize beta (for numerical stability)
             beta /= np.sum(beta)
 
-        print '    + Finished backward pass.'
-        print '    + Log10-evidence:', str(self.logEvidence/np.log(10))
+        if not silent:
+            print '    + Finished backward pass.'
+            print '    + Log10-evidence: {:.5f}'.format(self.logEvidence)
 
         self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
 
         for i in range(len(self.grid)):
             self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
 
-        print '    + Computed mean parameter values.'
+        if not silent:
+            print '    + Computed mean parameter values.'

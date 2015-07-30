@@ -17,9 +17,12 @@ class changepointStudy(Study):
         self.changepointDistribution = None
         self.averagePosteriorSequence = None
 
-        print '  --> change-point study'
+        print '  --> Change-point study'
 
-    def fit(self):
+    def fit(self, silent=False):
+        if not silent:
+            print '+ Started new fit.'
+
         # prepare arrays for change-point distribution and average posterior sequence
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
         if self.changepointPrior is None:
@@ -30,13 +33,16 @@ class changepointStudy(Study):
         for tChange in range(len(self.formattedData)):
             # configure transistion model
             K = ChangePoint(tChange=tChange)
-            self.setTransitionModel(K)
+            self.setTransitionModel(K, silent=True)
 
             # call fit method from parent class
-            Study.fit(self)
+            Study.fit(self, silent=True)
 
             logEvidenceList.append(self.logEvidence)
             self.averagePosteriorSequence += self.posteriorSequence*np.exp(self.logEvidence)*self.changepointPrior[tChange]
+
+            if not silent:
+                print '    + t = {} -- log10-evidence = {:.5f}'.format(tChange, self.logEvidence / np.log(10))
 
         # compute average posterior distribution
         normalization = self.averagePosteriorSequence.sum(axis=1)
@@ -45,17 +51,29 @@ class changepointStudy(Study):
         # set self.posteriorSequence to average posterior sequence for plotting reasons
         self.posteriorSequence = self.averagePosteriorSequence
 
+        if not silent:
+            print '    + Computed average posterior sequence'
+
         # compute log-evidence of averaged model
         self.logEvidence = np.log(np.sum(np.exp(np.array(logEvidenceList))*self.changepointPrior))
+
+        if not silent:
+            print '    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10))
 
         # compute change-point distribution
         self.changepointDistribution = np.exp(np.array(logEvidenceList))*self.changepointPrior
         self.changepointDistribution /= np.sum(self.changepointDistribution)
 
+        if not silent:
+            print '    + Computed change-point distribution'
+
         # compute posterior mean values
         self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
         for i in range(len(self.grid)):
             self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
+
+        if not silent:
+            print '    + Computed mean parameter values.'
 
         # local evidence is not supported at the moment
         self.localEvidence = None
