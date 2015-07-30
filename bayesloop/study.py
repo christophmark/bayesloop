@@ -100,7 +100,7 @@ class Study:
         self.gridSize = M.defaultGridSize
         self.boundaries = M.defaultBoundaries
 
-        print '+ Observation model:', M.name
+        print '+ Observation model:', M
 
     def setTransitionModel(self, K):
         """
@@ -111,7 +111,7 @@ class Study:
         """
         self.transitionModel = K
         self.transitionModel.latticeConstant = self.latticeConstant
-        print '+ Transition model:', K.name
+        print '+ Transition model:', K
 
     def fit(self):
         """

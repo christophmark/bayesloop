@@ -8,7 +8,9 @@ from scipy.ndimage.filters import gaussian_filter1d
 class Static:
     def __init__(self):
         self.latticeConstant = None
-        self.name = 'Static/constant parameter values'
+
+    def __str__(self):
+        return 'Static/constant parameter values'
 
     def computeForwardPrior(self, posterior, t):
         """
@@ -27,7 +29,9 @@ class GaussianRandomWalk:
     def __init__(self, sigma=None):
         self.latticeConstant = None
         self.sigma = sigma
-        self.name = 'Gaussian random walk'
+
+    def __str__(self):
+        return 'Gaussian random walk'
 
     def computeForwardPrior(self, posterior, t):
         """
@@ -49,7 +53,9 @@ class ChangePoint:
     def __init__(self, tChange=None):
         self.latticeConstant = None
         self.tChange = tChange
-        self.name = 'Change-point model'
+
+    def __str__(self):
+        return 'Change-point model'
 
     def computeForwardPrior(self, posterior, t):
         """

@@ -6,12 +6,13 @@ import numpy as np
 
 class Poisson:
     def __init__(self):
-        self.name = 'Poisson'
-
         self.segmentLength = 1  # number of measurements in one data segment
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
         self.uninformativePdf = None
+
+    def __str__(self):
+        return 'Poisson'
 
     def pdf(self, grid, x):
         """
