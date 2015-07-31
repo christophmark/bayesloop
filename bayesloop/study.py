@@ -181,7 +181,7 @@ class Study(object):
 
         if not silent:
             print '    + Finished backward pass.'
-            print '    + Log10-evidence: {:.5f}'.format(self.logEvidence)
+            print '    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10))
 
         self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
 
