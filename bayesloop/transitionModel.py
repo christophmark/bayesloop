@@ -23,7 +23,7 @@ class Static:
         return posterior.copy()
 
     def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t)
+        return self.computeForwardPrior(posterior, t-1)
 
 class GaussianRandomWalk:
     def __init__(self, sigma=None):
@@ -47,7 +47,7 @@ class GaussianRandomWalk:
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t)
+        return self.computeForwardPrior(posterior, t-1)
 
 class ChangePoint:
     def __init__(self, tChange=None):
@@ -69,6 +69,30 @@ class ChangePoint:
             return np.ones_like(posterior)/np.sum(np.ones_like(posterior))  # return flat distribution
         else:
             return posterior.copy()
+
+    def computeBackwardPrior(self, posterior, t):
+        return self.computeForwardPrior(posterior, t-1)
+
+class RegimeSwitch:
+    def __init__(self, pMin=None):
+        self.latticeConstant = None
+        self.pMin = pMin
+
+    def __str__(self):
+        return 'Regime-switching model'
+
+    def computeForwardPrior(self, posterior, t):
+        """
+        Compute new prior from old posterior.
+
+        :param posterior: grid-like posterior distribution
+        :param t: integer time step
+        :return: grid-like prior distribution
+        """
+        newPrior = posterior.copy()
+        newPrior[newPrior < self.pMin] = self.pMin
+
+        return newPrior
 
     def computeBackwardPrior(self, posterior, t):
         return self.computeForwardPrior(posterior, t-1)
