@@ -46,11 +46,11 @@ def plotResults(study):
 log10EvidenceList = []  # keep track of evidence
 localEvidenceList = []  # keep track of local evidence
 
-n = 6
+n = 7
 gs = gridspec.GridSpec(n, n+1)  # subplot alignment
 gs.update(left=0.4/n, right=0.99, bottom=0.4/n, top=0.95, hspace=0., wspace=0.)
 
-fig = plt.figure(figsize=[7, 7])
+fig = plt.figure(figsize=[7.5, 9])
 fig.text(0.5*n/(n+1.0), 0.01, 'Year')
 fig.text(0.01, 0.6, 'No. of disasters per year', rotation='vertical')
 
@@ -144,6 +144,20 @@ plotResults(disasterStudy)
 plt.xticks(fontsize=12)
 plt.yticks([1, 3, 5], fontsize=12)
 
+# 7th assumption: combined transition model
+# ----------------------------------
+K = bl.CombinedTransitionModel(bl.GaussianRandomWalk(sigma=0.05), bl.RegimeSwitch(pMin=10**-7))
+disasterStudy.setTransitionModel(K)
+
+disasterStudy.fit()  # fit this model
+log10EvidenceList.append(disasterStudy.logEvidence / np.log(10))
+localEvidenceList.append(disasterStudy.localEvidence)
+
+plt.subplot(gs[6, :n])  # fill subplot
+plotResults(disasterStudy)
+plt.xticks(fontsize=12)
+plt.yticks([1, 3, 5], fontsize=12)
+
 # log10-evidence subplot
 # ----------------------
 plt.subplot(gs[:, n])
@@ -159,7 +173,7 @@ ax.set_axis_bgcolor((237 / 255., 241 / 255., 247 / 255.))
 
 # Add inset with change-point distribution
 # ----------------------------------------
-ax_inset=fig.add_axes([0.6, 0.28, 0.20, 0.06])
+ax_inset = fig.add_axes([0.6, 0.24, 0.20, 0.06])
 plt.bar(np.arange(1851, 1962)[30:49], cpStudy.changepointDistribution[30:49], color=cpal[1], lw=0)
 plt.yticks([])
 ax_inset.set_axis_bgcolor((204/255.,220/255.,214/255.))
