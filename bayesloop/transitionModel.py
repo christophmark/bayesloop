@@ -3,7 +3,7 @@
 transitionModel.py introduces models for parameter variations.
 """
 import numpy as np
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage.filters import gaussian_filter
 
 
 class Static:
@@ -44,7 +44,17 @@ class GaussianRandomWalk:
         :return: grid-like prior distribution
         """
         newPrior = posterior.copy()
-        newPrior = gaussian_filter1d(newPrior, self.sigma / self.latticeConstant[0])
+
+        normedSigma = []
+        if type(self.sigma) is not list:
+            for c in self.latticeConstant:
+                normedSigma.append(self.sigma / c)
+        else:
+            for i, c in enumerate(self.latticeConstant):
+                normedSigma.append(self.sigma[i] / c)
+
+
+        newPrior = gaussian_filter(newPrior, normedSigma)
 
         return newPrior
 
