@@ -116,7 +116,7 @@ class Study(object):
         if not silent:
             print '    + Transition model:', K
 
-    def fit(self, forwardOnly=False, silent=False):
+    def fit(self, forwardOnly=False, evidenceOnly=False, silent=False):
         """
         Computes the posterior sequence and evidence of a data set + models
         """
@@ -185,10 +185,14 @@ class Study(object):
             if not silent:
                 print '    + Finished backward pass.'
 
-        self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
+        # posterior mean values do not need to be computed for evidence
+        if evidenceOnly:
+            self.posteriorMeanValues = []
+        else:
+            self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
 
-        for i in range(len(self.grid)):
-            self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
+            for i in range(len(self.grid)):
+                self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
 
-        if not silent:
-            print '    + Computed mean parameter values.'
+            if not silent:
+                print '    + Computed mean parameter values.'
