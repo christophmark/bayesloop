@@ -116,7 +116,7 @@ class Study(object):
         if not silent:
             print '    + Transition model:', K
 
-    def fit(self, silent=False):
+    def fit(self, forwardOnly=False, silent=False):
         """
         Computes the posterior sequence and evidence of a data set + models
         """
@@ -147,6 +147,7 @@ class Study(object):
             # normalization constant of alpha is used to compute evidence
             norm = np.sum(alpha)
             self.logEvidence += np.log(norm)
+            self.localEvidence[i] = norm  # in case we return before backward pass (forwardOnly = True)
 
             # normalize alpha (for numerical stability)
             alpha /= norm
@@ -159,29 +160,30 @@ class Study(object):
 
         if not silent:
             print '    + Finished forward pass.'
-
-        # backward pass
-        beta = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # initial flat prior
-        for i in np.arange(0, len(self.formattedData))[::-1]:
-            # posterior ~ alpha*beta
-            self.posteriorSequence[i] *= beta  # alpha*beta
-
-            # compute local evidence (before normalizing posterior wrt the parameters)
-            self.localEvidence[i] = np.sum(self.posteriorSequence[i])
-            self.posteriorSequence[i] /= self.localEvidence[i]
-
-            # re-compute likelihood
-            likelihood = self.observationModel.pdf(self.grid, self.formattedData[i])
-
-            # compute beta for next iteration
-            beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i)
-
-            # normalize beta (for numerical stability)
-            beta /= np.sum(beta)
-
-        if not silent:
-            print '    + Finished backward pass.'
             print '    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10))
+
+        if not forwardOnly:
+            # backward pass
+            beta = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # initial flat prior
+            for i in np.arange(0, len(self.formattedData))[::-1]:
+                # posterior ~ alpha*beta
+                self.posteriorSequence[i] *= beta  # alpha*beta
+
+                # compute local evidence (before normalizing posterior wrt the parameters)
+                self.localEvidence[i] = np.sum(self.posteriorSequence[i])
+                self.posteriorSequence[i] /= self.localEvidence[i]
+
+                # re-compute likelihood
+                likelihood = self.observationModel.pdf(self.grid, self.formattedData[i])
+
+                # compute beta for next iteration
+                beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i)
+
+                # normalize beta (for numerical stability)
+                beta /= np.sum(beta)
+
+            if not silent:
+                print '    + Finished backward pass.'
 
         self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
 
