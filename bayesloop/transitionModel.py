@@ -9,6 +9,7 @@ from scipy.ndimage.filters import gaussian_filter
 class Static:
     def __init__(self):
         self.latticeConstant = None
+        self.hyperParameters = {}
 
     def __str__(self):
         return 'Static/constant parameter values'
@@ -30,7 +31,7 @@ class Static:
 class GaussianRandomWalk:
     def __init__(self, sigma=None):
         self.latticeConstant = None
-        self.sigma = sigma
+        self.hyperParameters = {'sigma': sigma}
 
     def __str__(self):
         return 'Gaussian random walk'
@@ -46,12 +47,12 @@ class GaussianRandomWalk:
         newPrior = posterior.copy()
 
         normedSigma = []
-        if type(self.sigma) is not list:
+        if type(self.hyperParameters['sigma']) is not list:
             for c in self.latticeConstant:
-                normedSigma.append(self.sigma / c)
+                normedSigma.append(self.hyperParameters['sigma'] / c)
         else:
             for i, c in enumerate(self.latticeConstant):
-                normedSigma.append(self.sigma[i] / c)
+                normedSigma.append(self.hyperParameters['sigma'][i] / c)
 
 
         newPrior = gaussian_filter(newPrior, normedSigma)
@@ -65,7 +66,7 @@ class GaussianRandomWalk:
 class ChangePoint:
     def __init__(self, tChange=None):
         self.latticeConstant = None
-        self.tChange = tChange
+        self.hyperParameters = {'tChange': tChange}
 
     def __str__(self):
         return 'Change-point model'
@@ -78,7 +79,7 @@ class ChangePoint:
         :param t: integer time step
         :return: grid-like prior distribution
         """
-        if t == self.tChange:
+        if t == self.hyperParameters['tChange']:
             return np.ones_like(posterior) / np.sum(np.ones_like(posterior))  # return flat distribution
         else:
             return posterior.copy()
@@ -90,7 +91,7 @@ class ChangePoint:
 class RegimeSwitch:
     def __init__(self, pMin=None):
         self.latticeConstant = None
-        self.pMin = pMin
+        self.hyperParameters = {'pMin': pMin}
 
     def __str__(self):
         return 'Regime-switching model'
@@ -104,7 +105,7 @@ class RegimeSwitch:
         :return: grid-like prior distribution
         """
         newPrior = posterior.copy()
-        newPrior[newPrior < self.pMin] = self.pMin
+        newPrior[newPrior < self.hyperParameters['pMin']] = self.hyperParameters['pMin']
 
         return newPrior
 
