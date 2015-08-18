@@ -123,7 +123,7 @@ cpStudy.setBoundaries([[0, 6]])
 
 cpStudy.fit()
 log10EvidenceList.append(cpStudy.logEvidence / np.log(10))
-#localEvidenceList.append(cpStudy.localEvidence)
+localEvidenceList.append(cpStudy.localEvidence)
 
 plt.subplot(gs[4, :n])  # fill subplot
 plotResults(cpStudy)
@@ -173,7 +173,7 @@ ax.set_axis_bgcolor((237 / 255., 241 / 255., 247 / 255.))
 
 # Add inset with change-point distribution
 # ----------------------------------------
-ax_inset = fig.add_axes([0.6, 0.24, 0.20, 0.06])
+ax_inset = fig.add_axes([0.6, 0.375, 0.20, 0.06])
 plt.bar(np.arange(1851, 1962)[30:49], cpStudy.changepointDistribution[30:49], color=cpal[1], lw=0)
 plt.yticks([])
 ax_inset.set_axis_bgcolor((204/255.,220/255.,214/255.))
