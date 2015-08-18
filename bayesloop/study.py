@@ -162,7 +162,7 @@ class Study(object):
             print '    + Finished forward pass.'
             print '    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10))
 
-        if not forwardOnly:
+        if not (forwardOnly or evidenceOnly):
             # backward pass
             beta = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # initial flat prior
             for i in np.arange(0, len(self.formattedData))[::-1]:
