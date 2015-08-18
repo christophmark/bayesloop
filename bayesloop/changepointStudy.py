@@ -29,6 +29,7 @@ class changepointStudy(Study):
             self.changepointPrior = np.ones(len(self.formattedData))/len(self.formattedData)
         self.averagePosteriorSequence = np.zeros([len(self.formattedData)]+self.gridSize)
         logEvidenceList = []
+        localEvidenceList = []
 
         for tChange in range(len(self.formattedData)):
             # configure transistion model
@@ -39,6 +40,7 @@ class changepointStudy(Study):
             Study.fit(self, silent=True)
 
             logEvidenceList.append(self.logEvidence)
+            localEvidenceList.append(self.localEvidence)
             self.averagePosteriorSequence += self.posteriorSequence*np.exp(self.logEvidence)*self.changepointPrior[tChange]
 
             if not silent:
@@ -54,7 +56,7 @@ class changepointStudy(Study):
         if not silent:
             print '    + Computed average posterior sequence'
 
-        # compute log-evidence of averaged model
+        # compute log-evidence of average model
         self.logEvidence = np.log(np.sum(np.exp(np.array(logEvidenceList))*self.changepointPrior))
 
         if not silent:
@@ -67,6 +69,12 @@ class changepointStudy(Study):
         if not silent:
             print '    + Computed change-point distribution'
 
+        # compute local evidence of average model
+        self.localEvidence = np.sum((np.array(localEvidenceList).T*self.changepointDistribution).T, axis=0)
+
+        if not silent:
+            print '    + Computed local evidence of average model'
+
         # compute posterior mean values
         self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
         for i in range(len(self.grid)):
@@ -75,5 +83,3 @@ class changepointStudy(Study):
         if not silent:
             print '    + Computed mean parameter values.'
 
-        # local evidence is not supported at the moment
-        self.localEvidence = None
