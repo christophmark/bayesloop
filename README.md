@@ -21,5 +21,5 @@ Another option is to clone the repository and install bayesloop using `python se
 bayesloop is tested on Python 2.7 and depends on NumPy and SciPy.
 
 ## License
-[The MIT License (MIT)](https://bitbucket.org/chrismark/bayesloop/src/LICENSE?at=master)
+[The MIT License (MIT)](https://bitbucket.org/chrismark/bayesloop/src/master/LICENSE)
 
