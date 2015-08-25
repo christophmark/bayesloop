@@ -8,6 +8,7 @@
 * optimization of hyper-parameters in hierarchical time series models
 * provides parameter distributions instead of point estimates
 * suitable for online analysis as well as retrospective analysis
+* straight-forward handling of missing data points
 
 ## Installation
 The latest version of *bayesloop* can be installed from the master branch using pip:
