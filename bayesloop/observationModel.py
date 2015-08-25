@@ -16,6 +16,7 @@ class Poisson:
     """
     def __init__(self):
         self.segmentLength = 1  # number of measurements in one data segment
+        self.parameterNames = ['lambda']
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
         self.uninformativePdf = None
@@ -53,6 +54,7 @@ class AR1:
     """
     def __init__(self):
         self.segmentLength = 2  # number of measurements in one data segment
+        self.parameterNames = ['correlation coefficient', 'noise amplitude']
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.uninformativePdf = None
