@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-study.py introduces the main class of bayesloop.
+This file introduces the main class used for data analysis.
 """
 
 import numpy as np
@@ -8,6 +9,10 @@ from .preprocessing import *
 
 
 class Study(object):
+    """
+    This class implements a forward-backward-algorithm for analyzing time series data using hierarchical models. For
+    efficient computation, all parameter distribution are dicretized on a parameter grid.
+    """
     def __init__(self):
         self.observationModel = None
         self.transitionModel = None
@@ -30,9 +35,13 @@ class Study(object):
 
     def loadExampleData(self):
         """
-        Load UK coal mining disaster data.
+        Loads UK coal mining disaster data.
 
-        :return:
+        Parameters:
+            None
+
+        Returns:
+            None
         """
         self.rawData = np.array([4, 5, 4, 0, 1, 4, 3, 4, 0, 6, 3, 3, 4, 0, 2, 6,
                                  3, 3, 5, 4, 5, 3, 1, 4, 4, 1, 5, 5, 3, 4, 2, 5,
@@ -46,19 +55,27 @@ class Study(object):
 
     def loadData(self, array):
         """
-        Load Numpy array as data.
+        Loads Numpy array as data.
 
-        :param array: numpy array containing data
-        :return:
+        Parameters:
+            array - Numpy array containing time series data
+
+        Returns:
+            None
         """
         self.rawData = array
         print '    + Successfully imported array.'
 
     def createGrid(self):
         """
-        Based on given boundaries and grid size, create parameter grid.
+        Creates parameter grid, based on given boundaries and grid size. Note that the given parameter boundaries are
+        not included as points on the grid (to avoid e.g. division by zero in case zero is chosen as boundary value).
 
-        :return:
+        Parameters:
+            None
+
+        Returns:
+            None
         """
 
         self.marginalGrid = [np.linspace(b[0], b[1], g+2)[1:-1] for b, g in zip(self.boundaries, self.gridSize)]
@@ -70,30 +87,40 @@ class Study(object):
 
     def setBoundaries(self, newBoundaries):
         """
-        Set lower and upper parameter boundaries.
+        Sets lower and upper parameter boundaries (and updates grid accordingly).
 
-        :param newBoundaries: list of lists with lower and upper parameter boundaries
-        :return:
+        Parameters:
+            newBoundaries: A list of lists which each contain a lower & upper parameter boundary
+                           Example: [[-1, 1],[0, 2]]
+
+        Returns:
+            None
         """
         self.boundaries = newBoundaries
         self.createGrid()
 
     def setGridSize(self, newGridSize):
         """
-        Set grid size for discretization of parameter distributions.
+        Sets grid size for discretization of parameter distributions (and updates grid accordingly).
 
-        :param newGridSize: list containing sizes for each grid dimension
-        :return:
+        Parameters:
+            newGridSize - List of integers describing the size of the parameter grid for each dimension
+
+        Returns:
+            None
         """
         self.gridSize = newGridSize
         self.createGrid()
 
     def setObservationModel(self, M, silent=False):
         """
-        Set observation model (likelihood function) for analysis.
+        Sets observation model (likelihood function) for analysis.
 
-        :param M: observation model class (see observationModel.py)
-        :return:
+        Parameters:
+            M - Observation model class (see observationModel.py)
+
+        Returns:
+            None
         """
         self.observationModel = M
 
@@ -105,10 +132,13 @@ class Study(object):
 
     def setTransitionModel(self, K, silent=False):
         """
-        Set transition model (for parameter variations).
+        Set transition model which describes the parameter dynamics.
 
-        :param K: transition model class (see transitionModel.py)
-        :return:
+        Parameters:
+            K - Transition model class (see transitionModel.py)
+
+        Returns:
+            None
         """
         self.transitionModel = K
         self.transitionModel.latticeConstant = self.latticeConstant
@@ -118,7 +148,22 @@ class Study(object):
 
     def fit(self, forwardOnly=False, evidenceOnly=False, silent=False):
         """
-        Computes the posterior sequence and evidence of a data set + models
+        Computes the sequence of posterior distributions and evidence for each time step. Evidence is also computed for
+        the complete data set.
+
+        Parameters:
+            forwardOnly - If set to True, the fitting process is terminated after the forward pass. The resulting
+                posterior distributions are so-called "filtering distributions" which - at each time step -
+                only incorporate the information of past data points. This option thus emulates an online
+                analysis.
+
+            evidenceOnly - If set to True, only forward pass is run and evidence is calculated. In contrast to the
+                forwardOnly option, no posterior mean values are computed.
+
+            silent - If set to True, no output is generated by the fitting method.
+
+        Returns:
+            None
         """
         if not silent:
             print '+ Started new fit:'

@@ -1,10 +1,19 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-observationModel.py introduces likelihood functions.
+This file introduces the observation models that can be used by the Study class for data analysis. An observation model
+here referes to a likelihood function, stating the probability of a measurement at a certain time step, given the
+parameter values.
 """
+
 import numpy as np
 
 class Poisson:
+    """
+    Poisson observation model. Subsequent data points are considered independent and distributed according to the
+    Poisson distribution. Input data consists of integer values, typically the number of events in a fixed time
+    interval. The model has one parameter, often denoted by lambda, which describes the rate of the modeled events.
+    """
     def __init__(self):
         self.segmentLength = 1  # number of measurements in one data segment
         self.defaultGridSize = [1000]
@@ -16,11 +25,14 @@ class Poisson:
 
     def pdf(self, grid, x):
         """
-        Probability density function of the observational model
+        Probability density function of the Poisson model
 
-        :param grid: parameter grid
-        :param x: data segment from formatted data
-        :return: poisson pdf (shape like grid)
+        Parameters:
+            grid - Parameter grid for discerete rate (lambda) values
+            x - Data segment from formatted data (in this case a single number of events)
+
+        Returns:
+            Discretized Poisson pdf as numpy array (with same shape as grid)
         """
 
         # check for missing data
@@ -33,6 +45,12 @@ class Poisson:
         return (grid[0]**x[0])*(np.exp(-grid[0]))/(np.math.factorial(x[0]))
 
 class AR1:
+    """
+    Auto-regressive process of first order. This model describes a simple stochastic time series model with an
+    exponential autocorrelation-function. It can be recursively defined as: d_t = r_t * d_(t-1) + s_t * e_t, with d_t
+    being the data point at time t, r_t the correlation coefficient of subsequent data points and s_t being the noise
+    amplitude of the process. e_t is distributed according to a standard normal distribution.
+    """
     def __init__(self):
         self.segmentLength = 2  # number of measurements in one data segment
         self.defaultGridSize = [200, 200]
@@ -44,11 +62,14 @@ class AR1:
 
     def pdf(self, grid, x):
         """
-        Probability density function of the observational model
+        Probability density function of the Auto-regressive process of first order
 
-        :param grid: parameter grid
-        :param x: data segment from formatted data
-        :return: pdf for the autoregressive process of first order (shape like grid)
+        Parameters:
+            grid - Parameter grid for discerete values of the correlation coefficient and noise amplitude
+            x - Data segment from formatted data (in this case a pair of measurements)
+
+        Returns:
+            Discretized pdf (for data point d_t, given d_(t-1) and parameters) as numpy array (with same shape as grid).
         """
 
         # check for missing data
