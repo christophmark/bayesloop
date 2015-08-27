@@ -11,6 +11,7 @@ transition model. This altered distribution is subsequently used as a prior dist
 
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
+from collections import OrderedDict
 
 
 class Static:
@@ -48,7 +49,7 @@ class GaussianRandomWalk:
     """
     def __init__(self, sigma=None):
         self.latticeConstant = None
-        self.hyperParameters = {'sigma': sigma}
+        self.hyperParameters = OrderedDict([('sigma', sigma)])
 
     def __str__(self):
         return 'Gaussian random walk'
@@ -91,7 +92,7 @@ class ChangePoint:
     """
     def __init__(self, tChange=None):
         self.latticeConstant = None
-        self.hyperParameters = {'tChange': tChange}
+        self.hyperParameters = OrderedDict([('tChange', tChange)])
 
     def __str__(self):
         return 'Change-point model'
@@ -125,7 +126,7 @@ class RegimeSwitch:
     """
     def __init__(self, pMin=None):
         self.latticeConstant = None
-        self.hyperParameters = {'pMin': pMin}
+        self.hyperParameters = OrderedDict([('pMin', pMin)])
 
     def __str__(self):
         return 'Regime-switching model'
