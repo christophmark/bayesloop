@@ -81,4 +81,4 @@ class AR1:
             else:
                 return np.ones_like(grid[0])/np.sum(np.ones_like(grid[0]))  # uniform likelihood
 
-        return np.exp(-((x[1] - grid[0]*x[0])**2.)/(2.*grid[1]**2.) - np.log(2.*np.pi*grid[1]**2.))
+        return np.exp(-((x[1] - grid[0]*x[0])**2.)/(2.*grid[1]**2.) - .5*np.log(2.*np.pi*grid[1]**2.))
