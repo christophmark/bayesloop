@@ -5,7 +5,9 @@ This file introduces the main class used for data analysis.
 """
 
 import numpy as np
+from scipy.optimize import minimize
 from .preprocessing import *
+from .transitionModel import CombinedTransitionModel
 
 
 class Study(object):
@@ -241,3 +243,41 @@ class Study(object):
 
             if not silent:
                 print '    + Computed mean parameter values.'
+
+    def optimize(self):
+        if self.transitionModel is None:
+            print '! ERROR: No transition model chosen.'
+            return
+
+        # optimization of combined transition models is currently not supported
+        if isinstance(self.transitionModel, CombinedTransitionModel):
+            print '! ERROR: Optimization of combined transition models is currently not supported.'
+            return
+
+        print '+ Starting optimization...'
+
+        # perform optimization (maximization of log-evidence)
+        result = minimize(self.optimization_step, self.transitionModel.hyperParameters.values(), method='COBYLA')
+
+        print '+ Finished optimization.'
+
+        # set optimal hyperparameters in transition model
+        for i, key in enumerate(self.transitionModel.hyperParameters.keys()):
+            self.transitionModel.hyperParameters[key] = result.x[i]
+
+        # run analysis with optimal parameter values
+        self.fit()
+
+
+    def optimization_step(self, x):
+        # set new hyperparameters in transition model
+        for i, key in enumerate(self.transitionModel.hyperParameters.keys()):
+            self.transitionModel.hyperParameters[key] = x[i]
+
+        # compute log-evidence
+        self.fit(evidenceOnly=True, silent=True)
+
+        print '    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10)), '- Parameter values:', x
+
+        # return negative log-evidence (is minimized to maximize evidence)
+        return -self.logEvidence
