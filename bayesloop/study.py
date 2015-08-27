@@ -249,30 +249,42 @@ class Study(object):
             print '! ERROR: No transition model chosen.'
             return
 
-        # optimization of combined transition models is currently not supported
-        if isinstance(self.transitionModel, CombinedTransitionModel):
-            print '! ERROR: Optimization of combined transition models is currently not supported.'
-            return
-
         print '+ Starting optimization...'
 
+        # create parameter list to set start values for optimization
+        if isinstance(self.transitionModel, CombinedTransitionModel):
+            x0 = []
+            for model in self.transitionModel.models:
+                for i, key in enumerate(model.hyperParameters.keys()):
+                    x0.append(model.hyperParameters[key])
+        else:
+            x0 = self.transitionModel.hyperParameters.values()
+
         # perform optimization (maximization of log-evidence)
-        result = minimize(self.optimization_step, self.transitionModel.hyperParameters.values(), method='COBYLA')
+        result = minimize(self.optimization_step, x0, method='COBYLA')
 
         print '+ Finished optimization.'
 
         # set optimal hyperparameters in transition model
-        for i, key in enumerate(self.transitionModel.hyperParameters.keys()):
-            self.transitionModel.hyperParameters[key] = result.x[i]
+        self.setHyperParameters(result.x)
 
         # run analysis with optimal parameter values
         self.fit()
 
+    def setHyperParameters(self, x):
+        if isinstance(self.transitionModel, CombinedTransitionModel):
+            paramList = list(x[:])  # make copy of previous parameter list
+            for model in self.transitionModel.models:
+                for i, key in enumerate(model.hyperParameters.keys()):
+                    model.hyperParameters[key] = paramList[0]
+                    paramList.pop(0)
+        else:
+            for i, key in enumerate(self.transitionModel.hyperParameters.keys()):
+                self.transitionModel.hyperParameters[key] = x[i]
 
     def optimization_step(self, x):
         # set new hyperparameters in transition model
-        for i, key in enumerate(self.transitionModel.hyperParameters.keys()):
-            self.transitionModel.hyperParameters[key] = x[i]
+        self.setHyperParameters(x)
 
         # compute log-evidence
         self.fit(evidenceOnly=True, silent=True)
@@ -281,3 +293,5 @@ class Study(object):
 
         # return negative log-evidence (is minimized to maximize evidence)
         return -self.logEvidence
+
+
