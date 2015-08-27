@@ -38,7 +38,7 @@ def plotParameterEvolution(study, param=0, color='b'):
     axesToMarginalize = range(1, len(study.observationModel.parameterNames) + 1)  # axis 0 is time
     axesToMarginalize.remove(paramIndex + 1)
 
-    marginalPosteriorSequence = np.apply_over_axes(np.sum, study.posteriorSequence, axesToMarginalize)
+    marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, study.posteriorSequence, axesToMarginalize))
 
     plt.imshow(marginalPosteriorSequence.T,
                origin=0,
