@@ -46,6 +46,9 @@ class GaussianRandomWalk:
     """
     Gaussian random walk model. This model assumes that parameter changes are Gaussian-distributed. The standard
     deviation can be set individually for each model parameter.
+
+    Parameters (on initialization):
+        sigma - Float or list of floats defining the standard deviation of the Gaussian random walk for each parameter
     """
     def __init__(self, sigma=None):
         self.latticeConstant = None
@@ -89,6 +92,9 @@ class ChangePoint:
     Change-point model. Parameter values are allowed to change only at a single point in time, right after a specified
     time step (Hyper-parameter tChange). Note that a uniform parameter distribution is used at this time step to
     achieve this "reset" of parameter values.
+
+    Parameters (on initialization):
+        tChange - Integer value of the time step of the change point
     """
     def __init__(self, tChange=None):
         self.latticeConstant = None
@@ -123,10 +129,13 @@ class RegimeSwitch:
     model may help to identify potential abrupt changes in parameter values. At each time step, all parameter values
     within the set boundaries are assigned a minimal probability of being realized in the next time step, effectively
     allowing abrupt parameter changes at every time step.
+
+    Parameters (on initialization):
+        log10pMin - Minimal probability (on a log10 scale) that is assigned to every parameter value
     """
-    def __init__(self, pMin=None):
+    def __init__(self, log10pMin=None):
         self.latticeConstant = None
-        self.hyperParameters = OrderedDict([('pMin', pMin)])
+        self.hyperParameters = OrderedDict([('log10pMin', log10pMin)])
 
     def __str__(self):
         return 'Regime-switching model'
@@ -143,7 +152,10 @@ class RegimeSwitch:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
         """
         newPrior = posterior.copy()
-        newPrior[newPrior < self.hyperParameters['pMin']] = self.hyperParameters['pMin']
+        newPrior[newPrior < 10**self.hyperParameters['log10pMin']] = 10**self.hyperParameters['log10pMin']
+
+        # transformation above violates proper normalization; re-normalization needed
+        newPrior /= np.sum(newPrior)
 
         return newPrior
 
@@ -156,6 +168,9 @@ class CombinedTransitionModel:
     Combined transition model. This class allows to combine different transition models to be able to explore more
     complex parameter dynamics. All sub-models are passed to this class as arguments on initialization. Note that a
     different order of the sub-models can result in different parameter dynamics.
+
+    Parameters (on initialization):
+        args - Sequence of transition models
     """
     def __init__(self, *args):
         self.latticeConstant = None
