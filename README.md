@@ -16,7 +16,7 @@ The latest version of *bayesloop* can be installed from the master branch using 
 pip install git+https://bitbucket.org/chrismark/bayesloop
 ```
 
-Another option is to clone the repository and install *bayesloop* using `python setup.py install` or `python setup.py develop`.
+Another option is to download the zipped version or clone the repository and install *bayesloop* using `python setup.py install` or `python setup.py develop`.
 
 ## Dependencies
 *bayesloop* is tested on Python 2.7 and depends on NumPy and SciPy.
