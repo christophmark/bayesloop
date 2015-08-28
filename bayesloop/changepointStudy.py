@@ -100,3 +100,18 @@ class changepointStudy(Study):
         if not silent:
             print '    + Computed mean parameter values.'
 
+    # optimization methods are inherited from Study class, but cannot be used in this case
+    def optimize(self):
+        raise AttributeError( "'changepointStudy' object has no attribute 'optimize'" )
+
+    def optimizationStep(self):
+        raise AttributeError( "'changepointStudy' object has no attribute 'optimizationStep'" )
+
+    def setHyperParameters(self):
+        raise AttributeError( "'changepointStudy' object has no attribute 'setHyperParameters'" )
+
+    def unpackHyperParameters(self):
+        raise AttributeError( "'changepointStudy' object has no attribute 'unpackHyperParameters'" )
+
+
+
