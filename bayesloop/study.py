@@ -30,7 +30,7 @@ class Study(object):
 
         self.posteriorSequence = []
         self.posteriorMeanValues = []
-        self.logEvidence = None
+        self.logEvidence = 0
         self.localEvidence = []
 
         print '+ Created new study.'
