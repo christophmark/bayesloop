@@ -11,5 +11,5 @@ setup(
     author_email='christoph.mark@fau.de',
     license='The MIT License (MIT)',
     packages=['bayesloop'],
-    install_requires=['numpy>=1.9.2', 'scipy>=0.15.1']
+    install_requires=['numpy>=1.9.2', 'scipy>=0.15.1', 'matplotlib>=1.4.3', 'seaborn>=0.5.0']
     )

@@ -19,8 +19,8 @@ pip install git+https://github.com/christophmark/bayesloop
 ```
 
 ## Dependencies
-*bayesloop* is tested on Python 2.7 and depends on NumPy and SciPy.
+*bayesloop* is tested on Python 2.7 and depends on NumPy, SciPy, matplotlib and Seaborn.
 
 ## License
-[The MIT License (MIT)](https://bitbucket.org/chrismark/bayesloop/src/master/LICENSE)
+[The MIT License (MIT)](https://github.com/christophmark/bayesloop/blob/master/LICENSE)
 
