@@ -252,16 +252,10 @@ class Study(object):
         print '+ Starting optimization...'
 
         # create parameter list to set start values for optimization
-        if isinstance(self.transitionModel, CombinedTransitionModel):
-            x0 = []
-            for model in self.transitionModel.models:
-                for i, key in enumerate(model.hyperParameters.keys()):
-                    x0.append(model.hyperParameters[key])
-        else:
-            x0 = self.transitionModel.hyperParameters.values()
+        x0 = self.unpackHyperParameters()
 
         # perform optimization (maximization of log-evidence)
-        result = minimize(self.optimization_step, x0, method='COBYLA')
+        result = minimize(self.optimizationStep, x0, method='COBYLA')
 
         print '+ Finished optimization.'
 
@@ -271,18 +265,7 @@ class Study(object):
         # run analysis with optimal parameter values
         self.fit()
 
-    def setHyperParameters(self, x):
-        if isinstance(self.transitionModel, CombinedTransitionModel):
-            paramList = list(x[:])  # make copy of previous parameter list
-            for model in self.transitionModel.models:
-                for i, key in enumerate(model.hyperParameters.keys()):
-                    model.hyperParameters[key] = paramList[0]
-                    paramList.pop(0)
-        else:
-            for i, key in enumerate(self.transitionModel.hyperParameters.keys()):
-                self.transitionModel.hyperParameters[key] = x[i]
-
-    def optimization_step(self, x):
+    def optimizationStep(self, x):
         # set new hyperparameters in transition model
         self.setHyperParameters(x)
 
@@ -294,4 +277,45 @@ class Study(object):
         # return negative log-evidence (is minimized to maximize evidence)
         return -self.logEvidence
 
+    def unpackHyperParameters(self):
+        if isinstance(self.transitionModel, CombinedTransitionModel):
+            models = self.transitionModel.models
+        else:
+            # only one model in a non-combined transition model
+            models = [self.transitionModel]
 
+        x0 = []  # initialize parameter list
+        for model in models:
+            for i, key in enumerate(model.hyperParameters.keys()):
+                # if parameter itself is a list, we need to unpack
+                if type(model.hyperParameters[key]) is list:
+                    length = len(model.hyperParameters[key])
+                    for i in range(length):
+                        x0.append(model.hyperParameters[key][i])
+                # if parameter is single float, no unpacking is needed
+                else:
+                    x0.append(model.hyperParameters[key])
+
+        return x0
+
+    def setHyperParameters(self, x):
+        if isinstance(self.transitionModel, CombinedTransitionModel):
+            models = self.transitionModel.models
+        else:
+            # only one model in a non-combined transition model
+            models = [self.transitionModel]
+
+        paramList = list(x[:])  # make copy of previous parameter list
+        for model in models:
+            for i, key in enumerate(model.hyperParameters.keys()):
+                # if parameter itself is a list, we need to unpack
+                if type(model.hyperParameters[key]) is list:
+                    length = len(model.hyperParameters[key])
+                    model.hyperParameters[key] = []
+                    for i in range(length):
+                        model.hyperParameters[key].append(paramList[0])
+                        paramList.pop(0)
+                # if parameter is single float, no unpacking is needed
+                else:
+                    model.hyperParameters[key] = paramList[0]
+                    paramList.pop(0)
