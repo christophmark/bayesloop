@@ -133,7 +133,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 
 # 6th assumption: regime-switching model
 # ----------------------------------
-K = bl.RegimeSwitch(pMin=10**-7)
+K = bl.RegimeSwitch(log10pMin=-7)
 disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
@@ -147,7 +147,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 
 # 7th assumption: combined transition model
 # ----------------------------------
-K = bl.CombinedTransitionModel(bl.GaussianRandomWalk(sigma=0.05), bl.RegimeSwitch(pMin=10**-7))
+K = bl.CombinedTransitionModel(bl.GaussianRandomWalk(sigma=0.05), bl.RegimeSwitch(log10pMin=-7))
 disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
