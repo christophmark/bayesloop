@@ -113,7 +113,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 
 # 5th assumption: complete change point analysis
 # ----------------------------------------------
-cpStudy = bl.changepointStudy()
+cpStudy = bl.ChangepointStudy()
 cpStudy.loadExampleData()
 
 M = bl.Poisson()

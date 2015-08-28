@@ -10,14 +10,14 @@ from .preprocessing import *
 from .transitionModel import ChangePoint
 
 
-class changepointStudy(Study):
+class ChangepointStudy(Study):
     """
     This class builds on the Study-class and the change-point transition model to perform a series of analyses with varying
     change point times. It subsequently computes the average model from all possible change points and creates a probability
     distribution of change point times.
     """
     def __init__(self):
-        super(changepointStudy, self).__init__()
+        super(ChangepointStudy, self).__init__()
 
         self.changepointPrior = None
         self.changepointDistribution = None
