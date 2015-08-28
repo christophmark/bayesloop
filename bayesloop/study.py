@@ -25,8 +25,8 @@ class Study(object):
         self.grid = []
         self.latticeConstant = []
 
-        self.rawData = []
-        self.formattedData = []
+        self.rawData = np.array([])
+        self.formattedData = np.array([])
 
         self.posteriorSequence = []
         self.posteriorMeanValues = []
