@@ -7,7 +7,7 @@ This file introduces an extension to the basic Study-class which builds on the c
 import numpy as np
 from .study import Study
 from .preprocessing import *
-from .transitionModel import ChangePoint
+from .transitionModels import ChangePoint
 
 
 class ChangepointStudy(Study):

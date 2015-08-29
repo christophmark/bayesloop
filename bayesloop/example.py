@@ -21,7 +21,7 @@ cpal = sns.color_palette()
 disasterStudy = bl.Study()  # create study-object
 disasterStudy.loadExampleData()  # load example data (number of mining disasters per year)
 
-M = bl.Poisson()  # number of disasters per year is modelled by a poisson distribution
+M = bl.om.Poisson()  # number of disasters per year is modelled by a poisson distribution
 disasterStudy.setObservationModel(M)
 
 disasterStudy.setGridSize([1000])  # configure parameter grid
@@ -57,7 +57,7 @@ fig.text(0.01, 0.6, 'No. of disasters per year', rotation='vertical')
 
 # first assumption: static rate of disasters
 # ------------------------------------------
-K = bl.Static()
+K = bl.tm.Static()
 disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
@@ -71,7 +71,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 
 # 2nd assumption: gradual parameter variations with small rate
 # ------------------------------------------------------------
-K = bl.GaussianRandomWalk(sigma=0.2)
+K = bl.tm.GaussianRandomWalk(sigma=0.2)
 disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
@@ -85,7 +85,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 
 # 3rd assumption: gradual parameter variations with large rate
 # ------------------------------------------------------------
-K = bl.GaussianRandomWalk(sigma=0.4)
+K = bl.tm.GaussianRandomWalk(sigma=0.4)
 disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
@@ -99,7 +99,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 
 # 4th assumption: change point model
 # ----------------------------------
-K = bl.ChangePoint(tChange=40)
+K = bl.tm.ChangePoint(tChange=40)
 disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
@@ -116,7 +116,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 cpStudy = bl.ChangepointStudy()
 cpStudy.loadExampleData()
 
-M = bl.Poisson()
+M = bl.om.Poisson()
 cpStudy.setObservationModel(M)
 
 cpStudy.setGridSize([1000])
@@ -133,7 +133,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 
 # 6th assumption: regime-switching model
 # ----------------------------------
-K = bl.RegimeSwitch(log10pMin=-7)
+K = bl.tm.RegimeSwitch(log10pMin=-7)
 disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
@@ -147,7 +147,7 @@ plt.yticks([1, 3, 5], fontsize=12)
 
 # 7th assumption: combined transition model
 # ----------------------------------
-K = bl.CombinedTransitionModel(bl.GaussianRandomWalk(sigma=0.05), bl.RegimeSwitch(log10pMin=-7))
+K = bl.tm.CombinedTransitionModel(bl.tm.GaussianRandomWalk(sigma=0.05), bl.tm.RegimeSwitch(log10pMin=-7))
 disasterStudy.setTransitionModel(K)
 
 disasterStudy.fit()  # fit this model
