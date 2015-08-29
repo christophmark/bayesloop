@@ -35,6 +35,10 @@ class Poisson:
         Returns:
             Discretized Poisson pdf as numpy array (with same shape as grid)
         """
+        # check for multi-dimensional data
+        if len(x.shape) == 2:
+            # multi-dimensional data is processed one dimension at a time; likelihoods are then multiplied
+            return np.prod(np.array([self.pdf(grid, xi) for xi in x.T]), axis=0)
 
         # check for missing data
         if np.isnan(x[0]):
@@ -71,6 +75,10 @@ class WhiteNoise:
         Returns:
             Discretized Normal pdf (with zero mean and st.dev sigma) as numpy array (with same shape as grid).
         """
+        # check for multi-dimensional data
+        if len(x.shape) == 2:
+            # multi-dimensional data is processed one dimension at a time; likelihoods are then multiplied
+            return np.prod(np.array([self.pdf(grid, xi) for xi in x.T]), axis=0)
 
         # check for missing data
         if np.isnan(x[0]):
@@ -110,6 +118,10 @@ class AR1:
         Returns:
             Discretized pdf (for data point d_t, given d_(t-1) and parameters) as numpy array (with same shape as grid).
         """
+        # check for multi-dimensional data
+        if len(x.shape) == 2:
+            # multi-dimensional data is processed one dimension at a time; likelihoods are then multiplied
+            return np.prod(np.array([self.pdf(grid, xi) for xi in x.T]), axis=0)
 
         # check for missing data
         if np.isnan(x[0]) or np.isnan(x[1]):
