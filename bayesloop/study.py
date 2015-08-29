@@ -200,7 +200,8 @@ class Study(object):
             alpha /= norm
 
             # alphas are stored as preliminary posterior distributions
-            self.posteriorSequence[i] = alpha
+            if not evidenceOnly:
+                self.posteriorSequence[i] = alpha
 
             # compute alpha for next iteration
             alpha = self.transitionModel.computeForwardPrior(alpha, i)
