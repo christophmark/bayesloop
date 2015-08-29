@@ -175,7 +175,8 @@ class Study(object):
             print '    + Formatted data.'
 
         # initialize array for posterior distributions
-        self.posteriorSequence = np.empty([len(self.formattedData)]+self.gridSize)
+        if not evidenceOnly:
+            self.posteriorSequence = np.empty([len(self.formattedData)]+self.gridSize)
 
         # initialize array for computed evidence (marginal likelihood)
         self.logEvidence = 0
