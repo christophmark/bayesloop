@@ -45,6 +45,43 @@ class Poisson:
 
         return (grid[0]**x[0])*(np.exp(-grid[0]))/(np.math.factorial(x[0]))
 
+class WhiteNoise:
+    """
+    White noise process. All observations are independently drawn from a Gaussian distribution with zero mean and
+    a finite variance, the noise amplitude. This process is basically an autoregressive process with zero correlation.
+    """
+    def __init__(self):
+        self.segmentLength = 1  # number of measurements in one data segment
+        self.parameterNames = ['noise amplitude']
+        self.defaultGridSize = [1000]
+        self.defaultBoundaries = [[0, 1]]
+        self.uninformativePdf = None
+
+    def __str__(self):
+        return 'White noise process'
+
+    def pdf(self, grid, x):
+        """
+        Probability density function of the white noise process.
+
+        Parameters:
+            grid - Parameter grid for discerete values of noise amplitude
+            x - Data segment from formatted data (containing a single measurement)
+
+        Returns:
+            Discretized Normal pdf (with zero mean and st.dev sigma) as numpy array (with same shape as grid).
+        """
+
+        # check for missing data
+        if np.isnan(x[0]):
+            if self.uninformativePdf is not None:
+                return self.uninformativePdf  # arbitrary likelihood
+            else:
+                return np.ones_like(grid[0])/np.sum(np.ones_like(grid[0]))  # uniform likelihood
+
+        return np.exp(-(x[0]**2.)/(2.*grid[0]**2.) - .5*np.log(2.*np.pi*grid[0]**2.))
+
+
 class AR1:
     """
     Auto-regressive process of first order. This model describes a simple stochastic time series model with an
