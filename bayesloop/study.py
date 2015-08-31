@@ -79,6 +79,11 @@ class Study(object):
             None
         """
 
+        if not self.gridSize:
+            print '! Grid-size not set.'
+            print '  Setting default grid-size:', self.observationModel.defaultGridSize
+            self.gridSize = self.observationModel.defaultGridSize
+
         self.marginalGrid = [np.linspace(b[0], b[1], g+2)[1:-1] for b, g in zip(self.boundaries, self.gridSize)]
         self.grid = [m for m in np.meshgrid(*self.marginalGrid, indexing='ij')]
         self.latticeConstant = [g[1]-g[0] for g in self.marginalGrid]
@@ -125,9 +130,6 @@ class Study(object):
         """
         self.observationModel = M
 
-        self.gridSize = M.defaultGridSize
-        self.boundaries = M.defaultBoundaries
-
         if not silent:
             print '    + Observation model:', M
 
@@ -166,6 +168,9 @@ class Study(object):
         Returns:
             None
         """
+        if not self.checkConsistency():
+            return
+
         if not silent:
             print '+ Started new fit:'
 
@@ -246,8 +251,7 @@ class Study(object):
                 print '    + Computed mean parameter values.'
 
     def optimize(self):
-        if self.transitionModel is None:
-            print '! ERROR: No transition model chosen.'
+        if not self.checkConsistency():
             return
 
         print '+ Starting optimization...'
@@ -320,3 +324,31 @@ class Study(object):
                 else:
                     model.hyperParameters[key] = paramList[0]
                     paramList.pop(0)
+
+    def checkConsistency(self):
+        if not self.observationModel:
+            print '! No observation model chosen.'
+            return False
+        if not self.transitionModel:
+            print '! No transition model chosen.'
+            return False
+        if not self.boundaries:
+            print '! No parameter boundaries are set.'
+            print '  Setting default boundaries:', self.observationModel.defaultBoundaries
+            print '  Restart analysis to use these boundary values. To change boundaries, call setBoundaries().'
+            self.setBoundaries(self.observationModel.defaultBoundaries)
+            return False
+        if not len(self.observationModel.defaultGridSize) == len(self.gridSize):
+            print '! Specified parameter grid expects {0} parameter(s), but observation model has {1} parameter(s).'\
+                .format(len(self.gridSize), len(self.observationModel.defaultGridSize))
+            print '  Default grid-size for the chosen observation model: {0}'\
+                .format(self.observationModel.defaultGridSize)
+            return False
+        if not len(self.observationModel.defaultBoundaries) == len(self.boundaries):
+            print '! Parameter boundaries specify {0} parameter(s), but observation model has {1} parameter(s).'\
+                .format(len(self.boundaries), len(self.observationModel.defaultBoundaries))
+            print '  Default boundaries for the chosen observation model: {0}'\
+                .format(self.observationModel.defaultBoundaries)
+            return False
+
+        return True
