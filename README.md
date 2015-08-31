@@ -39,6 +39,7 @@ S.fit()  # Bayesian inference
 # plot data together with inferred parameter evolution
 plt.figure(figsize=(10, 5))
 plt.xlim([1850, 1962])
+
 plt.bar(range(1851, 1962), S.rawData, align='center', facecolor='r', alpha=.5)
 bl.plotParameterEvolution(S, xLower=1851, xUpper=1962)
 plt.show()
