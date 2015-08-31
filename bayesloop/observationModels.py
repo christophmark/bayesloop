@@ -49,31 +49,72 @@ class Poisson:
 
         return (grid[0]**x[0])*(np.exp(-grid[0]))/(np.math.factorial(x[0]))
 
-class WhiteNoise:
+class Gaussian:
     """
-    White noise process. All observations are independently drawn from a Gaussian distribution with zero mean and
-    a finite variance, the noise amplitude. This process is basically an autoregressive process with zero correlation.
+    Gaussian observations. All observations are independently drawn from a Gaussian distribution. The model has two
+    parameters, mean and standard deviation.
     """
     def __init__(self):
         self.segmentLength = 1  # number of measurements in one data segment
-        self.parameterNames = ['noise amplitude']
+        self.parameterNames = ['mean', 'standard deviation']
+        self.defaultGridSize = [[200, 200]]
+        self.defaultBoundaries = [[-1, 1], [0, 1]]
+        self.uninformativePdf = None
+
+    def __str__(self):
+        return 'Gaussian observations'
+
+    def pdf(self, grid, x):
+        """
+        Probability density function of the Gaussian model.
+
+        Parameters:
+            grid - Parameter grid for discrete values of mean and standard deviation
+            x - Data segment from formatted data (containing a single measurement)
+
+        Returns:
+            Discretized Normal pdf as numpy array (with same shape as grid).
+        """
+        # check for multi-dimensional data
+        if len(x.shape) == 2:
+            # multi-dimensional data is processed one dimension at a time; likelihoods are then multiplied
+            return np.prod(np.array([self.pdf(grid, xi) for xi in x.T]), axis=0)
+
+        # check for missing data
+        if np.isnan(x[0]):
+            if self.uninformativePdf is not None:
+                return self.uninformativePdf  # arbitrary likelihood
+            else:
+                return np.ones_like(grid[0])/np.sum(np.ones_like(grid[0]))  # uniform likelihood
+
+        return np.exp(-((x[0] - grid[0])**2.)/(2.*grid[1]**2.) - .5*np.log(2.*np.pi*grid[1]**2.))
+
+class ZeroMeanGaussian:
+    """
+    White noise process. All observations are independently drawn from a Gaussian distribution with zero mean and
+    a finite standard deviation, the noise amplitude. This process is basically an autoregressive process with zero
+    correlation.
+    """
+    def __init__(self):
+        self.segmentLength = 1  # number of measurements in one data segment
+        self.parameterNames = ['standard deviation']
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
         self.uninformativePdf = None
 
     def __str__(self):
-        return 'White noise process'
+        return 'White noise process (zero mean Gaussian)'
 
     def pdf(self, grid, x):
         """
         Probability density function of the white noise process.
 
         Parameters:
-            grid - Parameter grid for discerete values of noise amplitude
+            grid - Parameter grid for discrete values of noise amplitude
             x - Data segment from formatted data (containing a single measurement)
 
         Returns:
-            Discretized Normal pdf (with zero mean and st.dev sigma) as numpy array (with same shape as grid).
+            Discretized Normal pdf (with zero mean) as numpy array (with same shape as grid).
         """
         # check for multi-dimensional data
         if len(x.shape) == 2:
