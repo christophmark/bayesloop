@@ -56,7 +56,7 @@ class Gaussian:
     def __init__(self):
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = ['mean', 'standard deviation']
-        self.defaultGridSize = [[200, 200]]
+        self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.uninformativePdf = None
 
