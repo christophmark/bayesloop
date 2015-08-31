@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def plotParameterEvolution(study, param=0, color='b'):
+def plotParameterEvolution(study, param=0, xLower=None, xUpper=None, color='b'):
     """
     Plots a series of marginal posterior distributions corresponding to a single model parameter, together with the
     posterior mean values.
@@ -39,17 +39,24 @@ def plotParameterEvolution(study, param=0, color='b'):
 
     marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, study.posteriorSequence, axesToMarginalize))
 
+    if not xLower:
+        xLower = 0
+    if not xUpper:
+        if xLower:
+            print '! If lower x limit is provided, upper limit has to be provided, too.'
+            print '  Setting lower limit to zero.'
+        xLower = 0
+        xUpper = len(marginalPosteriorSequence)
+
     plt.imshow(marginalPosteriorSequence.T,
                origin=0,
                cmap=sns.light_palette(color, as_cmap=True),
-               extent=[0, len(marginalPosteriorSequence) - 1] + study.boundaries[paramIndex],
+               extent=[xLower, xUpper - 1] + study.boundaries[paramIndex],
                aspect='auto')
 
-    plt.plot(np.arange(len(marginalPosteriorSequence)), study.posteriorMeanValues[paramIndex], c='k', lw=1.5)
+    plt.plot(np.arange(xLower, xUpper), study.posteriorMeanValues[paramIndex], c='k', lw=1.5)
 
-    plt.xlim((0, len(marginalPosteriorSequence) - 1))
     plt.ylim(study.boundaries[paramIndex])
-
     plt.ylabel(study.observationModel.parameterNames[paramIndex])
     plt.xlabel('time step')
 
