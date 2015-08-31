@@ -6,7 +6,7 @@ This file introduces the main class used for data analysis.
 import numpy as np
 from scipy.optimize import minimize
 from .preprocessing import *
-from .transitionModel import CombinedTransitionModel
+from .transitionModels import CombinedTransitionModel
 
 
 class Study(object):
