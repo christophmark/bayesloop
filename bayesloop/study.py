@@ -96,8 +96,8 @@ class Study(object):
         Sets lower and upper parameter boundaries (and updates grid accordingly).
 
         Parameters:
-            newBoundaries: A list of lists which each contain a lower & upper parameter boundary
-                           Example: [[-1, 1],[0, 2]]
+            newBoundaries - A list of lists which each contain a lower & upper parameter boundary
+                            Example: [[-1, 1], [0, 2]]
 
         Returns:
             None
@@ -251,6 +251,20 @@ class Study(object):
                 print '    + Computed mean parameter values.'
 
     def optimize(self):
+        """
+        Uses the COBYLA minimization algorithm from SciPy to perform a maximization of the log-evidence with respect
+        to all hyper-parameters (the parameters of the transition model) of a time seris model. The starting values
+        are the values set by the user when defining the transition model.
+
+        For the optimization, only the log-evidence is computed and no parameter distributions are stored. When a local
+        maximum is found, the parameter distribution is computed based on the optimal values for the hyper-parameters.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         if not self.checkConsistency():
             return
 
@@ -271,6 +285,15 @@ class Study(object):
         self.fit()
 
     def optimizationStep(self, x):
+        """
+        Wrapper for the fit method to use it in conjunction with scipy.optimize.minimize.
+
+        Parameters:
+            x - unpacked list of current hyper-parameter values
+
+        Returns:
+            negative log-evidence that is subject to minimization
+        """
         # set new hyperparameters in transition model
         self.setHyperParameters(x)
 
@@ -283,6 +306,17 @@ class Study(object):
         return -self.logEvidence
 
     def unpackHyperParameters(self):
+        """
+        The parameters of a transition model can be split between several submodels (using CombinedTransitionModel) and
+        can be lists of values (multiple standard deviations in GaussianRandomWalk). This function unpacks the hyper-
+        parameters, resulting in a single list of values that can be fed to the optimization step routine.
+
+        Parameters:
+            None
+
+        Returns:
+            list of current hyper-parameter values
+        """
         if isinstance(self.transitionModel, CombinedTransitionModel):
             models = self.transitionModel.models
         else:
@@ -304,6 +338,17 @@ class Study(object):
         return x0
 
     def setHyperParameters(self, x):
+        """
+        The parameters of a transition model can be split between several submodels (using CombinedTransitionModel) and
+        can be lists of values (multiple standard deviations in GaussianRandomWalk). This function takes a list of
+        values and sets the corresponding variables in the transition model instance.
+
+        Parameters:
+            x - list of values (e.g. from unpackHyperparameters)
+
+        Returns:
+            None
+        """
         if isinstance(self.transitionModel, CombinedTransitionModel):
             models = self.transitionModel.models
         else:
@@ -326,6 +371,16 @@ class Study(object):
                     paramList.pop(0)
 
     def checkConsistency(self):
+        """
+        This method is called at the very beginning of analysis methods to ensure that all necessary elements of the
+        model are set correctly.
+
+        Parameters:
+            None
+
+        Returns:
+            True if all is well; False if problem with user input is detected.
+        """
         if not self.observationModel:
             print '! No observation model chosen.'
             return False

@@ -25,6 +25,15 @@ class OnlineStudy(Study):
         print '  --> Online study'
 
     def step(self, dataPoint):
+        """
+        Update the current parameter distribution by adding a new data point to the data set.
+
+        Parameters:
+            dataPoint - Float, int, or 1D-array of those (for multidimensional data).
+
+        Returns:
+            None
+        """
         self.rawData = np.append(self.rawData, dataPoint)
 
         # initialize posterior distribution as flat prior
@@ -62,12 +71,31 @@ class OnlineStudy(Study):
               '; Local evidence: {:.4f}'.format(self.localEvidence)
 
     def reset(self):
+        """
+        Resets the current posterior distribution, posterior mean value and log-evidence.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         self.posteriorDistribution = None
         self.posteriorMeanValue = None
         self.logEvidence = 0
         print '    ! Resetted posterior distribution, mean value and log-evidence.'
 
     def update(self):
+        """
+        Run a forward analysis over all avaible data points, and store the last results so that they can be used by the
+        step method for future data points.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         print '    + Updating posterior distribution and mean value using all available data...'
         self.logEvidence = 0
         self.fit(forwardOnly=True, silent=True)
