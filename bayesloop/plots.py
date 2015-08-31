@@ -50,4 +50,7 @@ def plotParameterEvolution(study, param=0, color='b'):
     plt.xlim((0, len(marginalPosteriorSequence) - 1))
     plt.ylim(study.boundaries[paramIndex])
 
+    plt.ylabel(study.observationModel.parameterNames[paramIndex])
+    plt.xlabel('time step')
+
 
