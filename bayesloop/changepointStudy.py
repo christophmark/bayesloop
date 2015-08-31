@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 This file introduces an extension to the basic Study-class which builds on the change-point transition model.
 """

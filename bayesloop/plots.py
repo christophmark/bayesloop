@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 This file introduces plotting functions to visualize analyses carried out with bayesloop.
 """

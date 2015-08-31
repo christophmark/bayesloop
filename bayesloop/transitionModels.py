@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 This file introduces the transition models that can be used by the Study class for data analysis. A transition model
 here referes to a stochastic or deterministic model that describes how the parameter values of a given time series

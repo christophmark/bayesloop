@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 This file introduces an extension to the basic Study-class which allows to add data step by step and keep an updated
 parameter distribution, allowing to analyze data streams online.

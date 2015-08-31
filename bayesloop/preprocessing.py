@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 This file includes functions used for the preprocessing of measurement data that is to be analyzed using bayesloop. The
 time series data is formatted into data segments that can be fed to the inference algorithm piece-by-piece.

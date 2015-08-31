@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 This file introduces the observation models that can be used by the Study class for data analysis. An observation model
 here referes to a likelihood function, stating the probability of a measurement at a certain time step, given the
