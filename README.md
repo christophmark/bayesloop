@@ -12,6 +12,39 @@ The underlying algorithm of *bayesloop* has been successfully employed in cancer
 * suitable for online analysis as well as retrospective analysis
 * straight-forward handling of missing data points
 
+## Getting started
+For a comprehensive introduction and overview of all features which *bayesloop* provides, see the tutorial (TODO). While you may read this tutorial directly on GitHub, you can also download it and interactively manipulate/execute the code therein (see [here](https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server) for further information).
+
+The following code provides a minimal example of an analysis carried out using *bayesloop*. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this [article](http://www.dima.unige.it/~riccomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf) for further information).
+```
+import bayesloop as bl
+import matplotlib.pyplot as plt
+
+S = bl.Study()  # start new data study
+S.loadExampleData()  # load data array
+
+# observed number of disasters is modeled by Poisson distribution
+M = bl.observationModels.Poisson()
+S.setObservationModel(M)
+
+# set boundaries for annual disaster-rate
+S.setBoundaries([[0, 6]])
+
+# disaster rate itself may change gradually over time
+K = bl.transitionModels.GaussianRandomWalk(sigma=0.2)
+S.setTransitionModel(K)
+
+S.fit()  # Bayesian inference
+
+# plot data together with inferred parameter evolution
+plt.figure(figsize=(10, 5))
+plt.xlim([1850, 1962])
+plt.bar(range(1851, 1962), S.rawData, align='center', facecolor='r', alpha=.5)
+bl.plotParameterEvolution(S, xLower=1851, xUpper=1962)
+plt.show()
+```
+This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the tutorial (TODO) for further insights into this data set!
+
 ## Installation
 To install the latest version of *bayesloop*, download the zipped version or clone the repository and install *bayesloop* using `python setup.py install`.
 
