@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="bayesloop : A framework for fitting and comparing time series models with time-varying parameters">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>bayesloop</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/christophmark/bayesloop">View on GitHub</a>
+
+          <h1 id="project_title">bayesloop</h1>
+          <h2 id="project_tagline">A framework for fitting and comparing time series models with time-varying parameters</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/christophmark/bayesloop/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/christophmark/bayesloop/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>Time series analysis today is an important cornerstone of quantitative science in many disciplines, including natural and life sciences as well as economics and social sciences. Regarding diverse phenomena like tumor cell migration, brain activity and stock trading, a similarity of these complex systems becomes apparent: the observable data we measure – cell migration paths, neuron spike rates and stock prices – are the result of a multitude of underlying processes that act over a broad range of spatial and temporal scales. It is thus to expect that the statistical properties of these systems are not constant, but themselves show stochastic or deterministic dynamics of their own. Time series models used to understand the dynamics of complex systems therefore have to account for temporal changes of the models' parameters.</p>
+
+<p><em>bayesloop</em> is a python module that focuses on fitting time series models with time-varying parameters and model selection based on <a href="https://cocosci.berkeley.edu/tom/papers/tutorial.pdf">Bayesian inference</a>. Instead of relying on <a href="http://www.cs.ubc.ca/%7Earnaud/andrieu_defreitas_doucet_jordan_intromontecarlomachinelearning.pdf">MCMC methods</a>, <em>bayesloop</em> uses a grid-based approach to evaluate probability distributions, allowing for an efficient approximation of the <a href="http://alumni.media.mit.edu/%7Etpminka/statlearn/demo/">marginal likelihood (evidence)</a>. The marginal likelihood represents a powerful tool to objectively compare different models and/or optimize the hyper-parameters of hierarchical models. To avoid the <a href="https://en.wikipedia.org/wiki/Curse_of_dimensionality">curse of dimensionality</a> when analyzing time series models with time-varying parameters, <em>bayesloop</em> employs a sequential inference algorithm that is based on the <a href="https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm">forward-backward-algorithm</a> used in <a href="http://www.cs.sjsu.edu/%7Estamp/RUA/HMM.pdf">Hidden Markov models</a>. Here, the relevant parameter spaces are kept low-dimensional by processing time series data step by step. The module covers a large class of time series models and is easily extensible.</p>
+
+<p>The underlying algorithm of <em>bayesloop</em> has been successfully employed in cancer research, studying the migration paths of invasive tumor cells, see this <a href="http://www.nature.com/articles/ncomms8516">article</a>.</p>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>objective model selection based on Bayesian evidence (marginal likelihood)</li>
+<li>optimization of hyper-parameters in hierarchical time series models</li>
+<li>provides parameter distributions instead of point estimates</li>
+<li>suitable for online analysis as well as retrospective analysis</li>
+<li>straight-forward handling of missing data points</li>
+</ul>
+
+<p>Note that the module is currently in beta state, so features may change in the future. Additional documentation will be available soon.</p>
+
+<h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting started</h2>
+
+<p>For a comprehensive introduction and overview of the main features that <em>bayesloop</em> provides, see the <a href="https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb">tutorial</a>. While you may read this tutorial directly on GitHub, you can also download it and interactively manipulate/execute the code therein (see <a href="https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server">here</a> for further information).</p>
+
+<p>The following code provides a minimal example of an analysis carried out using <em>bayesloop</em>. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this <a href="http://www.dima.unige.it/%7Ericcomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf">article</a> for further information).</p>
+
+<pre><code>import bayesloop as bl
+import matplotlib.pyplot as plt
+
+S = bl.Study()  # start new data study
+S.loadExampleData()  # load data array
+
+# observed number of disasters is modeled by Poisson distribution
+M = bl.observationModels.Poisson()
+S.setObservationModel(M)
+
+# set boundaries for annual disaster-rate
+S.setBoundaries([[0, 6]])
+
+# disaster rate itself may change gradually over time
+K = bl.transitionModels.GaussianRandomWalk(sigma=0.2)
+S.setTransitionModel(K)
+
+S.fit()  # Bayesian inference
+
+# plot data together with inferred parameter evolution
+plt.figure(figsize=(10, 5))
+plt.xlim([1850, 1962])
+plt.bar(range(1851, 1962), S.rawData,
+        align='center', facecolor='r', alpha=.5)
+bl.plotParameterEvolution(S, xLower=1851, xUpper=1962)
+plt.show()
+</code></pre>
+
+<p>This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the <a href="https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb">tutorial</a> for further insights!</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>To install the latest version of <em>bayesloop</em>, download the <a href="https://github.com/christophmark/bayesloop/archive/master.zip">zipped version</a> or clone the repository and install <em>bayesloop</em> using <code>python setup.py install</code>.</p>
+
+<p>Another option is to install <em>bayesloop</em> from the master branch using pip (requires git):</p>
+
+<pre><code>pip install git+https://github.com/christophmark/bayesloop
+</code></pre>
+
+<h2>
+<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h2>
+
+<p><em>bayesloop</em> is tested on Python 2.7 and depends on NumPy, SciPy, matplotlib and Seaborn.</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p><a href="https://github.com/christophmark/bayesloop/blob/master/LICENSE">The MIT License (MIT)</a></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">bayesloop maintained by <a href="https://github.com/christophmark">christophmark</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
