@@ -12,8 +12,10 @@ The underlying algorithm of *bayesloop* has been successfully employed in cancer
 * suitable for online analysis as well as retrospective analysis
 * straight-forward handling of missing data points
 
+Note that the module is currently in beta state, so feature may change. Additional documentation will be available soon.
+
 ## Getting started
-For a comprehensive introduction and overview of all features which *bayesloop* provides, see the tutorial (TODO). While you may read this tutorial directly on GitHub, you can also download it and interactively manipulate/execute the code therein (see [here](https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server) for further information).
+For a comprehensive introduction and overview of the main features that *bayesloop* provides, see the [tutorial](https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb). While you may read this tutorial directly on GitHub, you can also download it and interactively manipulate/execute the code therein (see [here](https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server) for further information).
 
 The following code provides a minimal example of an analysis carried out using *bayesloop*. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this [article](http://www.dima.unige.it/~riccomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf) for further information).
 ```
@@ -44,12 +46,12 @@ plt.bar(range(1851, 1962), S.rawData, align='center', facecolor='r', alpha=.5)
 bl.plotParameterEvolution(S, xLower=1851, xUpper=1962)
 plt.show()
 ```
-This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the tutorial (TODO) for further insights into this data set!
+This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the [tutorial](https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb) for further insights!
 
 ## Installation
 To install the latest version of *bayesloop*, download the zipped version or clone the repository and install *bayesloop* using `python setup.py install`.
 
-Another option is to install *bayesloop* from the master branch using pip:
+Another option is to install *bayesloop* from the master branch using pip (requires git):
 ```
 pip install git+https://github.com/christophmark/bayesloop
 ```
