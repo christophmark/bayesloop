@@ -49,7 +49,7 @@ plt.show()
 This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the [tutorial](https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb) for further insights!
 
 ## Installation
-To install the latest version of *bayesloop*, download the [zipped version](https://github.com/christophmark/bayesloop/archive/master.zip) or clone the repository and install *bayesloop* using `python setup.py install`.
+To install the latest version of *bayesloop*, download the [zipped version](https://github.com/christophmark/bayesloop/zipball/master) or clone the repository and install *bayesloop* using `python setup.py install`.
 
 Another option is to install *bayesloop* from the master branch using pip (requires git):
 ```
