@@ -12,7 +12,7 @@ The underlying algorithm of *bayesloop* has been successfully employed in cancer
 * suitable for online analysis as well as retrospective analysis
 * straight-forward handling of missing data points
 
-Note that the module is currently in beta state, so feature may change. Additional documentation will be available soon.
+Note that the module is currently in beta state, so features may change in the future. Additional documentation will be available soon.
 
 ## Getting started
 For a comprehensive introduction and overview of the main features that *bayesloop* provides, see the [tutorial](https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb). While you may read this tutorial directly on GitHub, you can also download it and interactively manipulate/execute the code therein (see [here](https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server) for further information).
@@ -41,15 +41,15 @@ S.fit()  # Bayesian inference
 # plot data together with inferred parameter evolution
 plt.figure(figsize=(10, 5))
 plt.xlim([1850, 1962])
-
-plt.bar(range(1851, 1962), S.rawData, align='center', facecolor='r', alpha=.5)
+plt.bar(range(1851, 1962), S.rawData,
+        align='center', facecolor='r', alpha=.5)
 bl.plotParameterEvolution(S, xLower=1851, xUpper=1962)
 plt.show()
 ```
 This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the [tutorial](https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb) for further insights!
 
 ## Installation
-To install the latest version of *bayesloop*, download the zipped version or clone the repository and install *bayesloop* using `python setup.py install`.
+To install the latest version of *bayesloop*, download the [zipped version](https://github.com/christophmark/bayesloop/archive/master.zip) or clone the repository and install *bayesloop* using `python setup.py install`.
 
 Another option is to install *bayesloop* from the master branch using pip (requires git):
 ```
