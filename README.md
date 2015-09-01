@@ -1,5 +1,4 @@
-# bayesloop
-<sup>[project page](http://christophmark.github.io/bayesloop/)</sup>
+# bayesloop    <sup>[project page](http://christophmark.github.io/bayesloop/)</sup>
 
 Time series analysis today is an important cornerstone of quantitative science in many disciplines, including natural and life sciences as well as economics and social sciences. Regarding diverse phenomena like tumor cell migration, brain activity and stock trading, a similarity of these complex systems becomes apparent: the observable data we measure – cell migration paths, neuron spike rates and stock prices – are the result of a multitude of underlying processes that act over a broad range of spatial and temporal scales. It is thus to expect that the statistical properties of these systems are not constant, but themselves show stochastic or deterministic dynamics of their own. Time series models used to understand the dynamics of complex systems therefore have to account for temporal changes of the models' parameters.
 
