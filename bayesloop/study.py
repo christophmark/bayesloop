@@ -52,7 +52,7 @@ class Study(object):
                                  3, 3, 1, 1, 2, 1, 1, 1, 1, 2, 4, 2, 0, 0, 1, 4,
                                  0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1])
 
-        print '    + Successfully imported example data.'
+        print '+ Successfully imported example data.'
 
     def loadData(self, array):
         """
@@ -65,7 +65,7 @@ class Study(object):
             None
         """
         self.rawData = array
-        print '    + Successfully imported array.'
+        print '+ Successfully imported array.'
 
     def createGrid(self):
         """
@@ -131,7 +131,7 @@ class Study(object):
         self.observationModel = M
 
         if not silent:
-            print '    + Observation model:', M
+            print '+ Observation model:', M
 
     def setTransitionModel(self, K, silent=False):
         """
@@ -147,7 +147,7 @@ class Study(object):
         self.transitionModel.latticeConstant = self.latticeConstant
 
         if not silent:
-            print '    + Transition model:', K
+            print '+ Transition model:', K
 
     def fit(self, forwardOnly=False, evidenceOnly=False, silent=False):
         """
