@@ -16,7 +16,7 @@ The underlying algorithm of *bayesloop* has been successfully employed in cancer
 Note that the module is currently in beta state, so features may change in the future.
 
 ## Getting started
-For a comprehensive introduction and overview of the main features that *bayesloop* provides, see the [tutorial](https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb). While you may read this tutorial directly on GitHub, you can also download it and interactively manipulate/execute the code therein (see [here](https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server) for further information).
+For a comprehensive introduction and overview of the main features that *bayesloop* provides, see the [tutorial](https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb). While you may read this tutorial directly on GitHub (or [here](http://nbviewer.ipython.org/github/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb), in case equations are not displayed properly),, you can also download it and interactively manipulate/execute the code therein (see [here](https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server) for further information).
 
 The following code provides a minimal example of an analysis carried out using *bayesloop*. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this [article](http://www.dima.unige.it/~riccomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf) for further information).
 ```
