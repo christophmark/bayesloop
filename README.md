@@ -13,7 +13,7 @@ The underlying algorithm of *bayesloop* has been successfully employed in cancer
 * suitable for online analysis as well as retrospective analysis
 * straight-forward handling of missing data points
 
-Note that the module is currently in beta state, so features may change in the future. Additional documentation will be available soon.
+Note that the module is currently in beta state, so features may change in the future.
 
 ## Getting started
 For a comprehensive introduction and overview of the main features that *bayesloop* provides, see the [tutorial](https://github.com/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb). While you may read this tutorial directly on GitHub, you can also download it and interactively manipulate/execute the code therein (see [here](https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server) for further information).
