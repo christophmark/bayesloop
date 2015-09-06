@@ -191,7 +191,7 @@ class Study(object):
         for i in np.arange(0, len(self.formattedData)):
 
             # compute likelihood
-            likelihood = self.observationModel.pdf(self.grid, self.formattedData[i])
+            likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])
 
             # update alpha based on likelihood
             alpha *= likelihood
@@ -227,7 +227,7 @@ class Study(object):
                 self.posteriorSequence[i] /= self.localEvidence[i]
 
                 # re-compute likelihood
-                likelihood = self.observationModel.pdf(self.grid, self.formattedData[i])
+                likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])
 
                 # compute beta for next iteration
                 beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i)

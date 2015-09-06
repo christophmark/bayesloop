@@ -55,7 +55,7 @@ class OnlineStudy(Study):
         self.posteriorDistribution = self.transitionModel.computeForwardPrior(self.posteriorDistribution,
                                                                               len(self.formattedData)-1)
 
-        likelihood = self.observationModel.pdf(self.grid, dataSegment)  # compute likelihood
+        likelihood = self.observationModel.processedPdf(self.grid, dataSegment)  # compute likelihood
         self.posteriorDistribution *= likelihood  # update alpha based on likelihood
 
         norm = np.sum(self.posteriorDistribution)  # normalization constant of posterior is used to compute evidence
