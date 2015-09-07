@@ -32,6 +32,8 @@ class Study(object):
         self.logEvidence = 0
         self.localEvidence = []
 
+        self.parametersToOptimize = []
+
         print '+ Created new study.'
 
     def loadExampleData(self):
@@ -250,7 +252,7 @@ class Study(object):
             if not silent:
                 print '    + Computed mean parameter values.'
 
-    def optimize(self):
+    def optimize(self, parameterList=[]):
         """
         Uses the COBYLA minimization algorithm from SciPy to perform a maximization of the log-evidence with respect
         to all hyper-parameters (the parameters of the transition model) of a time seris model. The starting values
@@ -268,10 +270,27 @@ class Study(object):
         if not self.checkConsistency():
             return
 
+        # set list of parameters to optimize
+        if isinstance(parameterList, basestring):  # in case only a single parameter name is provided as a string
+            self.parametersToOptimize = [parameterList]
+        else:
+            self.parametersToOptimize = parameterList
+
         print '+ Starting optimization...'
+        if self.parametersToOptimize:
+            print '  --> Parameter(s) to optmimize:', self.parametersToOptimize
+        else:
+            print '  --> All model parameters are optmimized.'
 
         # create parameter list to set start values for optimization
         x0 = self.unpackHyperParameters()
+
+        # check if valid parameter names were entered
+        if len(x0) == 0:
+            print '! No parameters to optimize. Check parameter names.'
+            # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
+            self.parametersToOptimize = []
+            return
 
         # perform optimization (maximization of log-evidence)
         result = minimize(self.optimizationStep, x0, method='COBYLA')
@@ -283,6 +302,9 @@ class Study(object):
 
         # run analysis with optimal parameter values
         self.fit()
+
+        # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
+        self.parametersToOptimize = []
 
     def optimizationStep(self, x):
         """
@@ -326,6 +348,10 @@ class Study(object):
         x0 = []  # initialize parameter list
         for model in models:
             for i, key in enumerate(model.hyperParameters.keys()):
+                # check whether list of parameters to optimize is set and contains the current parameter
+                if self.parametersToOptimize and not (key in self.parametersToOptimize):
+                    continue
+
                 # if parameter itself is a list, we need to unpack
                 if type(model.hyperParameters[key]) is list:
                     length = len(model.hyperParameters[key])
@@ -358,6 +384,10 @@ class Study(object):
         paramList = list(x[:])  # make copy of previous parameter list
         for model in models:
             for i, key in enumerate(model.hyperParameters.keys()):
+                # check whether list of parameters to optimize is set and contains the current parameter
+                if self.parametersToOptimize and not (key in self.parametersToOptimize):
+                    continue
+
                 # if parameter itself is a list, we need to unpack
                 if type(model.hyperParameters[key]) is list:
                     length = len(model.hyperParameters[key])
