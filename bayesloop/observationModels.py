@@ -18,6 +18,17 @@ class ObservationModel:
         return self.name
 
     def processedPdf(self, grid, dataSegment):
+        """
+        This method is called by the fit-method of the Study class (and the step method of the OnlineStudy class) and
+        processes multidimensional data and missing data and passes it to the pdf-method of the child class.
+
+        Parameters:
+            grid - Discrete parameter grid
+            dataSegment - Data segment from formatted data
+
+        Returns:
+            Discretized pdf as numpy array (with same shape as grid)
+        """
         # check for multi-dimensional data
         if len(dataSegment.shape) == 2:
             # multi-dimensional data is processed one dimension at a time; likelihoods are then multiplied
