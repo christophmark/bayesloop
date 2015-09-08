@@ -62,7 +62,7 @@ class Poisson(ObservationModel):
         return (grid[0] ** dataSegment[0]) * (np.exp(-grid[0])) / (np.math.factorial(dataSegment[0]))
 
 
-class Gaussian:
+class Gaussian(ObservationModel):
     """
     Gaussian observations. All observations are independently drawn from a Gaussian distribution. The model has two
     parameters, mean and standard deviation.
@@ -91,7 +91,7 @@ class Gaussian:
             -((dataSegment[0] - grid[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(2. * np.pi * grid[1] ** 2.))
 
 
-class ZeroMeanGaussian:
+class ZeroMeanGaussian(ObservationModel):
     """
     White noise process. All observations are independently drawn from a Gaussian distribution with zero mean and
     a finite standard deviation, the noise amplitude. This process is basically an autoregressive process with zero
@@ -120,7 +120,7 @@ class ZeroMeanGaussian:
         return np.exp(-(dataSegment[0] ** 2.) / (2. * grid[0] ** 2.) - .5 * np.log(2. * np.pi * grid[0] ** 2.))
 
 
-class AR1:
+class AR1(ObservationModel):
     """
     Auto-regressive process of first order. This model describes a simple stochastic time series model with an
     exponential autocorrelation-function. It can be recursively defined as: d_t = r_t * d_(t-1) + s_t * e_t, with d_t
