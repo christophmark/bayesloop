@@ -346,17 +346,29 @@ class Study(object):
             models = [self.transitionModel]
 
         x0 = []  # initialize parameter list
-        for model in models:
-            for i, key in enumerate(model.hyperParameters.keys()):
+        for i, model in enumerate(models):
+            for key in model.hyperParameters.keys():
                 # check whether list of parameters to optimize is set and contains the current parameter
                 if self.parametersToOptimize and not (key in self.parametersToOptimize):
-                    continue
+                    ignoreParameter = True  # by default, these parameters are ignored
+
+                    # check for special notation (e.g. 'sigma_2')
+                    for p in self.parametersToOptimize:
+                        stringList = p.split('_')
+                        # check if notation & key is correct & integer is at the end
+                        if len(stringList) > 1 and '_'.join(stringList[:-1]) == key and stringList[-1].isdigit():
+                            # check whether current model is the right one
+                            if int(stringList[-1]) - 1 == i:
+                                ignoreParameter = False  # exception due to special notation
+
+                    if ignoreParameter:
+                        continue
 
                 # if parameter itself is a list, we need to unpack
                 if type(model.hyperParameters[key]) is list:
                     length = len(model.hyperParameters[key])
-                    for i in range(length):
-                        x0.append(model.hyperParameters[key][i])
+                    for j in range(length):
+                        x0.append(model.hyperParameters[key][j])
                 # if parameter is single float, no unpacking is needed
                 else:
                     x0.append(model.hyperParameters[key])
@@ -382,17 +394,29 @@ class Study(object):
             models = [self.transitionModel]
 
         paramList = list(x[:])  # make copy of previous parameter list
-        for model in models:
-            for i, key in enumerate(model.hyperParameters.keys()):
+        for i, model in enumerate(models):
+            for key in model.hyperParameters.keys():
                 # check whether list of parameters to optimize is set and contains the current parameter
                 if self.parametersToOptimize and not (key in self.parametersToOptimize):
-                    continue
+                    ignoreParameter = True  # by default, these parameters are ignored
+
+                    # check for special notation (e.g. 'sigma_2')
+                    for p in self.parametersToOptimize:
+                        stringList = p.split('_')
+                        # check if notation & key is correct & integer is at the end
+                        if len(stringList) > 1 and '_'.join(stringList[:-1]) == key and stringList[-1].isdigit():
+                            # check whether current model is the right one
+                            if int(stringList[-1]) - 1 == i:
+                                ignoreParameter = False  # exception due to special notation
+
+                    if ignoreParameter:
+                        continue
 
                 # if parameter itself is a list, we need to unpack
                 if type(model.hyperParameters[key]) is list:
                     length = len(model.hyperParameters[key])
                     model.hyperParameters[key] = []
-                    for i in range(length):
+                    for j in range(length):
                         model.hyperParameters[key].append(paramList[0])
                         paramList.pop(0)
                 # if parameter is single float, no unpacking is needed
