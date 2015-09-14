@@ -44,6 +44,79 @@ class ObservationModel:
         return self.pdf(grid, dataSegment)
 
 
+class Custom(ObservationModel):
+    """
+    This observation model class allows to create new observation models on-the-fly from scipy.stats random variables.
+    Note that scipy.stats does not use the canonical way of naming the parameters of the probability distributions, but
+    instead includes the parameter 'loc' (for discrete & continuous distributions) and 'scale' (for continuous only).
+
+    See http://docs.scipy.org/doc/scipy/reference/stats.html for further information on the available distributions and
+    the parameter notation.
+
+    Example usage:
+        M = bl.observationModels.Custom(scipy.stats.norm, fixedParameters={'loc': 4})
+
+    This will result in a model for normally distributed observations with a fixed 'loc' (mean) of 4, leaving the
+    'scale' (standard deviation) as the only free parameter to be inferred.
+
+    Note that while the parameters 'loc' and 'scale' have default values in scipy.stats and do not necessarily need to
+    be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant.
+    """
+
+    def __init__(self, rv, fixedParameters={}):
+        self.rv = rv
+        self.fixedParameterDict = fixedParameters
+
+        # check whether random variable is a continuous variable
+        if "pdf" in dir(self.rv):
+            self.isContinuous = True
+        else:
+            self.isContinuous = False
+
+        # list of all possible parameters is stored in 'shapes'
+        shapes = rv.shapes.split(', ')
+        shapes.append('loc')
+        if self.isContinuous:
+            shapes.append('scale')  # scale parameter is only available for continuous variables
+
+        # list of free parameters
+        self.freeParameters = [param for param in shapes if not (param in self.fixedParameterDict)]
+        print '+ Custom observation model with {0} free parameters: {1}'.format(len(self.freeParameters),
+                                                                                self.freeParameters)
+
+        # set class attributes similar to other observation models
+        self.name = rv.name  # scipy.stats name is used
+        self.segmentLength = 1  # currently only independent observations are supported by Custom class
+        self.parameterNames = self.freeParameters
+        self.defaultGridSize = [1000]
+        self.defaultBoundaries = [[0, 1]]
+        self.uninformativePdf = None
+
+    def pdf(self, grid, dataSegment):
+        """
+        Probability density function of custom scipy.stats models
+
+        Parameters:
+            grid - Parameter grid for discrete rate values
+            dataSegment - Data segment from formatted data
+
+        Returns:
+            Discretized pdf as numpy array (with same shape as grid)
+        """
+        # create dictionary from list
+        freeParameterDict = {key: value for key, value in zip(self.freeParameters, grid)}
+
+        # merge free/fixed parameter dictionaries
+        parameterDict = freeParameterDict.copy()
+        parameterDict.update(self.fixedParameterDict)
+
+        # scipy.stats differentiates between 'pdf' and 'pmf' for continuous and discrete variables, respectively
+        if self.isContinuous:
+            return self.rv.pdf(dataSegment[0], **parameterDict)
+        else:
+            return self.rv.pmf(dataSegment[0], **parameterDict)
+
+
 class Poisson(ObservationModel):
     """
     Poisson observation model. Subsequent data points are considered independent and distributed according to the
