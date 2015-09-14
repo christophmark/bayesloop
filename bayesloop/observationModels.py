@@ -88,8 +88,8 @@ class Custom(ObservationModel):
         self.name = rv.name  # scipy.stats name is used
         self.segmentLength = 1  # currently only independent observations are supported by Custom class
         self.parameterNames = self.freeParameters
-        self.defaultGridSize = [1000]
-        self.defaultBoundaries = [[0, 1]]
+        self.defaultGridSize = [1000]*len(self.parameterNames)
+        self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
         self.uninformativePdf = None
 
     def pdf(self, grid, dataSegment):
