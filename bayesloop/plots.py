@@ -24,12 +24,18 @@ def plotParameterEvolution(study, param=0, xLower=None, xUpper=None, color='b'):
         None
     """
 
-    if type(param) is int:
+    if isinstance(param, (int, long)):
         paramIndex = param
-    elif type(param) is str:
+    elif isinstance(param, basestring):
+        paramIndex = -1
         for i, name in enumerate(study.observationModel.parameterNames):
             if name == param:
                 paramIndex = i
+
+        # check if match was found
+        if paramIndex == -1:
+            print 'ERROR: Wrong parameter name. Available options: {0}'.format(study.observationModel.parameterNames)
+            return
     else:
         print 'ERROR: Wrong parameter format. Specify parameter via name or index.'
         return
