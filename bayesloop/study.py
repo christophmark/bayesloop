@@ -7,6 +7,7 @@ import numpy as np
 from scipy.optimize import minimize
 from .preprocessing import *
 from .transitionModels import CombinedTransitionModel
+from .transitionModels import SerialTransitionModel
 
 
 class Study(object):
@@ -339,7 +340,7 @@ class Study(object):
         Returns:
             list of current hyper-parameter values
         """
-        if isinstance(self.transitionModel, CombinedTransitionModel):
+        if isinstance(self.transitionModel, (CombinedTransitionModel, SerialTransitionModel)):
             models = self.transitionModel.models
         else:
             # only one model in a non-combined transition model
@@ -387,7 +388,7 @@ class Study(object):
         Returns:
             None
         """
-        if isinstance(self.transitionModel, CombinedTransitionModel):
+        if isinstance(self.transitionModel, (CombinedTransitionModel, SerialTransitionModel)):
             models = self.transitionModel.models
         else:
             # only one model in a non-combined transition model
