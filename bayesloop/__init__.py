@@ -2,6 +2,7 @@
 
 from .study import *
 from .changepointStudy import *
+from .rasterStudy import *
 from .onlineStudy import *
 from .plots import *
 
