@@ -9,6 +9,9 @@ import seaborn as sns
 
 def plotParameterEvolution(study, param=0, xLower=None, xUpper=None, color='b'):
     """
+    THIS FUNCTION IS DEPRECATED AND WILL BE REMOVED IN THE RELEASE v0.4!
+    Use the corresponding class method of the Study-class.
+
     Plots a series of marginal posterior distributions corresponding to a single model parameter, together with the
     posterior mean values.
 
@@ -23,6 +26,8 @@ def plotParameterEvolution(study, param=0, xLower=None, xUpper=None, color='b'):
     Returns:
         None
     """
+
+    print '! Plotting function is deprecated. Use the corresponding method of the Study-class.'
 
     if isinstance(param, (int, long)):
         paramIndex = param

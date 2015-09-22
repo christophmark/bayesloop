@@ -44,7 +44,7 @@ plt.figure(figsize=(10, 5))
 plt.xlim([1850, 1962])
 plt.bar(range(1851, 1962), S.rawData,
         align='center', facecolor='r', alpha=.5)
-bl.plotParameterEvolution(S, xLower=1851, xUpper=1962)
+S.plotParameterEvolution(xLower=1851, xUpper=1962)
 plt.show()
 ```
 This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the [tutorial](http://nbviewer.ipython.org/github/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb) for further insights!
