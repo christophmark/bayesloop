@@ -433,9 +433,6 @@ class Study(object):
         posterior mean values.
 
         Parameters:
-            study - An instance of the basic or an extended study-class that is used to analyze the data that is to be
-                visualized.
-
             param - parameter name or index of parameter to display; default: 0 (first model parameter)
 
             color - color from which a light colormap is created
