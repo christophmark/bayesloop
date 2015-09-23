@@ -35,7 +35,7 @@ class Study(object):
         self.logEvidence = 0
         self.localEvidence = []
 
-        self.parametersToOptimize = []
+        self.selectedHyperParameters = []
 
         print '+ Created new study.'
 
@@ -270,29 +270,29 @@ class Study(object):
         Returns:
             None
         """
+        # set list of parameters to optimize
+        if isinstance(parameterList, basestring):  # in case only a single parameter name is provided as a string
+            self.selectedHyperParameters = [parameterList]
+        else:
+            self.selectedHyperParameters = parameterList
+
+        print '+ Starting optimization...'
         if not self.checkConsistency():
             return
 
-        # set list of parameters to optimize
-        if isinstance(parameterList, basestring):  # in case only a single parameter name is provided as a string
-            self.parametersToOptimize = [parameterList]
-        else:
-            self.parametersToOptimize = parameterList
-
-        print '+ Starting optimization...'
-        if self.parametersToOptimize:
-            print '  --> Parameter(s) to optmimize:', self.parametersToOptimize
+        if self.selectedHyperParameters:
+            print '  --> Parameter(s) to optmimize:', self.selectedHyperParameters
         else:
             print '  --> All model parameters are optmimized.'
 
         # create parameter list to set start values for optimization
-        x0 = self.unpackHyperParameters()
+        x0 = self.unpackSelectedHyperParameters()
 
         # check if valid parameter names were entered
         if len(x0) == 0:
             print '! No parameters to optimize. Check parameter names.'
             # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
-            self.parametersToOptimize = []
+            self.selectedHyperParameters = []
             return
 
         # perform optimization (maximization of log-evidence)
@@ -301,13 +301,13 @@ class Study(object):
         print '+ Finished optimization.'
 
         # set optimal hyperparameters in transition model
-        self.setHyperParameters(result.x)
+        self.setSelectedHyperParameters(result.x)
 
         # run analysis with optimal parameter values
         self.fit()
 
         # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
-        self.parametersToOptimize = []
+        self.selectedHyperParameters = []
 
     def optimizationStep(self, x):
         """
@@ -320,7 +320,7 @@ class Study(object):
             negative log-evidence that is subject to minimization
         """
         # set new hyperparameters in transition model
-        self.setHyperParameters(x)
+        self.setSelectedHyperParameters(x)
 
         # compute log-evidence
         self.fit(evidenceOnly=True, silent=True)
@@ -330,11 +330,12 @@ class Study(object):
         # return negative log-evidence (is minimized to maximize evidence)
         return -self.logEvidence
 
-    def unpackHyperParameters(self):
+    def unpackSelectedHyperParameters(self):
         """
         The parameters of a transition model can be split between several submodels (using CombinedTransitionModel) and
         can be lists of values (multiple standard deviations in GaussianRandomWalk). This function unpacks the hyper-
-        parameters, resulting in a single list of values that can be fed to the optimization step routine.
+        parameters, resulting in a single list of values that can be fed to the optimization step routine. Note that
+        only the hyper-parameters that are noted (by name) in the attribute selectedHyperParameters are regarded.
 
         Parameters:
             None
@@ -352,11 +353,11 @@ class Study(object):
         for i, model in enumerate(models):
             for key in model.hyperParameters.keys():
                 # check whether list of parameters to optimize is set and contains the current parameter
-                if self.parametersToOptimize and not (key in self.parametersToOptimize):
+                if self.selectedHyperParameters and not (key in self.selectedHyperParameters):
                     ignoreParameter = True  # by default, these parameters are ignored
 
                     # check for special notation (e.g. 'sigma_2')
-                    for p in self.parametersToOptimize:
+                    for p in self.selectedHyperParameters:
                         stringList = p.split('_')
                         # check if notation & key is correct & integer is at the end
                         if len(stringList) > 1 and '_'.join(stringList[:-1]) == key and stringList[-1].isdigit():
@@ -378,14 +379,15 @@ class Study(object):
 
         return x0
 
-    def setHyperParameters(self, x):
+    def setSelectedHyperParameters(self, x):
         """
         The parameters of a transition model can be split between several submodels (using CombinedTransitionModel) and
         can be lists of values (multiple standard deviations in GaussianRandomWalk). This function takes a list of
-        values and sets the corresponding variables in the transition model instance.
+        values and sets the corresponding variables in the transition model instance. Note that only the hyper-
+        parameters that are noted (by name) in the attribute selectedHyperParameters are regarded.
 
         Parameters:
-            x - list of values (e.g. from unpackHyperparameters)
+            x - list of values (e.g. from unpackSelectedHyperParameters)
 
         Returns:
             None
@@ -400,11 +402,11 @@ class Study(object):
         for i, model in enumerate(models):
             for key in model.hyperParameters.keys():
                 # check whether list of parameters to optimize is set and contains the current parameter
-                if self.parametersToOptimize and not (key in self.parametersToOptimize):
+                if self.selectedHyperParameters and not (key in self.selectedHyperParameters):
                     ignoreParameter = True  # by default, these parameters are ignored
 
                     # check for special notation (e.g. 'sigma_2')
-                    for p in self.parametersToOptimize:
+                    for p in self.selectedHyperParameters:
                         stringList = p.split('_')
                         # check if notation & key is correct & integer is at the end
                         if len(stringList) > 1 and '_'.join(stringList[:-1]) == key and stringList[-1].isdigit():
@@ -519,4 +521,33 @@ class Study(object):
                 .format(self.observationModel.defaultBoundaries)
             return False
 
+
+        # check if selected hyperparameters are indeed present in the defined model
+        if isinstance(self.transitionModel, (CombinedTransitionModel, SerialTransitionModel)):
+            models = self.transitionModel.models
+        else:
+            # only one model in a non-combined transition model
+            models = [self.transitionModel]
+
+        for p in self.selectedHyperParameters:
+            isPresent = False
+            stringList = p.split('_')
+
+            for i, model in enumerate(models):
+                if stringList[-1].isdigit():  # check for special notation
+                    # check if parameter name AND index fits
+                    if (''.join(stringList[:-1]) in model.hyperParameters.keys()) and int(stringList[-1]) == (i+1):
+                        isPresent = True
+                else:
+                    # check if parameter name is present in at least one model
+                    if p in model.hyperParameters.keys():
+                        isPresent = True
+
+            if isPresent:
+                continue
+            else:
+                print '! Given parameter name is not defined in the model: {}'.format(p)
+                return False
+
+        # all is well
         return True
