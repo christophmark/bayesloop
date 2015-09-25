@@ -81,8 +81,7 @@ class Custom(ObservationModel):
 
         # list of free parameters
         self.freeParameters = [param for param in shapes if not (param in self.fixedParameterDict)]
-        print '+ Custom observation model with {0} free parameter(s): {1}'.format(len(self.freeParameters),
-                                                                                self.freeParameters)
+        print '+ Created custom observation model with {0} free parameter(s).'.format(len(self.freeParameters))
 
         # set class attributes similar to other observation models
         self.name = rv.name  # scipy.stats name is used

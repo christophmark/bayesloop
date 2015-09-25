@@ -136,7 +136,7 @@ class Study(object):
         self.observationModel = M
 
         if not silent:
-            print '+ Observation model:', M
+            print '+ Observation model: {}. Parameter(s): {}'.format(M, M.parameterNames)
 
     def setTransitionModel(self, K, silent=False):
         """
