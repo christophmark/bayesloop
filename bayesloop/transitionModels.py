@@ -9,7 +9,7 @@ transition model. This altered distribution is subsequently used as a prior dist
 """
 
 import numpy as np
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d
 from scipy.ndimage.interpolation import shift
 from collections import OrderedDict
 
@@ -19,6 +19,7 @@ class Static:
     Static transition model. This trivial model assumes no change of parameter values over time.
     """
     def __init__(self):
+        self.study = None
         self.latticeConstant = None
         self.hyperParameters = {}
 
@@ -50,9 +51,11 @@ class GaussianRandomWalk:
     Parameters (on initialization):
         sigma - Float or list of floats defining the standard deviation of the Gaussian random walk for each parameter
     """
-    def __init__(self, sigma=None):
+    def __init__(self, sigma=None, param=None):
+        self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('sigma', sigma)])
+        self.selectedParameter = param
 
     def __str__(self):
         return 'Gaussian random walk'
@@ -78,8 +81,15 @@ class GaussianRandomWalk:
             for i, c in enumerate(self.latticeConstant):
                 normedSigma.append(self.hyperParameters['sigma'][i] / c)
 
-
-        newPrior = gaussian_filter(newPrior, normedSigma)
+        # check if only one axis is to be transformed
+        if self.selectedParameter is not None:
+            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+            selectedSigma = normedSigma[axisToTransform]
+            if selectedSigma < 0.0:  # gaussian_filter1d cannot handle negative st.dev.
+                selectedSigma = 0.0
+            newPrior = gaussian_filter1d(newPrior, selectedSigma, axis=axisToTransform)
+        else:
+            newPrior = gaussian_filter(newPrior, normedSigma)
 
         return newPrior
 
@@ -97,6 +107,7 @@ class ChangePoint:
         tChange - Integer value of the time step of the change point
     """
     def __init__(self, tChange=None):
+        self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('tChange', tChange)])
 
@@ -134,6 +145,7 @@ class RegimeSwitch:
         log10pMin - Minimal probability (on a log10 scale) that is assigned to every parameter value
     """
     def __init__(self, log10pMin=None):
+        self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('log10pMin', log10pMin)])
 
@@ -171,9 +183,11 @@ class Linear:
     Parameters (on initialization):
         slope - Float or list of floats defining the change in parameter value for each time step for all parameters
     """
-    def __init__(self, slope=None):
+    def __init__(self, slope=None, param=None):
+        self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('slope', slope)])
+        self.selectedParameter = param
 
     def __str__(self):
         return 'Linear deterministic model'
@@ -197,6 +211,15 @@ class Linear:
         else:
             for i, c in enumerate(self.latticeConstant):
                 normedSlope.append(self.hyperParameters['slope'][i] / c)
+
+        # check if only one axis is to be transformed
+        if self.selectedParameter is not None:
+            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+            selectedSlope = normedSlope[axisToTransform]
+
+            # reinitiate slope list (setting only the selected axis to a non-zero value)
+            normedSlope = [0]*len(normedSlope)
+            normedSlope[axisToTransform] = selectedSlope
 
         newPrior = posterior.copy()
 
@@ -239,6 +262,7 @@ class CombinedTransitionModel:
         args - Sequence of transition models
     """
     def __init__(self, *args):
+        self.study = None
         self.latticeConstant = None
         self.models = args
 
@@ -260,6 +284,7 @@ class CombinedTransitionModel:
 
         for m in self.models:
             m.latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated to sub-models
+            m.study = self.study  # study needs to be propagated to sub-models
             newPrior = m.computeForwardPrior(newPrior, t)
 
         return newPrior
@@ -269,6 +294,7 @@ class CombinedTransitionModel:
 
         for m in self.models:
             m.latticeConstant = self.latticeConstant
+            m.study = self.study
             newPrior = m.computeBackwardPrior(newPrior, t)
 
         return newPrior
@@ -296,6 +322,7 @@ class SerialTransitionModel:
         that models and time steps do not necessarily have to be passed in an alternating way.
     """
     def __init__(self, *args):
+        self.study = None
         self.latticeConstant = None
 
         # determine time steps of structural breaks and corresponding models
@@ -329,6 +356,7 @@ class SerialTransitionModel:
 
         newPrior = posterior.copy()
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
+        self.models[modelIndex].study = self.study  # study needs to be propagated
         newPrior = self.models[modelIndex].computeForwardPrior(newPrior, t)
         return newPrior
 
@@ -338,5 +366,6 @@ class SerialTransitionModel:
 
         newPrior = posterior.copy()
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
+        self.models[modelIndex].study = self.study  # study needs to be propagated
         newPrior = self.models[modelIndex].computeBackwardPrior(newPrior, t)
         return newPrior
