@@ -22,6 +22,10 @@ class ChangepointStudy(Study):
         self.changepointDistribution = None
         self.averagePosteriorSequence = None
 
+        # set transition model at the beginning
+        K = ChangePoint(tChange=0)
+        self.setTransitionModel(K, silent=True)
+
         print '  --> Change-point study'
 
     def fit(self, silent=False):
@@ -38,6 +42,9 @@ class ChangepointStudy(Study):
         """
         if not silent:
             print '+ Started new fit.'
+
+        if not self.checkConsistency():
+            return
 
         # prepare arrays for change-point distribution and average posterior sequence
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
@@ -100,17 +107,11 @@ class ChangepointStudy(Study):
             print '    + Computed mean parameter values.'
 
     # optimization methods are inherited from Study class, but cannot be used in this case
-    def optimize(self):
+    def optimize(self, *args, **kwargs):
         raise AttributeError( "'changepointStudy' object has no attribute 'optimize'" )
 
-    def optimizationStep(self):
+    def optimizationStep(self, *args, **kwargs):
         raise AttributeError( "'changepointStudy' object has no attribute 'optimizationStep'" )
-
-    def setHyperParameters(self):
-        raise AttributeError( "'changepointStudy' object has no attribute 'setHyperParameters'" )
-
-    def unpackHyperParameters(self):
-        raise AttributeError( "'changepointStudy' object has no attribute 'unpackHyperParameters'" )
 
 
 
