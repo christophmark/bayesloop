@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.optimize import minimize
+from .helper import *
 from .preprocessing import *
 from .transitionModels import CombinedTransitionModel
 from .transitionModels import SerialTransitionModel
@@ -149,6 +150,7 @@ class Study(object):
             None
         """
         self.transitionModel = K
+        self.transitionModel.study = self
         self.transitionModel.latticeConstant = self.latticeConstant
 
         if not silent:
@@ -283,7 +285,7 @@ class Study(object):
         if self.selectedHyperParameters:
             print '  --> Parameter(s) to optmimize:', self.selectedHyperParameters
         else:
-            print '  --> All model parameters are optmimized.'
+            print '  --> All model parameters are optimized.'
 
         # create parameter list to set start values for optimization
         x0 = self.unpackSelectedHyperParameters()
@@ -330,61 +332,122 @@ class Study(object):
         # return negative log-evidence (is minimized to maximize evidence)
         return -self.logEvidence
 
+    def unpackHyperParameters(self, transitionModel, values=False):
+        """
+        Returns list of all hyper-parameters (names or values), nested as the transition model.
+
+        Parameters:
+            transitionModel - An instance of a transition model
+            values - By default, parameter names are returned; if set to True, parameter values are returned
+
+        Returns:
+            List of hyper-parameters (names or values)
+        """
+        paramList = []
+        if hasattr(transitionModel, 'models'):
+            for m in transitionModel.models:
+                paramList.append(self.unpackHyperParameters(m, values=values))
+        else:
+            if values:
+                paramList.extend(transitionModel.hyperParameters.values())
+            else:
+                paramList.extend(transitionModel.hyperParameters.keys())
+
+        return paramList
+
+    def unpackAllHyperParameters(self):
+        """
+        Returns a flattened list of all hyper-parameter values of the current transition model.
+        """
+        return list(flatten(self.unpackHyperParameters(self.transitionModel, values=True)))
+
     def unpackSelectedHyperParameters(self):
         """
-        The parameters of a transition model can be split between several submodels (using CombinedTransitionModel) and
-        can be lists of values (multiple standard deviations in GaussianRandomWalk). This function unpacks the hyper-
-        parameters, resulting in a single list of values that can be fed to the optimization step routine. Note that
-        only the hyper-parameters that are noted (by name) in the attribute selectedHyperParameters are regarded.
+        The parameters of a transition model can be split between several sub-models (using CombinedTransitionModel or
+        SerialTransitionModel) and can be lists of values (multiple standard deviations in GaussianRandomWalk). This
+        function unpacks the hyper-parameters, resulting in a single list of values that can be fed to the optimization
+        step routine. Note that only the hyper-parameters that are noted (by name) in the attribute
+        selectedHyperParameters are regarded.
 
         Parameters:
             None
 
         Returns:
-            list of current hyper-parameter values
+            list of current hyper-parameter values if successful, 0 otherwise
         """
-        if isinstance(self.transitionModel, (CombinedTransitionModel, SerialTransitionModel)):
-            models = self.transitionModel.models
-        else:
-            # only one model in a non-combined transition model
-            models = [self.transitionModel]
+        # if no hyper-parameters are selected, choose all
+        if not self.selectedHyperParameters:
+            return self.unpackAllHyperParameters()
 
-        x0 = []  # initialize parameter list
-        for i, model in enumerate(models):
-            for key in model.hyperParameters.keys():
-                # check whether list of parameters to optimize is set and contains the current parameter
-                if self.selectedHyperParameters and not (key in self.selectedHyperParameters):
-                    ignoreParameter = True  # by default, these parameters are ignored
+        # if self.selectedHyperParameters is not empty
+        nameTree = self.unpackHyperParameters(self.transitionModel)
+        valueTree = self.unpackHyperParameters(self.transitionModel, values=True)
+        output = []
 
-                    # check for special notation (e.g. 'sigma_2')
-                    for p in self.selectedHyperParameters:
-                        stringList = p.split('_')
-                        # check if notation & key is correct & integer is at the end
-                        if len(stringList) > 1 and '_'.join(stringList[:-1]) == key and stringList[-1].isdigit():
-                            # check whether current model is the right one
-                            if int(stringList[-1]) - 1 == i:
-                                ignoreParameter = False  # exception due to special notation
+        # loop over selected hyper-parameters
+        for x in self.selectedHyperParameters:
+            l = x.split('_')
+            name = []
+            index = []
+            for s in l:
+                try:
+                    index.append(int(s))
+                except:
+                    name.append(s)
+            name = '_'.join(name)
 
-                    if ignoreParameter:
-                        continue
+            # no index provided
+            if len(index) == 0:
+                iFound = recursiveIndex(nameTree, name)  # choose first hit
+                if len(iFound) == 0:
+                    print '! Could not find any hyper-parameter named {}.'.format(name)
+                    return 0
 
-                # if parameter itself is a list, we need to unpack
-                if type(model.hyperParameters[key]) is list:
-                    length = len(model.hyperParameters[key])
-                    for j in range(length):
-                        x0.append(model.hyperParameters[key][j])
-                # if parameter is single float, no unpacking is needed
+                value = valueTree[:]
+                for i in iFound:
+                    value = value[i]
+
+                # if parameter value is list, we need to unpack
+                if isinstance(value, (list, tuple)):
+                    for v in value:
+                        output.append(v)
                 else:
-                    x0.append(model.hyperParameters[key])
+                    output.append(value)
 
-        return x0
+                # remove occurrence from nameTree (if name is listed twice, use second occurrence...)
+                assignNestedItem(nameTree, iFound, ' ')
 
-    def setSelectedHyperParameters(self, x):
+            # index provided
+            if len(index) > 0:
+                temp = nameTree[:]
+                value = valueTree[:]
+                for i in index:
+                    try:
+                        temp = temp[i-1]
+                        value = value[i-1]  # notation starts to count at 1
+                    except:
+                        print '! Could not find any hyper-parameter at index {}.'.format(index)
+                        return 0
+
+                # find parameter within sub-model
+                try:
+                    value = value[temp.index(name)]
+                    # if parameter value is list, we need to unpack
+                    if isinstance(value, (list, tuple)):
+                        for v in value:
+                            output.append(v)
+                    else:
+                        output.append(value)
+                except:
+                    print '! Could not find hyper-parameter {} at index {}.'.format(name, index)
+                    return 0
+
+        # return selected values of hyper-parameters
+        return output
+
+    def setAllHyperParameters(self, x):
         """
-        The parameters of a transition model can be split between several submodels (using CombinedTransitionModel) and
-        can be lists of values (multiple standard deviations in GaussianRandomWalk). This function takes a list of
-        values and sets the corresponding variables in the transition model instance. Note that only the hyper-
-        parameters that are noted (by name) in the attribute selectedHyperParameters are regarded.
+        Sets all current hyper-parameters, based on a flattened list of parameter values.
 
         Parameters:
             x - list of values (e.g. from unpackSelectedHyperParameters)
@@ -392,42 +455,118 @@ class Study(object):
         Returns:
             None
         """
-        if isinstance(self.transitionModel, (CombinedTransitionModel, SerialTransitionModel)):
-            models = self.transitionModel.models
-        else:
-            # only one model in a non-combined transition model
-            models = [self.transitionModel]
+        paramList = list(x[:])  # make copy of parameter list
 
-        paramList = list(x[:])  # make copy of previous parameter list
-        for i, model in enumerate(models):
-            for key in model.hyperParameters.keys():
-                # check whether list of parameters to optimize is set and contains the current parameter
-                if self.selectedHyperParameters and not (key in self.selectedHyperParameters):
-                    ignoreParameter = True  # by default, these parameters are ignored
+        nameTree = self.unpackHyperParameters(self.transitionModel)
+        namesFlat = list(flatten(self.unpackHyperParameters(self.transitionModel)))
 
-                    # check for special notation (e.g. 'sigma_2')
-                    for p in self.selectedHyperParameters:
-                        stringList = p.split('_')
-                        # check if notation & key is correct & integer is at the end
-                        if len(stringList) > 1 and '_'.join(stringList[:-1]) == key and stringList[-1].isdigit():
-                            # check whether current model is the right one
-                            if int(stringList[-1]) - 1 == i:
-                                ignoreParameter = False  # exception due to special notation
+        for name in namesFlat:
+            index = recursiveIndex(nameTree, name)
 
-                    if ignoreParameter:
-                        continue
+            # get correct sub-model
+            model = self.transitionModel
+            for i in index[:-1]:
+                model = model.models[i]
 
-                # if parameter itself is a list, we need to unpack
-                if type(model.hyperParameters[key]) is list:
-                    length = len(model.hyperParameters[key])
-                    model.hyperParameters[key] = []
-                    for j in range(length):
-                        model.hyperParameters[key].append(paramList[0])
-                        paramList.pop(0)
-                # if parameter is single float, no unpacking is needed
-                else:
-                    model.hyperParameters[key] = paramList[0]
+            # if parameter value is list, we need to unpack
+            if isinstance(model.hyperParameters[name], (list, tuple)):
+                lst = []
+                for i in range(len(model.hyperParameters[name])):
+                    lst.append(paramList[0])
                     paramList.pop(0)
+                model.hyperParameters[name] = lst
+            else:
+                model.hyperParameters[name] = paramList[0]
+                paramList.pop(0)
+
+            # remove occurrence from nameTree (if name is listed twice, use second occurrence...)
+            assignNestedItem(nameTree, index, ' ')
+
+    def setSelectedHyperParameters(self, x):
+        """
+        The parameters of a transition model can be split between several sub-models (using CombinedTransitionModel or
+        SerialTransitionModel) and can be lists of values (multiple standard deviations in GaussianRandomWalk). This
+        function takes a list of values and sets the corresponding variables in the transition model instance. Note that
+        only the hyper-parameters that are noted (by name) in the attribute selectedHyperParameters are regarded.
+
+        Parameters:
+            x - list of values (e.g. from unpackSelectedHyperParameters)
+
+        Returns:
+            1, if successful, 0 otherwise
+        """
+        # if no hyper-parameters are selected, choose all
+        if not self.selectedHyperParameters:
+            self.setAllHyperParameters(x)
+            return 1
+
+        paramList = list(x[:])  # make copy of parameter list
+        nameTree = self.unpackHyperParameters(self.transitionModel)
+
+        # loop over selected hyper-parameters
+        for x in self.selectedHyperParameters:
+            l = x.split('_')
+            name = []
+            index = []
+            for s in l:
+                try:
+                    index.append(int(s))
+                except:
+                    name.append(s)
+            name = '_'.join(name)
+
+            # no index provided
+            if len(index) == 0:
+                iFound = recursiveIndex(nameTree, name)  # choose first hit
+                if len(iFound) == 0:
+                    print '! Could not find any hyper-parameter named {}.'.format(name)
+                    return 0
+
+                # get correct sub-model
+                model = self.transitionModel
+                for i in iFound[:-1]:
+                    model = model.models[i]
+
+                # if parameter value is list, we need to unpack
+                if isinstance(model.hyperParameters[name], (list, tuple)):
+                    lst = []
+                    for i in range(len(model.hyperParameters[name])):
+                        lst.append(paramList[0])
+                        paramList.pop(0)
+                    model.hyperParameters[name] = lst
+                else:
+                    model.hyperParameters[name] = paramList[0]
+                    paramList.pop(0)
+
+                # remove occurrence from nameTree (if name is listed twice, use second occurrence...)
+                assignNestedItem(nameTree, iFound, ' ')
+
+            # index provided
+            if len(index) > 0:
+                model = self.transitionModel
+                for i in index:
+                    try:
+                        model = model.models[i-1]  # user indices begin at 1
+                    except:
+                        print '! Could not find any hyper-parameter at index {}.'.format(index)
+                        return 0
+
+                # find parameter within sub-model
+                try:
+                    # if parameter value is list, we need to unpack
+                    if isinstance(model.hyperParameters[name], (list, tuple)):
+                        lst = []
+                        for i in range(len(model.hyperParameters[name])):
+                            lst.append(paramList[0])
+                            paramList.pop(0)
+                        model.hyperParameters[name] = lst
+                    else:
+                        model.hyperParameters[name] = paramList[0]
+                        paramList.pop(0)
+                except:
+                    print '! Could not find hyper-parameter {} at index {}.'.format(name, index)
+                    return 0
+        return 1
 
     def plotParameterEvolution(self, param=0, xLower=None, xUpper=None, color='b'):
         """
@@ -453,10 +592,10 @@ class Study(object):
 
             # check if match was found
             if paramIndex == -1:
-                print 'ERROR: Wrong parameter name. Available options: {0}'.format(self.observationModel.parameterNames)
+                print '! Wrong parameter name. Available options: {0}'.format(self.observationModel.parameterNames)
                 return
         else:
-            print 'ERROR: Wrong parameter format. Specify parameter via name or index.'
+            print '! Wrong parameter format. Specify parameter via name or index.'
             return
 
         axesToMarginalize = range(1, len(self.observationModel.parameterNames) + 1)  # axis 0 is time
@@ -521,33 +660,10 @@ class Study(object):
                 .format(self.observationModel.defaultBoundaries)
             return False
 
-
-        # check if selected hyperparameters are indeed present in the defined model
-        if isinstance(self.transitionModel, (CombinedTransitionModel, SerialTransitionModel)):
-            models = self.transitionModel.models
-        else:
-            # only one model in a non-combined transition model
-            models = [self.transitionModel]
-
-        for p in self.selectedHyperParameters:
-            isPresent = False
-            stringList = p.split('_')
-
-            for i, model in enumerate(models):
-                if stringList[-1].isdigit():  # check for special notation
-                    # check if parameter name AND index fits
-                    if (''.join(stringList[:-1]) in model.hyperParameters.keys()) and int(stringList[-1]) == (i+1):
-                        isPresent = True
-                else:
-                    # check if parameter name is present in at least one model
-                    if p in model.hyperParameters.keys():
-                        isPresent = True
-
-            if isPresent:
-                continue
-            else:
-                print '! Given parameter name is not defined in the model: {}'.format(p)
-                return False
+        # check if assigning values to selected hyper-parameters is successful
+        if self.unpackSelectedHyperParameters() == 0:
+            print '! Setting hyper-parameter values failed. Check hyper-parameter names.'
+            return False
 
         # all is well
         return True
