@@ -86,7 +86,7 @@ class Study(object):
         """
 
         if not self.gridSize:
-            print '! Grid-size not set.'
+            print '! Grid-size not set (needed to set boundaries).'
             print '  Setting default grid-size:', self.observationModel.defaultGridSize
             self.gridSize = self.observationModel.defaultGridSize
 
@@ -97,7 +97,7 @@ class Study(object):
         if self.transitionModel != None:
             self.transitionModel.latticeConstant = self.latticeConstant
 
-    def setBoundaries(self, newBoundaries):
+    def setBoundaries(self, newBoundaries, silent=False):
         """
         Sets lower and upper parameter boundaries (and updates grid accordingly).
 
@@ -110,8 +110,10 @@ class Study(object):
         """
         self.boundaries = newBoundaries
         self.createGrid()
+        if not silent:
+            print '+ Boundaries: {}'.format(self.boundaries)
 
-    def setGridSize(self, newGridSize):
+    def setGridSize(self, newGridSize, silent=False):
         """
         Sets grid size for discretization of parameter distributions (and updates grid accordingly).
 
@@ -123,6 +125,8 @@ class Study(object):
         """
         self.gridSize = newGridSize
         self.createGrid()
+        if not silent:
+            print '+ Grid size: {}'.format(self.gridSize)
 
     def setObservationModel(self, M, silent=False):
         """
