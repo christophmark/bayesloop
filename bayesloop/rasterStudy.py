@@ -87,7 +87,9 @@ class RasterStudy(Study):
 
         # compute average posterior distribution
         normalization = np.array([np.sum(posterior) for posterior in self.averagePosteriorSequence])
-        self.averagePosteriorSequence /= normalization[:,None]
+        for i in range(len(self.grid)):
+            normalization = normalization[:, None]  # add axis; needs to match averagePosteriorSequence
+        self.averagePosteriorSequence /= normalization
 
         # set self.posteriorSequence to average posterior sequence for plotting reasons
         self.posteriorSequence = self.averagePosteriorSequence

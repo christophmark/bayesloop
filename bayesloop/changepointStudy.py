@@ -70,8 +70,10 @@ class ChangepointStudy(Study):
                 print '    + t = {} -- log10-evidence = {:.5f}'.format(tChange, self.logEvidence / np.log(10))
 
         # compute average posterior distribution
-        normalization = self.averagePosteriorSequence.sum(axis=1)
-        self.averagePosteriorSequence /= normalization[:,None]
+        normalization = np.array([np.sum(posterior) for posterior in self.averagePosteriorSequence])
+        for i in range(len(self.grid)):
+            normalization = normalization[:, None]  # add axis; needs to match averagePosteriorSequence
+        self.averagePosteriorSequence /= normalization
 
         # set self.posteriorSequence to average posterior sequence for plotting reasons
         self.posteriorSequence = self.averagePosteriorSequence
