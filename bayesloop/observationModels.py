@@ -74,7 +74,11 @@ class Custom(ObservationModel):
             self.isContinuous = False
 
         # list of all possible parameters is stored in 'shapes'
-        shapes = rv.shapes.split(', ')
+        if rv.shapes is None:  # for some distributions, shapes is set to None (e.g. normal distribution)
+            shapes = []
+        else:
+            shapes = rv.shapes.split(', ')
+
         shapes.append('loc')
         if self.isContinuous:
             shapes.append('scale')  # scale parameter is only available for continuous variables
