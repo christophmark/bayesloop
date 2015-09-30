@@ -127,10 +127,12 @@ class RasterStudy(Study):
 
     # optimization methods are inherited from Study class, but cannot be used in this case
     def optimize(self, *args, **kwargs):
-        raise AttributeError( "'RasterStudy' object has no attribute 'optimize'" )
+        print "! 'RasterStudy' object has no attribute 'optimize'"
+        return
 
     def optimizationStep(self, *args, **kwargs):
-        raise AttributeError( "'RasterStudy' object has no attribute 'optimizationStep'" )
+        print "! 'RasterStudy' object has no attribute 'optimizationStep'"
+        return
 
     def plotHyperParameterDistribution(self, param=0, **kwargs):
         """

@@ -110,10 +110,12 @@ class ChangepointStudy(Study):
 
     # optimization methods are inherited from Study class, but cannot be used in this case
     def optimize(self, *args, **kwargs):
-        raise AttributeError( "'changepointStudy' object has no attribute 'optimize'" )
+        print "! 'ChangepointStudy' object has no attribute 'optimize'"
+        return
 
     def optimizationStep(self, *args, **kwargs):
-        raise AttributeError( "'changepointStudy' object has no attribute 'optimizationStep'" )
+        print "! 'ChangepointStudy' object has no attribute 'optimizationStep'"
+        return
 
 
 
