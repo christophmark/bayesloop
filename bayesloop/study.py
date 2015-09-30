@@ -585,7 +585,7 @@ class Study(object):
         Returns:
             None
         """
-        if not self.posteriorSequence:
+        if self.posteriorSequence == []:
             print '! Cannot plot posterior sequence as it has not yet been computed. Run complete fit.'
             return
 
