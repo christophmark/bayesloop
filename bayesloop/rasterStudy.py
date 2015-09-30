@@ -237,6 +237,11 @@ class RasterStudy(Study):
         if not len(paramIndices) == 2:
             print '! Probably one wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames)
 
+        # check if parameter indices are in ascending order (so axes are labeled correctly)
+        if not paramIndices[0] < paramIndices[1]:
+            print '! Switching hyper-parameter order for plotting.'
+            paramIndices = paramIndices[::-1]
+
         axesToMarginalize = range(len(hyperParameterNames))
         for p in paramIndices:
             axesToMarginalize.remove(p)
