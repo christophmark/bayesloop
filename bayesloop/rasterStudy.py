@@ -24,7 +24,7 @@ class RasterStudy(Study):
 
         print '  --> Raster study'
 
-    def fit(self, raster=[], silent=False):
+    def fit(self, raster=[], forwardOnly=False, evidenceOnly=False, silent=False):
         """
         This method over-rides the according method of the Study-class. It runs the algorithm for equally spaced hyper-
         parameter values as defined by the variable 'raster'. The posterior sequence represents the average
@@ -59,7 +59,9 @@ class RasterStudy(Study):
                 print '! Given raster expects {0} values for hyper-parameter prior.'.format(len(self.rasterValues))
                 return
 
-        self.averagePosteriorSequence = np.zeros([len(self.formattedData)]+self.gridSize)
+        if not evidenceOnly:
+            self.averagePosteriorSequence = np.zeros([len(self.formattedData)]+self.gridSize)
+
         logEvidenceList = []
         localEvidenceList = []
 
@@ -72,11 +74,13 @@ class RasterStudy(Study):
             self.setSelectedHyperParameters(hyperParamValues)
 
             # call fit method from parent class
-            Study.fit(self, silent=True)
+            Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=True)
 
             logEvidenceList.append(self.logEvidence)
             localEvidenceList.append(self.localEvidence)
-            self.averagePosteriorSequence += self.posteriorSequence*np.exp(self.logEvidence)*self.hyperParameterPrior[i]
+            if not evidenceOnly:
+                self.averagePosteriorSequence += self.posteriorSequence*np.exp(self.logEvidence)*\
+                                                 self.hyperParameterPrior[i]
 
             if not silent:
                 print '    + Raster point {} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
@@ -85,17 +89,18 @@ class RasterStudy(Study):
             # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
             self.selectedHyperParameters = []
 
-        # compute average posterior distribution
-        normalization = np.array([np.sum(posterior) for posterior in self.averagePosteriorSequence])
-        for i in range(len(self.grid)):
-            normalization = normalization[:, None]  # add axis; needs to match averagePosteriorSequence
-        self.averagePosteriorSequence /= normalization
+        if not evidenceOnly:
+            # compute average posterior distribution
+            normalization = np.array([np.sum(posterior) for posterior in self.averagePosteriorSequence])
+            for i in range(len(self.grid)):
+                normalization = normalization[:, None]  # add axis; needs to match averagePosteriorSequence
+            self.averagePosteriorSequence /= normalization
 
-        # set self.posteriorSequence to average posterior sequence for plotting reasons
-        self.posteriorSequence = self.averagePosteriorSequence
+            # set self.posteriorSequence to average posterior sequence for plotting reasons
+            self.posteriorSequence = self.averagePosteriorSequence
 
-        if not silent:
-            print '    + Computed average posterior sequence'
+            if not silent:
+                print '    + Computed average posterior sequence'
 
         # compute log-evidence of average model
         self.logEvidence = np.log(np.sum(np.exp(np.array(logEvidenceList))*self.hyperParameterPrior))
@@ -118,12 +123,13 @@ class RasterStudy(Study):
             print '    + Computed local evidence of average model'
 
         # compute posterior mean values
-        self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
-        for i in range(len(self.grid)):
-            self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
+        if not evidenceOnly:
+            self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
+            for i in range(len(self.grid)):
+                self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
 
-        if not silent:
-            print '    + Computed mean parameter values.'
+            if not silent:
+                print '    + Computed mean parameter values.'
 
     # optimization methods are inherited from Study class, but cannot be used in this case
     def optimize(self, *args, **kwargs):
