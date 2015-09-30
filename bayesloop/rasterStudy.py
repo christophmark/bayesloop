@@ -65,12 +65,13 @@ class RasterStudy(Study):
         logEvidenceList = []
         localEvidenceList = []
 
-        for i, hyperParamValues in enumerate(self.rasterValues):
-            # we use the setSelectedHyperParameters-method from the Study class
-            self.selectedHyperParameters = [name for name, lower, upper, steps in self.raster]
-            #if not self.checkConsistency():
-            #    return
+        # we use the setSelectedHyperParameters-method from the Study class
+        self.selectedHyperParameters = [name for name, lower, upper, steps in self.raster]
 
+        if not self.checkConsistency():
+            return
+
+        for i, hyperParamValues in enumerate(self.rasterValues):
             self.setSelectedHyperParameters(hyperParamValues)
 
             # call fit method from parent class
@@ -86,8 +87,8 @@ class RasterStudy(Study):
                 print '    + Raster point {} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
                     .format(i+1, len(self.rasterValues), hyperParamValues, self.logEvidence / np.log(10))
 
-            # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
-            self.selectedHyperParameters = []
+        # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
+        self.selectedHyperParameters = []
 
         if not evidenceOnly:
             # compute average posterior distribution
