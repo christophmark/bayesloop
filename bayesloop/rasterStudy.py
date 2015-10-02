@@ -10,7 +10,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 class RasterStudy(Study):
     """
-
+    This class serves as an extention to the basic Study class and allows to compute the distribution of hyper-
+    parameters of a given transition model. For further information, see the documentation of the fit-method of this
+    class.
     """
     def __init__(self):
         super(RasterStudy, self).__init__()
