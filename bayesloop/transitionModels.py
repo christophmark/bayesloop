@@ -325,16 +325,18 @@ class SerialTransitionModel:
         self.study = None
         self.latticeConstant = None
 
-        # determine time steps of structural breaks and corresponding models
-        self.breakTimes = [t for t in args if isinstance(t, int)]
+        # determine time steps of structural breaks and store them as hyper-parameter 'tBreak'
+        self.hyperParameters = OrderedDict([('tBreak', [t for t in args if isinstance(t, int)])])
+
+        # determine sub-models corresponding to break times
         self.models = [m for m in args if not isinstance(m, int)]
 
         # check: break times have to be passed in monotonically increasing order
-        if not all(x < y for x, y in zip(self.breakTimes, self.breakTimes[1:])):
+        if not all(x < y for x, y in zip(self.hyperParameters['tBreak'], self.hyperParameters['tBreak'][1:])):
             print '! Time steps for structural breaks ave to be passed in monotonically increasing order.'
 
         # check: n models require n-1 break times
-        if not (len(self.models)-1 == len(self.breakTimes)):
+        if not (len(self.models)-1 == len(self.hyperParameters['tBreak'])):
             print '! Wrong number of structural breaks/models. For n models, n-1 structural breaks are required.'
 
     def __str__(self):
@@ -352,7 +354,7 @@ class SerialTransitionModel:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
         """
         # the index of the model to choose at time t is given by the number of break times <= t
-        modelIndex = np.sum(np.array(self.breakTimes) <= t)
+        modelIndex = np.sum(np.array(self.hyperParameters['tBreak']) <= t)
 
         newPrior = posterior.copy()
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
@@ -362,7 +364,7 @@ class SerialTransitionModel:
 
     def computeBackwardPrior(self, posterior, t):
         # the index of the model to choose at time t is given by the number of break times <= t
-        modelIndex = np.sum(np.array(self.breakTimes) <= t-1)
+        modelIndex = np.sum(np.array(self.hyperParameters['tBreak']) <= t-1)
 
         newPrior = posterior.copy()
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
