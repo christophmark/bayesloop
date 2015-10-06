@@ -348,10 +348,13 @@ class Study(object):
             List of hyper-parameters (names or values)
         """
         paramList = []
+        # recursion step for sub-models
         if hasattr(transitionModel, 'models'):
             for m in transitionModel.models:
                 paramList.append(self.unpackHyperParameters(m, values=values))
-        else:
+
+        # extend hyper-parameter based on current (sub-)model
+        if hasattr(transitionModel, 'hyperParameters'):
             if values:
                 paramList.extend(transitionModel.hyperParameters.values())
             else:
