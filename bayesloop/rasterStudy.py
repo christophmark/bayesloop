@@ -208,6 +208,7 @@ class RasterStudy(Study):
 
         plt.bar(np.linspace(*self.raster[paramIndex][1:]),
                 marginalDistribution,
+                align='center',
                 width=self.rasterConstant[paramIndex],
                 **kwargs)
 
