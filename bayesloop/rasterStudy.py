@@ -54,8 +54,7 @@ class RasterStudy(Study):
         Returns:
             None
         """
-        if not silent:
-            print '+ Started new fit.'
+        print '+ Started new fit.'
 
         if not customRaster:
             self.raster = raster
@@ -158,6 +157,8 @@ class RasterStudy(Study):
 
             if not silent:
                 print '    + Computed mean parameter values.'
+
+        print '+ Finished fit.'
 
     # optimization methods are inherited from Study class, but cannot be used in this case
     def optimize(self, *args, **kwargs):
