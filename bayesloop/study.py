@@ -289,7 +289,12 @@ class Study(object):
         if self.selectedHyperParameters:
             print '  --> Parameter(s) to optmimize:', self.selectedHyperParameters
         else:
-            print '  --> All model parameters are optimized.'
+            print '  --> All model parameters are optimized (except change/break-points).'
+            # load all hyper-parameter names
+            self.selectedHyperParameters = list(flatten(self.unpackHyperParameters(self.transitionModel)))
+            # delete all occurrences of 'tChange' or 'tBreak'
+            self.selectedHyperParameters = [x for x in self.selectedHyperParameters
+                                            if (x != 'tChange') and (x != 'tBreak')]
 
         # create parameter list to set start values for optimization
         x0 = self.unpackSelectedHyperParameters()
