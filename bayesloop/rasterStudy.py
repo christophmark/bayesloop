@@ -139,8 +139,7 @@ class RasterStudy(Study):
         # compute log-evidence of average model
         self.logEvidence = np.log(np.sum(np.exp(np.array(logEvidenceList))*self.hyperParameterPrior))
 
-        if not silent:
-            print '    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10))
+        print '    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10))
 
         # compute hyper-parameter distribution
         self.hyperParameterDistribution = np.exp(np.array(logEvidenceList))*self.hyperParameterPrior
