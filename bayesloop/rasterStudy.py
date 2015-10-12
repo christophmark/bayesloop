@@ -117,7 +117,7 @@ class RasterStudy(Study):
                                                  self.hyperParameterPrior[i]
 
             if not silent:
-                print '    + Raster point {} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
+                print '    + Analysis #{} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
                     .format(i+1, len(self.rasterValues), hyperParamValues, self.logEvidence / np.log(10))
 
         # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
