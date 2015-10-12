@@ -104,7 +104,7 @@ class RasterStudy(Study):
         if not self.checkConsistency():
             return
 
-        print '+ {} analyses to run.'.format(len(self.rasterValues))
+        print '    + {} analyses to run.'.format(len(self.rasterValues))
         for i, hyperParamValues in enumerate(self.rasterValues):
             self.setSelectedHyperParameters(hyperParamValues)
 
