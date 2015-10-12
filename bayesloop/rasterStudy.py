@@ -59,6 +59,12 @@ class RasterStudy(Study):
         if not customRaster:
             self.raster = raster
 
+            # in case no raster is provided, call standard fit method.
+            if not self.raster:
+                print '! No raster defined for hyper-parameter values. Using standard fit-method.'
+                Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=silent)
+                return
+
             # create array with raster-values
             temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster],
                                indexing='ij')
