@@ -287,7 +287,7 @@ class Study(object):
             return
 
         if self.selectedHyperParameters:
-            print '  --> Parameter(s) to optmimize:', self.selectedHyperParameters
+            print '  --> Parameter(s) to optimize:', self.selectedHyperParameters
         else:
             print '  --> All model parameters are optimized (except change/break-points).'
             # load all hyper-parameter names
