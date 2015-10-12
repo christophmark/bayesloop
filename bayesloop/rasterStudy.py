@@ -60,8 +60,9 @@ class RasterStudy(Study):
             self.raster = raster
 
             # create array with raster-values
-            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster])
-            self.rasterValues = np.array([t.flatten() for t in temp]).T
+            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster],
+                               indexing='ij')
+            self.rasterValues = np.array([t.ravel() for t in temp]).T
             self.rasterConstant = [np.abs(upper-lower)/(float(steps)-1) for name, lower, upper, steps in self.raster]
         else:
             if self.raster == []:
@@ -289,8 +290,8 @@ class RasterStudy(Study):
         distribution = self.hyperParameterDistribution.reshape(rasterSteps)
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
-        x, y = np.meshgrid(np.linspace(*self.raster[paramIndices[0]][1:]),
-                           np.linspace(*self.raster[paramIndices[1]][1:]))
+        x, y = np.meshgrid(np.linspace(*self.raster[paramIndices[1]][1:]),
+                           np.linspace(*self.raster[paramIndices[0]][1:]))
         z = marginalDistribution
 
         # allow to add plot to predefined figure
@@ -300,18 +301,18 @@ class RasterStudy(Study):
             fig = figure
         ax = fig.add_subplot(subplot, projection='3d')
 
-        ax.bar3d(x.flatten() - self.rasterConstant[paramIndices[0]]/2.,
-                 y.flatten() - self.rasterConstant[paramIndices[1]]/2.,
+        ax.bar3d(x.flatten() - self.rasterConstant[paramIndices[1]]/2.,
+                 y.flatten() - self.rasterConstant[paramIndices[0]]/2.,
                  z.flatten()*0.,
-                 self.rasterConstant[paramIndices[0]],
                  self.rasterConstant[paramIndices[1]],
+                 self.rasterConstant[paramIndices[0]],
                  z.flatten(),
                  zsort='max',
                  **kwargs
                  )
 
-        ax.set_xlabel(hyperParameterNames[paramIndices[0]])
-        ax.set_ylabel(hyperParameterNames[paramIndices[1]])
+        ax.set_xlabel(hyperParameterNames[paramIndices[1]])
+        ax.set_ylabel(hyperParameterNames[paramIndices[0]])
 
         # in case an integer step size for hyper-parameter values is chosen, probability is displayed
         # (probability density otherwise)
