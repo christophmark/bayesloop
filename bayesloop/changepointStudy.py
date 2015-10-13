@@ -243,8 +243,8 @@ class ChangepointStudy(RasterStudy):
                 self.raster[i][2] = tRange[1]
 
         RasterStudy.plotJointHyperParameterDistribution(self, params=indices, figure=figure, subplot=subplot, **kwargs)
-        plt.xlabel('change-point #{}'.format(indices[1]+1))
-        plt.ylabel('change-point #{}'.format(indices[0]+1))
+        plt.xlabel('change-point #{}'.format(indices[0]+1))
+        plt.ylabel('change-point #{}'.format(indices[1]+1))
 
         # restore self.raster if necessary
         if tRange:
@@ -286,8 +286,8 @@ class ChangepointStudy(RasterStudy):
                 self.raster[i][2] = tRange[1]
 
         RasterStudy.plotJointHyperParameterDistribution(self, params=indices, figure=figure, subplot=subplot, **kwargs)
-        plt.xlabel('break-point #{}'.format(indices[1]+1))
-        plt.ylabel('break-point #{}'.format(indices[0]+1))
+        plt.xlabel('break-point #{}'.format(indices[0]+1))
+        plt.ylabel('break-point #{}'.format(indices[1]+1))
 
         # restore self.raster if necessary
         if tRange:
