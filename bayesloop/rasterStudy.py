@@ -165,6 +165,9 @@ class RasterStudy(Study):
             if not silent:
                 print '    + Computed mean parameter values.'
 
+        # clear self.hyperParameterPrior (in case fit is called after changing self.raster)
+        self.hyperParameterPrior = None
+
         print '+ Finished fit.'
 
     # optimization methods are inherited from Study class, but cannot be used in this case
