@@ -323,6 +323,10 @@ class ChangepointStudy(RasterStudy):
         distribution = self.hyperParameterDistribution.reshape(rasterSteps)
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
+        # marginal distribution is not created by sum, but by the integral
+        integrationFactor = np.prod([self.rasterConstant[axis] for axis in axesToMarginalize])
+        marginalDistribution *= integrationFactor
+
         # compute distribution over number of time steps between the two change/break-times
         durationDistribution = np.zeros(marginalDistribution.shape[0])
         for i in range(marginalDistribution.shape[0]):

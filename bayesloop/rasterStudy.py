@@ -217,6 +217,10 @@ class RasterStudy(Study):
         distribution = self.hyperParameterDistribution.reshape(rasterSteps)
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
+        # marginal distribution is not created by sum, but by the integral
+        integrationFactor = np.prod([self.rasterConstant[axis] for axis in axesToMarginalize])
+        marginalDistribution *= integrationFactor
+
         plt.bar(np.linspace(*self.raster[paramIndex][1:]),
                 marginalDistribution,
                 align='center',
@@ -298,6 +302,10 @@ class RasterStudy(Study):
         rasterSteps = [steps for name, lower, upper, steps in self.raster]
         distribution = self.hyperParameterDistribution.reshape(rasterSteps)
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
+
+        # marginal distribution is not created by sum, but by the integral
+        integrationFactor = np.prod([self.rasterConstant[axis] for axis in axesToMarginalize])
+        marginalDistribution *= integrationFactor
 
         x, y = np.meshgrid(np.linspace(*self.raster[paramIndices[1]][1:]),
                            np.linspace(*self.raster[paramIndices[0]][1:]))
