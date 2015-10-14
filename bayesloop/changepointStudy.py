@@ -84,7 +84,7 @@ class ChangepointStudy(RasterStudy):
         if nChangepoint > 0:
             print '+ Detected {} change-point(s) in transition model.'.format(nChangepoint)
             if raster:
-                print '+ Additional {} hyper-parameters specified for rastering.'.format(len(raster))
+                print '+ {} additional hyper-parameter(s) specified for rastering.'.format(len(raster))
 
             # build custom raster of change-point values (have to be ordered) +
             # standard raster for other hyper-parameters
