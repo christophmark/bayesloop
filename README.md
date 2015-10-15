@@ -7,9 +7,11 @@ Time series analysis today is an important cornerstone of quantitative science i
 The underlying algorithm of *bayesloop* has been successfully employed in cancer research, studying the migration paths of invasive tumor cells, see this [article](http://www.nature.com/articles/ncomms8516).
 
 ## Features
-* objective model selection based on Bayesian evidence (marginal likelihood)
+* objective model selection based on Bayesian model evidence
 * optimization of hyper-parameters in hierarchical time series models
-* provides parameter distributions instead of point estimates
+* computes distributions of hyper-parameters
+* computes parameter distributions for each time step
+* analysis of change-points and structural breaks
 * suitable for online analysis as well as retrospective analysis
 * straight-forward handling of missing data points
 
