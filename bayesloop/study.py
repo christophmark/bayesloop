@@ -234,8 +234,9 @@ class Study(object):
                 self.posteriorSequence[i] *= beta  # alpha*beta
 
                 # compute local evidence (before normalizing posterior wrt the parameters)
-                self.localEvidence[i] = np.sum(self.posteriorSequence[i])
-                self.posteriorSequence[i] /= self.localEvidence[i]
+                norm = np.sum(self.posteriorSequence[i])
+                self.localEvidence[i] *= norm
+                self.posteriorSequence[i] /= norm
 
                 # re-compute likelihood
                 likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])
