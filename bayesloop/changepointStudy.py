@@ -154,7 +154,8 @@ class ChangepointStudy(RasterStudy):
             **kwargs - All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
-            None
+            Two numpy arrays. The first array contains the change-point times, the second one the corresponding
+            probability values
         """
         if tRange and len(tRange) != 2:
             print '! A lower AND upper boundary for the time range have to be provided.'
@@ -166,12 +167,14 @@ class ChangepointStudy(RasterStudy):
             self.raster[idx][1] = tRange[0]
             self.raster[idx][2] = tRange[1]
 
-        RasterStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
+        x, marginalDistribution = RasterStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
         plt.xlabel('change-point #{}'.format(idx+1))
 
         # restore self.raster if necessary
         if tRange:
             self.raster = temp
+
+        return x, marginalDistribution
 
     def plotBreakpointDistribution(self, idx=0, tRange=[], **kwargs):
         """
@@ -188,7 +191,8 @@ class ChangepointStudy(RasterStudy):
             **kwargs - All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
-            None
+            Two numpy arrays. The first array contains the break-point times, the second one the corresponding
+            probability values
         """
         if tRange and len(tRange) != 2:
             print '! A lower AND upper boundary for the time range have to be provided.'
@@ -200,12 +204,14 @@ class ChangepointStudy(RasterStudy):
             self.raster[idx][1] = tRange[0]
             self.raster[idx][2] = tRange[1]
 
-        RasterStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
+        x, marginalDistribution = RasterStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
         plt.xlabel('break-point #{}'.format(idx+1))
 
         # restore self.raster if necessary
         if tRange:
             self.raster = temp
+
+        return x, marginalDistribution
 
     def plotJointChangepointDistribution(self, indices=[0, 1], tRange=[], figure=None, subplot=111, **kwargs):
         """
@@ -229,7 +235,8 @@ class ChangepointStudy(RasterStudy):
             **kwargs - all further keyword-arguments are passed to the bar3d-plot (see matplotlib documentation)
 
         Returns:
-            None
+            Three numpy arrays. The first and second array contains the change-point times, the third one the
+            corresponding probability (density) values
         """
         if tRange and len(tRange) != 2:
             print '! A lower AND upper boundary for the time range have to be provided.'
@@ -242,13 +249,18 @@ class ChangepointStudy(RasterStudy):
                 self.raster[i][1] = tRange[0]
                 self.raster[i][2] = tRange[1]
 
-        RasterStudy.plotJointHyperParameterDistribution(self, params=indices, figure=figure, subplot=subplot, **kwargs)
+        x, y, marginalDistribution = RasterStudy.plotJointHyperParameterDistribution(self,
+                                                                                     params=indices,
+                                                                                     figure=figure,
+                                                                                     subplot=subplot, **kwargs)
         plt.xlabel('change-point #{}'.format(indices[0]+1))
         plt.ylabel('change-point #{}'.format(indices[1]+1))
 
         # restore self.raster if necessary
         if tRange:
             self.raster = temp
+
+        return x, y, marginalDistribution
 
     def plotJointBreakpointDistribution(self, indices=[0, 1], tRange=[], figure=None, subplot=111, **kwargs):
         """
@@ -272,7 +284,8 @@ class ChangepointStudy(RasterStudy):
             **kwargs - all further keyword-arguments are passed to the bar3d-plot (see matplotlib documentation)
 
         Returns:
-            None
+            Three numpy arrays. The first and second array contains the break-point times, the third one the
+            corresponding probability (density) values
         """
         if tRange and len(tRange) != 2:
             print '! A lower AND upper boundary for the time range have to be provided.'
@@ -285,7 +298,11 @@ class ChangepointStudy(RasterStudy):
                 self.raster[i][1] = tRange[0]
                 self.raster[i][2] = tRange[1]
 
-        RasterStudy.plotJointHyperParameterDistribution(self, params=indices, figure=figure, subplot=subplot, **kwargs)
+        x, y, marginalDistribution = RasterStudy.plotJointHyperParameterDistribution(self,
+                                                                                     params=indices,
+                                                                                     figure=figure,
+                                                                                     subplot=subplot,
+                                                                                     **kwargs)
         plt.xlabel('break-point #{}'.format(indices[0]+1))
         plt.ylabel('break-point #{}'.format(indices[1]+1))
 
@@ -293,19 +310,24 @@ class ChangepointStudy(RasterStudy):
         if tRange:
             self.raster = temp
 
-    def plotDuration(self, indices=[0, 1], **kwargs):
+        return x, y, marginalDistribution
+
+    def plotDuration(self, indices=[0, 1], returnDistribution=False, **kwargs):
         """
         Creates a histogram for the number of time steps between two change/break-points. This distribution of duration
         is created from the joint distribution of the two specified change/break-points.
 
         Parameters:
             indices - List of two indices of change/break-points to display; default: [0, 1]
-                      (first and second change/break-point of the transition model)
+                (first and second change/break-point of the transition model)
+
+            returnDistribution - If set to True, this function returns a numpy array containing all probability
+                (density) values of the duration distribution
 
             **kwargs - All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
-            None
+            Numpy array containing all probability (density) values of the duration distribution
         """
         hyperParameterNames = [name for name, lower, upper, steps in self.raster]
 
@@ -338,4 +360,6 @@ class ChangepointStudy(RasterStudy):
 
         plt.xlabel('duration between point #{} and #{} (in time steps)'.format(indices[0]+1, indices[1]+1))
         plt.ylabel('probability')
+
+        return durationDistribution
 

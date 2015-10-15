@@ -189,7 +189,8 @@ class RasterStudy(Study):
             **kwargs - All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
-            None
+            Two numpy arrays. The first array contains the hyper-parameter values, the second one the
+            corresponding probability (density) values
         """
         hyperParameterNames = [name for name, lower, upper, steps in self.raster]
 
@@ -221,11 +222,8 @@ class RasterStudy(Study):
         integrationFactor = np.prod([self.rasterConstant[axis] for axis in axesToMarginalize])
         marginalDistribution *= integrationFactor
 
-        plt.bar(np.linspace(*self.raster[paramIndex][1:]),
-                marginalDistribution,
-                align='center',
-                width=self.rasterConstant[paramIndex],
-                **kwargs)
+        x = np.linspace(*self.raster[paramIndex][1:])
+        plt.bar(x, marginalDistribution, align='center', width=self.rasterConstant[paramIndex], **kwargs)
 
         plt.xlabel(hyperParameterNames[paramIndex])
 
@@ -236,7 +234,10 @@ class RasterStudy(Study):
         else:
             plt.ylabel('probability density')
 
-    def plotJointHyperParameterDistribution(self, params=[0, 1], figure=None, subplot=111, **kwargs):
+        return x, marginalDistribution
+
+    def plotJointHyperParameterDistribution(self, params=[0, 1], figure=None, subplot=111,
+                                            **kwargs):
         """
         Creates a 3D bar chart of a joint hyper-parameter distribution (of two hyper-parameters) done with the
         RasterStudy class. The distribution is marginalized with respect to the hyper-parameters passed by names or
@@ -245,17 +246,18 @@ class RasterStudy(Study):
 
         Parameters:
             params - List of two parameter names or indices of hyper-parameters to display; default: [0, 1]
-                     (first and second model parameter)
+                (first and second model parameter)
 
-            figure - In case the plot is supposed to be part of an existing figure, it can be passed to the method.
-                     By default, a new figure is created.
+            figure - In case the plot is supposed to be part of an existing figure, it can be passed to the method. By
+                default, a new figure is created.
 
             subplot - Characterization of subplot alignment, as in matplotlib. Default: 111
 
             **kwargs - all further keyword-arguments are passed to the bar3d-plot (see matplotlib documentation)
 
         Returns:
-            None
+            Three numpy arrays. The first and second array contains the hyper-parameter values, the
+            third one the corresponding probability (density) values
         """
         hyperParameterNames = [name for name, lower, upper, steps in self.raster]
 
@@ -337,3 +339,5 @@ class RasterStudy(Study):
             ax.set_zlabel('probability')
         else:
             ax.set_zlabel('probability density')
+
+        return x, y, marginalDistribution
