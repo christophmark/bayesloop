@@ -197,8 +197,16 @@ class Study(object):
         self.logEvidence = 0
         self.localEvidence = np.empty(len(self.formattedData))
 
+        # set prior distribution for forward-pass
+        if self.observationModel.defaultPrior:
+            alpha = self.observationModel.defaultPrior(*self.grid)
+        else:
+            alpha = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # flat prior
+
+        # normalize prior (necessary in case an improper prior is used)
+        alpha /= np.sum(alpha)
+
         # forward pass
-        alpha = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # initial flat prior
         for i in np.arange(0, len(self.formattedData)):
 
             # compute likelihood
@@ -227,9 +235,22 @@ class Study(object):
             print '    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10))
 
         if not (forwardOnly or evidenceOnly):
+            # set prior distribution for backward-pass
+            if self.observationModel.defaultPrior:
+                beta = self.observationModel.defaultPrior(*self.grid)
+            else:
+                beta = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # flat prior
+
+            # normalize prior (necessary in case an improper prior is used)
+            beta /= np.sum(beta)
+
+            # last time step is completely defined by forward-pass, we therefore iterate beta once and start the
+            # backward-pass not at the last, but the second to last data segment
+            likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[-1])
+            beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i)
+
             # backward pass
-            beta = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # initial flat prior
-            for i in np.arange(0, len(self.formattedData))[::-1]:
+            for i in np.arange(0, len(self.formattedData)-1)[::-1]:
                 # posterior ~ alpha*beta
                 self.posteriorSequence[i] *= beta  # alpha*beta
 

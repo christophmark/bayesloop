@@ -93,6 +93,7 @@ class Custom(ObservationModel):
         self.parameterNames = self.freeParameters
         self.defaultGridSize = [1000]*len(self.parameterNames)
         self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
+        self.defaultPrior = None
         self.uninformativePdf = None
 
     def pdf(self, grid, dataSegment):
@@ -133,6 +134,7 @@ class Poisson(ObservationModel):
         self.parameterNames = ['lambda']
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
+        self.defaultPrior = lambda x: np.sqrt(1./x)  # Jeffreys prior
         self.uninformativePdf = None
 
     def pdf(self, grid, dataSegment):
@@ -161,6 +163,7 @@ class Gaussian(ObservationModel):
         self.parameterNames = ['mean', 'standard deviation']
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
+        self.defaultPrior = None
         self.uninformativePdf = None
 
     def pdf(self, grid, dataSegment):
@@ -191,6 +194,7 @@ class ZeroMeanGaussian(ObservationModel):
         self.parameterNames = ['standard deviation']
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
+        self.defaultPrior = None
         self.uninformativePdf = None
 
     def pdf(self, grid, dataSegment):
@@ -221,6 +225,7 @@ class AR1(ObservationModel):
         self.parameterNames = ['correlation coefficient', 'noise amplitude']
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
+        self.defaultPrior = None
         self.uninformativePdf = None
 
     def pdf(self, grid, dataSegment):
