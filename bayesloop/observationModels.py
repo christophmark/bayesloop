@@ -121,6 +121,45 @@ class Custom(ObservationModel):
             return self.rv.pmf(dataSegment[0], **parameterDict)
 
 
+class Bernoulli(ObservationModel):
+    """
+    Bernoulli trial. This distribution models a random variable that takes the value 1 with a probability of p, and
+    a value of 0 with the probability of (1-p). Subsequent data points are considered independent. The model has one
+    parameter, p, which describes the probability of "success", i.e. to take the value 1.
+    """
+
+    def __init__(self):
+        self.name = 'Bernoulli'
+        self.segmentLength = 1  # number of measurements in one data segment
+        self.parameterNames = ['p']
+        self.defaultGridSize = [1000]
+        self.defaultBoundaries = [[0, 1]]
+        self.defaultPrior = lambda x: 1./np.sqrt(x*(1.-x))  # Jeffreys prior
+        self.uninformativePdf = None
+
+    def pdf(self, grid, dataSegment):
+        """
+        Probability density function of the Bernoulli model
+
+        Parameters:
+            grid - Parameter grid for discrete values of the parameter p
+            dataSegment - Data segment from formatted data (in this case a single number of events)
+
+        Returns:
+            Discretized Bernoulli pdf as numpy array (with same shape as grid)
+        """
+        temp = grid[0][:]  # make copy of parameter grid
+        temp[temp > 1.] = 0.  # p < 1
+        temp[temp < 0.] = 0.  # p > 0
+
+        if dataSegment[0]:
+            pass  # pdf = p
+        else:
+            temp = 1. - temp  # pdf = 1 - p
+
+        return temp
+
+
 class Poisson(ObservationModel):
     """
     Poisson observation model. Subsequent data points are considered independent and distributed according to the
