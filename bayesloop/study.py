@@ -244,23 +244,22 @@ class Study(object):
             # normalize prior (necessary in case an improper prior is used)
             beta /= np.sum(beta)
 
-            # last time step is completely defined by forward-pass, we therefore iterate beta once and start the
-            # backward-pass not at the last, but the second to last data segment
-            likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[-1])
-            beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i)
-
             # backward pass
-            for i in np.arange(0, len(self.formattedData)-1)[::-1]:
+            for i in np.arange(0, len(self.formattedData))[::-1]:
                 # posterior ~ alpha*beta
                 self.posteriorSequence[i] *= beta  # alpha*beta
 
-                # compute local evidence (before normalizing posterior wrt the parameters)
-                norm = np.sum(self.posteriorSequence[i])
-                self.localEvidence[i] *= norm
-                self.posteriorSequence[i] /= norm
+                # normalize posterior wrt the parameters
+                self.posteriorSequence[i] /= np.sum(self.posteriorSequence[i])
 
                 # re-compute likelihood
                 likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])
+
+                # compute local evidence
+                try:
+                    self.localEvidence[i] = 1./np.sum(self.posteriorSequence[i]/likelihood)
+                except:  # in case division by zero happens
+                    self.localEvidence[i] = np.nan
 
                 # compute beta for next iteration
                 beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i)
