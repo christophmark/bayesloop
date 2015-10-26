@@ -106,6 +106,22 @@ This analysis indicates a significant improvement of safety conditions between 1
 <p><em>bayesloop</em> is tested on Python 2.7 and depends on NumPy, SciPy, matplotlib and Seaborn.</p>
 
 <h2>
+<a id="optionaldependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Optional dependencies</h2>
+
+<p><em>bayesloop</em> uses <a href="https://pypi.python.org/pypi/dill">dill</a>, an extension to Python's <a href="https://docs.python.org/2/library/pickle.html">pickle</a> module, to save/load on-going data studies to/from file. It can be installed via pip:</p>
+
+<pre><code>pip install dill
+</code></pre>
+
+<p><em>bayesloop</em> further supports multiprocessing for computationally expensive analyses, based on the <a href="https://github.com/uqfoundation/pathos">pathos</a> module. The latest version can be obtained directly from GitHub using pip (requires git):</p>
+
+<pre><code>pip install git+https://github.com/uqfoundation/pathos
+</code></pre>
+
+<p><strong>Note</strong>: Windows users need to install a C compiler <em>before</em> installing pathos. One possible solution for 64bit systems is to install <a href="http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092">Microsoft Visual C++ 2008 SP1 Redistributable Package (x64)</a> and <a href="http://www.microsoft.com/en-us/download/details.aspx?id=44266">Microsoft Visual C++ Compiler for Python 2.7</a>.</p>
+
+
+<h2>
 <a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
 
 <p><a href="https://github.com/christophmark/bayesloop/blob/master/LICENSE">The MIT License (MIT)</a></p>
