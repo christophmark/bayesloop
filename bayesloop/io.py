@@ -22,6 +22,7 @@ def save(filename, study):
 
     with open(filename,'wb') as f:
         dill.dump(study, f, protocol=dill.HIGHEST_PROTOCOL)
+    print '+ Successfully saved current study.'
 
 def load(filename):
     """
@@ -41,5 +42,6 @@ def load(filename):
 
     with open(filename,'rb') as f:
         S = dill.load(f)
+    print '+ Successfully loaded study.'
 
     return S
