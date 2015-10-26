@@ -62,6 +62,17 @@ pip install git+https://github.com/christophmark/bayesloop
 ## Dependencies
 *bayesloop* is tested on Python 2.7 and depends on NumPy, SciPy, matplotlib and Seaborn.
 
+## Optional dependencies
+*bayesloop* uses [dill](https://pypi.python.org/pypi/dill), an extension to Python's [pickle](https://docs.python.org/2/library/pickle.html) module to save/load on-going data studies to/from file. It can be installed via pip:
+```
+pip install dill
+```
+
+*bayesloop* further supports multiprocessing for computationally expensive analyses, based on the [pathos](https://github.com/uqfoundation/pathos) module. The latest version can be obtained directly from GitHub using pip (requires git):
+```
+pip install git+https://github.com/uqfoundation/pathos.git@master
+```
+Note: Windows users need to install a C compiler *before* installing pathos. One possible solution for 64bit systems is to install [Microsoft Visual C++ 2008 SP1 Redistributable Package (x64)](http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092) and [Microsoft Visual C++ Compiler for Python 2.7](http://www.microsoft.com/en-us/download/details.aspx?id=44266).
+
 ## License
 [The MIT License (MIT)](https://github.com/christophmark/bayesloop/blob/master/LICENSE)
-
