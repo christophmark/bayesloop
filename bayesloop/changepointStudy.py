@@ -25,7 +25,7 @@ class ChangepointStudy(RasterStudy):
         self.mask = []  # mask to select valid change-point combinations
         print '  --> Change-point analysis'
 
-    def fit(self, raster=[], forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
+    def fit(self, raster=[], tBoundaries=[], forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
         """
         This method over-rides the according method of the Raster Study-class. It runs the algorithm for all possible
         combinations of change-points (and possible scans a range of values for other hyper-parameters). The posterior
@@ -34,10 +34,15 @@ class ChangepointStudy(RasterStudy):
 
         Parameters:
             raster - While the class ChangepointStudy automatically iterates over all possible combinations of
-                     change-points, it is possible to provide an additional list of lists with each containing the name
-                     of a hyper-parameter together with a lower and upper boundary as well as a number of steps in
-                     between.
-                     Example: raster = [['sigma', 0, 1, 20],['log10pMin', -10, -5, 10]]
+                change-points, it is possible to provide an additional list of lists with each containing the name
+                of a hyper-parameter together with a lower and upper boundary as well as a number of steps in
+                between.
+                Example: raster = [['sigma', 0, 1, 20], ['log10pMin', -10, -5, 10]]
+
+            tBoundaries - A list of lists, each of which contains a lower and upper integer boundary for a change-point.
+                This can be set for large data sets, in case the change-point should only be looked for in a specific
+                range.
+                Example (two change/break-points): tBoundaries = [[0, 20], [80, 100]]
 
             forwardOnly - If set to True, the fitting process is terminated after the forward pass. The resulting
                 posterior distributions are so-called "filtering distributions" which - at each time step -
@@ -90,7 +95,13 @@ class ChangepointStudy(RasterStudy):
 
             # build custom raster of change-point values (have to be ordered) +
             # standard raster for other hyper-parameters
-            self.raster = [['tChange', 0, len(self.formattedData)-1, len(self.formattedData)]]*nChangepoint + raster
+            if tBoundaries:  # custom boundaries
+                self.raster = []
+                for b in tBoundaries:
+                    self.raster += [['tChange', b[0], b[1], b[1]-b[0]+1]]
+                self.raster += raster
+            else:  # all possible combinations
+                self.raster = [['tChange', 0, len(self.formattedData)-1, len(self.formattedData)]]*nChangepoint + raster
             temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster])
             self.allRasterValues = np.array([t.flatten() for t in temp]).T  # all value tuples
 
@@ -111,7 +122,13 @@ class ChangepointStudy(RasterStudy):
 
             # build custom raster of change-point values (have to be ordered) +
             # standard raster for other hyper-parameters
-            self.raster = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]]*nBreakpoint + raster
+            if tBoundaries:  # custom boundaries
+                self.raster = []
+                for b in tBoundaries:
+                    self.raster += [['tBreak', b[0], b[1], b[1]-b[0]+1]]
+                self.raster += raster
+            else:  # all possible combinations
+                self.raster = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]]*nBreakpoint + raster
             temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster])
             self.allRasterValues = np.array([t.flatten() for t in temp]).T  # all value tuples
 
@@ -125,6 +142,7 @@ class ChangepointStudy(RasterStudy):
                                                      name, lower, upper, steps in raster]
 
             # redefine self.raster, such that 'tBreak' only occurs once (is passed as list)
+            rasterBackup = self.raster[:]
             self.raster = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]] + raster
 
         # call fit method of raster-study
@@ -138,7 +156,7 @@ class ChangepointStudy(RasterStudy):
         # for break-points, self.raster has to be restored to original value after fitting
         # (containing multiple 'tBreak', for proper plotting)
         if nBreakpoint > 0:
-            self.raster = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]]*nBreakpoint + raster
+            self.raster = rasterBackup
 
         # for proper plotting, rasterValues must include all possible combinations of hyper-parameter values. We
         # therefore have to include invalid combinations and assign the probability zero to them.
