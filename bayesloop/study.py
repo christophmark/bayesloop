@@ -292,7 +292,10 @@ class Study(object):
         maximum is found, the parameter distribution is computed based on the optimal values for the hyper-parameters.
 
         Parameters:
-            None
+            parameterList - List of hyper-parameter names to optimize. For nested transition models with multiple,
+                identical hyper-parameter names, the sub-model index can be provided. By default, all hyper-parameters
+                are optimized. For further information, see:
+                http://nbviewer.ipython.org/github/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb#section_3.2
 
         Returns:
             None
