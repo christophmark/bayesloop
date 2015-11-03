@@ -601,7 +601,7 @@ class Study(object):
                     return 0
         return 1
 
-    def plotParameterEvolution(self, param=0, xLower=None, xUpper=None, color='b'):
+    def plotParameterEvolution(self, param=0, xLower=None, xUpper=None, color='b', **kwargs):
         """
         Plots a series of marginal posterior distributions corresponding to a single model parameter, together with the
         posterior mean values.
@@ -610,6 +610,8 @@ class Study(object):
             param - parameter name or index of parameter to display; default: 0 (first model parameter)
 
             color - color from which a light colormap is created
+
+            kwargs - all further keyword-arguments are passed to the plot of the posterior mean values
 
         Returns:
             None
@@ -654,7 +656,15 @@ class Study(object):
                    extent=[xLower, xUpper - 1] + self.boundaries[paramIndex],
                    aspect='auto')
 
-        plt.plot(np.arange(xLower, xUpper), self.posteriorMeanValues[paramIndex], c='k', lw=1.5)
+        # set default color of plot to black
+        if (not 'c' in kwargs) and (not 'color' in kwargs):
+            kwargs['c'] = 'k'
+
+        # set default linewidth to 1.5
+        if (not 'lw' in kwargs) and (not 'linewidth' in kwargs):
+            kwargs['lw'] = 1.5
+
+        plt.plot(np.arange(xLower, xUpper), self.posteriorMeanValues[paramIndex], **kwargs)
 
         plt.ylim(self.boundaries[paramIndex])
         plt.ylabel(self.observationModel.parameterNames[paramIndex])
