@@ -280,3 +280,39 @@ class AR1(ObservationModel):
         """
         return np.exp(-((dataSegment[1] - grid[0] * dataSegment[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(
             2. * np.pi * grid[1] ** 2.))
+
+
+class ScaledAR1(ObservationModel):
+    """
+    Scaled auto-regressive process of first order. Recusively defined as
+        d_t = r_t * d_(t-1) + s_t*sqrt(1 - (r_t)^2) * e_t,
+    with r_t the correlation coefficient of subsequent data points and s_t being the standard deviation of the
+    observations d_t. For the standard AR1 process, s_t defines the noise amplitude of the process. For uncorrelated
+    data, the two observation models are equal.
+    """
+
+    def __init__(self):
+        self.name = 'Scaled autoregressive process of first order (AR1)'
+        self.segmentLength = 2  # number of measurements in one data segment
+        self.parameterNames = ['correlation coefficient', 'standard deviation']
+        self.defaultGridSize = [200, 200]
+        self.defaultBoundaries = [[-1, 1], [0, 1]]
+        self.defaultPrior = None
+        self.uninformativePdf = None
+
+    def pdf(self, grid, dataSegment):
+        """
+        Probability density function of the Auto-regressive process of first order
+
+        Parameters:
+            grid - Parameter grid for discerete values of the correlation coefficient and standard deviation
+            dataSegment - Data segment from formatted data (in this case a pair of measurements)
+
+        Returns:
+            Discretized pdf (for data point d_t, given d_(t-1) and parameters) as numpy array (with same shape as grid).
+        """
+        r = grid[0]
+        s = grid[1]
+        sScaled = s*np.sqrt(1 - r**2.)
+        return np.exp(-((dataSegment[1] - r * dataSegment[0]) ** 2.) / (2. * sScaled ** 2.) - .5 * np.log(
+            2. * np.pi * sScaled ** 2.))
