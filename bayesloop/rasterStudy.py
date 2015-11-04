@@ -5,6 +5,7 @@ This file introduces an extension to the basic Study-class that allows to comput
 
 from .study import *
 from .preprocessing import *
+from scipy.misc import logsumexp
 from mpl_toolkits.mplot3d import Axes3D
 from copy import copy
 
@@ -137,7 +138,8 @@ class RasterStudy(Study):
             for S in subStudies:
                 self.logEvidenceList += S.logEvidenceList
                 self.localEvidenceList += S.localEvidenceList
-                self.averagePosteriorSequence += S.averagePosteriorSequence
+                if not evidenceOnly:
+                    self.averagePosteriorSequence += S.averagePosteriorSequence
         # single process fit
         else:
             for i, hyperParamValues in enumerate(self.rasterValues):
@@ -173,12 +175,14 @@ class RasterStudy(Study):
                 print '    + Computed average posterior sequence'
 
         # compute log-evidence of average model
-        self.logEvidence = np.log(np.sum(np.exp(np.array(self.logEvidenceList))*self.hyperParameterPrior))
+        self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.hyperParameterPrior))
 
         print '    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10))
 
         # compute hyper-parameter distribution
-        self.hyperParameterDistribution = np.exp(np.array(self.logEvidenceList))*self.hyperParameterPrior
+        logHyperParameterDistribution = self.logEvidenceList + np.log(self.hyperParameterPrior)
+        scaledLogHyperParameterDistribution = logHyperParameterDistribution - np.mean(logHyperParameterDistribution)
+        self.hyperParameterDistribution = np.exp(scaledLogHyperParameterDistribution)
         self.hyperParameterDistribution /= np.sum(self.hyperParameterDistribution)
         self.hyperParameterDistribution /= np.prod(self.rasterConstant)  # probability density
 
