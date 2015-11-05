@@ -32,7 +32,7 @@ class ObservationModel:
         # check for multi-dimensional data
         if len(dataSegment.shape) == 2:
             # multi-dimensional data is processed one dimension at a time; likelihoods are then multiplied
-            return np.prod(np.array([self.pdf(grid, d) for d in dataSegment.T]), axis=0)
+            return np.prod(np.array([self.processedPdf(grid, d) for d in dataSegment.T]), axis=0)
 
         # check for missing data
         if np.isnan(dataSegment).any():
