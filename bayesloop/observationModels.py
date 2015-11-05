@@ -323,3 +323,64 @@ class ScaledAR1(ObservationModel):
         sScaled = s*np.sqrt(1 - r**2.)
         return np.exp(-((dataSegment[1] - r * dataSegment[0]) ** 2.) / (2. * sScaled ** 2.) - .5 * np.log(
             2. * np.pi * sScaled ** 2.))
+
+
+class LinearRegression(ObservationModel):
+    """
+    Linear regression model.
+    """
+
+    def __init__(self, offset=True, fixedError=False):
+        self.offset = offset
+        self.fixedError = fixedError
+        self.segmentLength = 1
+        self.multiplyLikelihoods = False  # multivariate input is needed to compute pdf
+
+        if self.offset and not self.fixedError:
+            self.name = 'Linear regression model (including offset)'
+            self.parameterNames = ['slope', 'offset', 'standard deviation']
+            self.defaultGridSize = [40, 40, 40]
+            self.defaultBoundaries = [[-1, 1], [0, 1], [0, 1]]
+            self.defaultPrior = None
+            self.uninformativePdf = None
+        elif self.offset and self.fixedError:
+            self.name = 'Linear regression model (including offset; fixed error = {})'.format(self.fixedError)
+            self.parameterNames = ['slope', 'offset']
+            self.defaultGridSize = [200, 200]
+            self.defaultBoundaries = [[-1, 1], [0, 1]]
+            self.defaultPrior = None
+            self.uninformativePdf = None
+        elif not self.offset and not self.fixedError:
+            self.name = 'Linear regression model'
+            self.parameterNames = ['slope', 'standard deviation']
+            self.defaultGridSize = [200, 200]
+            self.defaultBoundaries = [[-1, 1], [0, 1]]
+            self.defaultPrior = None
+            self.uninformativePdf = None
+        elif not self.offset and self.fixedError:
+            self.name = 'Linear regression model (fixed error = {})'.format(self.fixedError)
+            self.parameterNames = ['slope']
+            self.defaultGridSize = [1000]
+            self.defaultBoundaries = [[-1, 1]]
+            self.defaultPrior = None
+            self.uninformativePdf = None
+
+    def pdf(self, grid, dataSegment):
+        """
+        Linear regression PDF
+        """
+        slope = grid[0]
+        offset = grid[1] if self.offset else 0.
+        if not self.fixedError:
+            if self.offset:
+                sigma = grid[2]
+            else:
+                sigma = grid[1]
+        else:
+            sigma = self.fixedError
+
+        return np.exp(-((dataSegment[0, 1] - slope * dataSegment[0, 0] - offset) ** 2.) /
+                      (2. * sigma ** 2.) - .5 * np.log(2. * np.pi * sigma ** 2.))
+
+
+
