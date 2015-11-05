@@ -29,9 +29,9 @@ class ObservationModel:
         Returns:
             Discretized pdf as numpy array (with same shape as grid)
         """
-        # check for multi-dimensional data
-        if len(dataSegment.shape) == 2:
-            # multi-dimensional data is processed one dimension at a time; likelihoods are then multiplied
+        # if self.multipyLikelihoods == True, multi-dimensional data is processed one dimension at a time;
+        # likelihoods are then multiplied
+        if len(dataSegment.shape) == 2 and self.multiplyLikelihoods:
             return np.prod(np.array([self.processedPdf(grid, d) for d in dataSegment.T]), axis=0)
 
         # check for missing data
@@ -95,6 +95,7 @@ class Custom(ObservationModel):
         self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
         self.defaultPrior = None
         self.uninformativePdf = None
+        self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
         """
@@ -136,6 +137,7 @@ class Bernoulli(ObservationModel):
         self.defaultBoundaries = [[0, 1]]
         self.defaultPrior = lambda x: 1./np.sqrt(x*(1.-x))  # Jeffreys prior
         self.uninformativePdf = None
+        self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
         """
@@ -175,6 +177,7 @@ class Poisson(ObservationModel):
         self.defaultBoundaries = [[0, 1]]
         self.defaultPrior = lambda x: np.sqrt(1./x)  # Jeffreys prior
         self.uninformativePdf = None
+        self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
         """
@@ -204,6 +207,7 @@ class Gaussian(ObservationModel):
         self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.defaultPrior = None
         self.uninformativePdf = None
+        self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
         """
@@ -235,6 +239,7 @@ class ZeroMeanGaussian(ObservationModel):
         self.defaultBoundaries = [[0, 1]]
         self.defaultPrior = None
         self.uninformativePdf = None
+        self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
         """
@@ -266,6 +271,7 @@ class AR1(ObservationModel):
         self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.defaultPrior = None
         self.uninformativePdf = None
+        self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
         """
@@ -299,6 +305,7 @@ class ScaledAR1(ObservationModel):
         self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.defaultPrior = None
         self.uninformativePdf = None
+        self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
         """
