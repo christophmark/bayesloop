@@ -34,7 +34,10 @@ class OnlineStudy(Study):
         Returns:
             None
         """
-        self.rawData = np.append(self.rawData, dataPoint)
+        if len(self.rawData) == 0:
+            self.rawData = np.array([dataPoint])
+        else:
+            self.rawData = np.append(self.rawData, np.array([dataPoint]), axis=0)
 
         # initialize posterior distribution as flat prior
         if self.posteriorDistribution is None:
