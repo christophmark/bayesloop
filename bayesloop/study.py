@@ -282,7 +282,7 @@ class Study(object):
             if not silent:
                 print '    + Computed mean parameter values.'
 
-    def optimize(self, parameterList=[]):
+    def optimize(self, parameterList=[], **kwargs):
         """
         Uses the COBYLA minimization algorithm from SciPy to perform a maximization of the log-evidence with respect
         to all hyper-parameters (the parameters of the transition model) of a time seris model. The starting values
@@ -296,6 +296,8 @@ class Study(object):
                 identical hyper-parameter names, the sub-model index can be provided. By default, all hyper-parameters
                 are optimized. For further information, see:
                 http://nbviewer.ipython.org/github/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb#section_3.2
+
+            kwargs - All other keyword parameters are passed to the 'minimize' routine of scipy.optimize.
 
         Returns:
             None
@@ -331,7 +333,7 @@ class Study(object):
             return
 
         # perform optimization (maximization of log-evidence)
-        result = minimize(self.optimizationStep, x0, method='COBYLA')
+        result = minimize(self.optimizationStep, x0, method='COBYLA', **kwargs)
 
         print '+ Finished optimization.'
 
