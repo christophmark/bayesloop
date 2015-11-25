@@ -308,7 +308,7 @@ class RasterStudy(Study):
 
         # reshape hyper-parameter distribution for easy marginalizing
         rasterSteps = [steps for name, lower, upper, steps in self.raster]
-        distribution = self.hyperParameterDistribution.reshape(rasterSteps)
+        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='F')  # rasterValues: indexing='ij'
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
         # marginal distribution is not created by sum, but by the integral
@@ -395,7 +395,7 @@ class RasterStudy(Study):
 
         # reshape hyper-parameter distribution for easy marginalizing
         rasterSteps = [steps for name, lower, upper, steps in self.raster]
-        distribution = self.hyperParameterDistribution.reshape(rasterSteps)
+        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='F')  # rasterValues: indexing='ij'
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
         # marginal distribution is not created by sum, but by the integral
