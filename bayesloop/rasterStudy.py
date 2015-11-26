@@ -308,7 +308,7 @@ class RasterStudy(Study):
 
         # reshape hyper-parameter distribution for easy marginalizing
         rasterSteps = [steps for name, lower, upper, steps in self.raster]
-        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='F')  # rasterValues: indexing='ij'
+        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
         # marginal distribution is not created by sum, but by the integral
@@ -395,16 +395,17 @@ class RasterStudy(Study):
 
         # reshape hyper-parameter distribution for easy marginalizing
         rasterSteps = [steps for name, lower, upper, steps in self.raster]
-        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='F')  # rasterValues: indexing='ij'
+        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
         # marginal distribution is not created by sum, but by the integral
         integrationFactor = np.prod([self.rasterConstant[axis] for axis in axesToMarginalize])
         marginalDistribution *= integrationFactor
 
-        x, y = np.meshgrid(np.linspace(*self.raster[paramIndices[1]][1:]),
-                           np.linspace(*self.raster[paramIndices[0]][1:]))
+        x, y = np.meshgrid(np.linspace(*self.raster[paramIndices[0]][1:]),
+                           np.linspace(*self.raster[paramIndices[1]][1:]), indexing='ij')
         z = marginalDistribution
+        print np.amax(z)
 
         # allow to add plot to predefined figure
         if figure is None:
@@ -413,18 +414,18 @@ class RasterStudy(Study):
             fig = figure
         ax = fig.add_subplot(subplot, projection='3d')
 
-        ax.bar3d(x.flatten() - self.rasterConstant[paramIndices[1]]/2.,
-                 y.flatten() - self.rasterConstant[paramIndices[0]]/2.,
+        ax.bar3d(x.flatten() - self.rasterConstant[paramIndices[0]]/2.,
+                 y.flatten() - self.rasterConstant[paramIndices[1]]/2.,
                  z.flatten()*0.,
-                 self.rasterConstant[paramIndices[1]],
                  self.rasterConstant[paramIndices[0]],
+                 self.rasterConstant[paramIndices[1]],
                  z.flatten(),
                  zsort='max',
                  **kwargs
                  )
 
-        ax.set_xlabel(hyperParameterNames[paramIndices[1]])
-        ax.set_ylabel(hyperParameterNames[paramIndices[0]])
+        ax.set_xlabel(hyperParameterNames[paramIndices[0]])
+        ax.set_ylabel(hyperParameterNames[paramIndices[1]])
 
         # in case an integer step size for hyper-parameter values is chosen, probability is displayed
         # (probability density otherwise)

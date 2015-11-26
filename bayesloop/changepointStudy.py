@@ -102,7 +102,8 @@ class ChangepointStudy(RasterStudy):
                 self.raster += raster
             else:  # all possible combinations
                 self.raster = [['tChange', 0, len(self.formattedData)-1, len(self.formattedData)]]*nChangepoint + raster
-            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster])
+            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster],
+                               indexing='ij')
             self.allRasterValues = np.array([t.flatten() for t in temp]).T  # all value tuples
 
             # only accept if change-point values are ordered (and not equal)
@@ -129,7 +130,8 @@ class ChangepointStudy(RasterStudy):
                 self.raster += raster
             else:  # all possible combinations
                 self.raster = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]]*nBreakpoint + raster
-            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster])
+            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster],
+                               indexing='ij')
             self.allRasterValues = np.array([t.flatten() for t in temp]).T  # all value tuples
 
             # only accept if change-point values are ordered (and not equal)
@@ -367,7 +369,7 @@ class ChangepointStudy(RasterStudy):
 
         # reshape hyper-parameter distribution for easy marginalizing
         rasterSteps = [steps for name, lower, upper, steps in self.raster]
-        distribution = self.hyperParameterDistribution.reshape(rasterSteps)
+        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
         # marginal distribution is not created by sum, but by the integral
