@@ -36,10 +36,7 @@ class ObservationModel:
 
         # check for missing data
         if np.isnan(dataSegment).any():
-            if self.uninformativePdf is not None:
-                return self.uninformativePdf  # arbitrary likelihood
-            else:
-                return np.ones_like(grid[0]) / np.sum(np.ones_like(grid[0]))  # uniform likelihood
+            return np.ones_like(grid[0])  # grid of ones does not alter the current prior distribution
 
         return self.pdf(grid, dataSegment)
 
@@ -94,7 +91,6 @@ class Custom(ObservationModel):
         self.defaultGridSize = [1000]*len(self.parameterNames)
         self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
         self.defaultPrior = None
-        self.uninformativePdf = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -136,7 +132,6 @@ class Bernoulli(ObservationModel):
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
         self.defaultPrior = lambda x: 1./np.sqrt(x*(1.-x))  # Jeffreys prior
-        self.uninformativePdf = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -176,7 +171,6 @@ class Poisson(ObservationModel):
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
         self.defaultPrior = lambda x: np.sqrt(1./x)  # Jeffreys prior
-        self.uninformativePdf = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -206,7 +200,6 @@ class Gaussian(ObservationModel):
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.defaultPrior = None
-        self.uninformativePdf = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -238,7 +231,6 @@ class ZeroMeanGaussian(ObservationModel):
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
         self.defaultPrior = None
-        self.uninformativePdf = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -270,7 +262,6 @@ class AR1(ObservationModel):
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.defaultPrior = None
-        self.uninformativePdf = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -304,7 +295,6 @@ class ScaledAR1(ObservationModel):
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.defaultPrior = None
-        self.uninformativePdf = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -342,28 +332,24 @@ class LinearRegression(ObservationModel):
             self.defaultGridSize = [40, 40, 40]
             self.defaultBoundaries = [[-1, 1], [0, 1], [0, 1]]
             self.defaultPrior = None
-            self.uninformativePdf = None
         elif self.offset and self.fixedError:
             self.name = 'Linear regression model (including offset; fixed error = {})'.format(self.fixedError)
             self.parameterNames = ['slope', 'offset']
             self.defaultGridSize = [200, 200]
             self.defaultBoundaries = [[-1, 1], [0, 1]]
             self.defaultPrior = None
-            self.uninformativePdf = None
         elif not self.offset and not self.fixedError:
             self.name = 'Linear regression model'
             self.parameterNames = ['slope', 'standard deviation']
             self.defaultGridSize = [200, 200]
             self.defaultBoundaries = [[-1, 1], [0, 1]]
             self.defaultPrior = None
-            self.uninformativePdf = None
         elif not self.offset and self.fixedError:
             self.name = 'Linear regression model (fixed error = {})'.format(self.fixedError)
             self.parameterNames = ['slope']
             self.defaultGridSize = [1000]
             self.defaultBoundaries = [[-1, 1]]
             self.defaultPrior = None
-            self.uninformativePdf = None
 
     def pdf(self, grid, dataSegment):
         """
