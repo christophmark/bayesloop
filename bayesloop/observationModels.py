@@ -90,7 +90,7 @@ class Custom(ObservationModel):
         self.parameterNames = self.freeParameters
         self.defaultGridSize = [1000]*len(self.parameterNames)
         self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
-        self.defaultPrior = None
+        self.prior = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -131,7 +131,7 @@ class Bernoulli(ObservationModel):
         self.parameterNames = ['p']
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
-        self.defaultPrior = lambda x: 1./np.sqrt(x*(1.-x))  # Jeffreys prior
+        self.prior = lambda p: 1./np.sqrt(p*(1.-p))  # Jeffreys prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -170,7 +170,7 @@ class Poisson(ObservationModel):
         self.parameterNames = ['lambda']
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
-        self.defaultPrior = lambda x: np.sqrt(1./x)  # Jeffreys prior
+        self.prior = lambda x: np.sqrt(1./x)  # Jeffreys prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -199,7 +199,7 @@ class Gaussian(ObservationModel):
         self.parameterNames = ['mean', 'standard deviation']
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
-        self.defaultPrior = None
+        self.prior = lambda mu, sigma: 1./sigma**3.  # Jeffreys prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -230,7 +230,7 @@ class ZeroMeanGaussian(ObservationModel):
         self.parameterNames = ['standard deviation']
         self.defaultGridSize = [1000]
         self.defaultBoundaries = [[0, 1]]
-        self.defaultPrior = None
+        self.prior = lambda sigma: 1./sigma  # Jeffreys prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -261,7 +261,7 @@ class AR1(ObservationModel):
         self.parameterNames = ['correlation coefficient', 'noise amplitude']
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
-        self.defaultPrior = None
+        self.prior = lambda rho, sigma: 1  # flat prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -294,7 +294,7 @@ class ScaledAR1(ObservationModel):
         self.parameterNames = ['correlation coefficient', 'standard deviation']
         self.defaultGridSize = [200, 200]
         self.defaultBoundaries = [[-1, 1], [0, 1]]
-        self.defaultPrior = None
+        self.prior = lambda rho, sigma: 1  # flat prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -331,25 +331,25 @@ class LinearRegression(ObservationModel):
             self.parameterNames = ['slope', 'offset', 'standard deviation']
             self.defaultGridSize = [40, 40, 40]
             self.defaultBoundaries = [[-1, 1], [0, 1], [0, 1]]
-            self.defaultPrior = None
+            self.prior = lambda rho, sigma: 1  # flat prior
         elif self.offset and self.fixedError:
             self.name = 'Linear regression model (including offset; fixed error = {})'.format(self.fixedError)
             self.parameterNames = ['slope', 'offset']
             self.defaultGridSize = [200, 200]
             self.defaultBoundaries = [[-1, 1], [0, 1]]
-            self.defaultPrior = None
+            self.prior = lambda rho, sigma: 1  # flat prior
         elif not self.offset and not self.fixedError:
             self.name = 'Linear regression model'
             self.parameterNames = ['slope', 'standard deviation']
             self.defaultGridSize = [200, 200]
             self.defaultBoundaries = [[-1, 1], [0, 1]]
-            self.defaultPrior = None
+            self.prior = lambda rho, sigma: 1  # flat prior
         elif not self.offset and self.fixedError:
             self.name = 'Linear regression model (fixed error = {})'.format(self.fixedError)
             self.parameterNames = ['slope']
             self.defaultGridSize = [1000]
             self.defaultBoundaries = [[-1, 1]]
-            self.defaultPrior = None
+            self.prior = lambda rho, sigma: 1  # flat prior
 
     def pdf(self, grid, dataSegment):
         """

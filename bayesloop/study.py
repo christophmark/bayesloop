@@ -198,10 +198,10 @@ class Study(object):
         self.localEvidence = np.empty(len(self.formattedData))
 
         # set prior distribution for forward-pass
-        if self.observationModel.defaultPrior:
-            alpha = self.observationModel.defaultPrior(*self.grid)
+        if self.observationModel.prior is not None:
+            alpha = self.observationModel.prior(*self.grid)
         else:
-            alpha = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # flat prior
+            alpha = np.ones(self.gridSize)  # flat prior
 
         # normalize prior (necessary in case an improper prior is used)
         alpha /= np.sum(alpha)
@@ -236,10 +236,10 @@ class Study(object):
 
         if not (forwardOnly or evidenceOnly):
             # set prior distribution for backward-pass
-            if self.observationModel.defaultPrior:
-                beta = self.observationModel.defaultPrior(*self.grid)
+            if self.observationModel.prior is not None:
+                beta = self.observationModel.prior(*self.grid)
             else:
-                beta = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))  # flat prior
+                beta = np.ones(self.gridSize)  # flat prior
 
             # normalize prior (necessary in case an improper prior is used)
             beta /= np.sum(beta)
