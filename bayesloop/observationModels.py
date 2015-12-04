@@ -6,6 +6,11 @@ parameter values.
 """
 
 import numpy as np
+import sympy.abc as abc
+from sympy import lambdify
+from sympy.stats import density
+from .jeffreys import getJeffreysPrior
+from scipy.misc import factorial
 
 
 class ObservationModel:
@@ -43,7 +48,11 @@ class ObservationModel:
 
 class Custom(ObservationModel):
     """
-    This observation model class allows to create new observation models on-the-fly from scipy.stats random variables.
+    This observation model class allows to create new observation models on-the-fly from scipy.stats probability
+    distributions or from sympy.stats random variables.
+
+    SciPy.stats
+    -----------
     Note that scipy.stats does not use the canonical way of naming the parameters of the probability distributions, but
     instead includes the parameter 'loc' (for discrete & continuous distributions) and 'scale' (for continuous only).
 
@@ -57,45 +66,121 @@ class Custom(ObservationModel):
     'scale' (standard deviation) as the only free parameter to be inferred.
 
     Note that while the parameters 'loc' and 'scale' have default values in scipy.stats and do not necessarily need to
-    be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant.
+    be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant. Using
+    SciPy.stats distributions, bayesloop uses a flat prior by default.
+
+    SymPy.stats
+    -----------
+    Observation models can be defined symbolically using the SymPy module in a convenient way. In contrast to the
+    SciPy probability distirbutions, fixed parameters are directly set and not passed as a dictionary.
+
+    See http://docs.sympy.org/dev/modules/stats.html for further information on the available distributions and the
+    parameter notation.
+
+    Example usage:
+        from sympy import Symbol
+        from sympy.stats import Normal
+
+        mu = 4
+        sigma = Symbol('sigma', positive=True)
+        rv = Normal('normal', mu, sigma)
+
+        M = bl.observationModels.Custom(rv)
+
+    This will result in a model for normally distributed observations with a fixed 'mu' (mean) of 4, leaving 'sigma'
+    (the standard deviation) as the only free parameter to be inferred. Using SymPy random variables to create an
+    observation model, bayesloop tries to determine the corresponding Jeffreys prior. This behavior can be turned off
+    by setting the keyword-argument 'determineJeffreysPrior=False'.
     """
 
-    def __init__(self, rv, fixedParameters={}):
+    def __init__(self, rv, fixedParameters={}, determineJeffreysPrior=True):
         self.rv = rv
         self.fixedParameterDict = fixedParameters
 
-        # check whether random variable is a continuous variable
-        if "pdf" in dir(self.rv):
-            self.isContinuous = True
-        else:
-            self.isContinuous = False
+        # check if first argument is valid
+        try:
+            self.module = rv.__module__.split('.')
+            assert self.module[0] == 'scipy' or self.module[0] == 'sympy'
+            assert self.module[1] == 'stats'
+        except:
+            print '! Custom observation models have to be based on probability distributions from SciPy'
+            print '  or random variables from SymPy.'
+            return
 
-        # list of all possible parameters is stored in 'shapes'
-        if rv.shapes is None:  # for some distributions, shapes is set to None (e.g. normal distribution)
-            shapes = []
-        else:
-            shapes = rv.shapes.split(', ')
+        # SciPy probability distribution
+        if self.module[0] == 'scipy':
+            print '+ Creating custom observation model based on probability distribution from SciPy.'
 
-        shapes.append('loc')
-        if self.isContinuous:
-            shapes.append('scale')  # scale parameter is only available for continuous variables
+            # auto-Jeffreys is only available for SymPy RVs
+            if determineJeffreysPrior:
+                print '  ! A flat prior is used.'
+                print '    Automatic determination of Jeffreys priors is only available for SymPy RVs.'
 
-        # list of free parameters
-        self.freeParameters = [param for param in shapes if not (param in self.fixedParameterDict)]
-        print '+ Created custom observation model with {0} free parameter(s).'.format(len(self.freeParameters))
+            # check whether random variable is a continuous variable
+            if "pdf" in dir(self.rv):
+                self.isContinuous = True
+            else:
+                self.isContinuous = False
 
-        # set class attributes similar to other observation models
-        self.name = rv.name  # scipy.stats name is used
-        self.segmentLength = 1  # currently only independent observations are supported by Custom class
-        self.parameterNames = self.freeParameters
-        self.defaultGridSize = [1000]*len(self.parameterNames)
-        self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
-        self.prior = None
-        self.multiplyLikelihoods = True
+            # list of all possible parameters is stored in 'shapes'
+            if rv.shapes is None:  # for some distributions, shapes is set to None (e.g. normal distribution)
+                shapes = []
+            else:
+                shapes = rv.shapes.split(', ')
+
+            shapes.append('loc')
+            if self.isContinuous:
+                shapes.append('scale')  # scale parameter is only available for continuous variables
+
+            # list of free parameters
+            self.freeParameters = [param for param in shapes if not (param in self.fixedParameterDict)]
+
+            # set class attributes similar to other observation models
+            self.name = rv.name  # scipy.stats name is used
+            self.segmentLength = 1  # currently only independent observations are supported by Custom class
+            self.parameterNames = self.freeParameters
+            self.defaultGridSize = [1000]*len(self.parameterNames)
+            self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
+            self.prior = None
+            self.multiplyLikelihoods = True
+
+        # SymPy random variable
+        elif self.module[0] == 'sympy':
+            print '+ Creating custom observation model based on random variable from SymPy.'
+
+            if fixedParameters:
+                print '    ! The keyword argument "fixedParameters" can only be used for SciPy probability distributions.'
+
+            # extract free variables from SymPy random variable
+            parameters = list(self.rv._sorted_args[0].distribution.free_symbols)
+
+            self.name = str(rv)  # user-defined name for random variable is used
+            self.segmentLength = 1  # currently only independent observations are supported by Custom class
+            self.parameterNames = [str(p) for p in parameters]
+            self.defaultGridSize = [1000]*len(self.parameterNames)
+            self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
+            self.multiplyLikelihoods = True
+
+            # determine Jeffreys prior
+            if determineJeffreysPrior:
+                try:
+                    print '    + Trying to determine Jeffreys prior. This might take a moment...'
+                    symPrior, self.prior = getJeffreysPrior(self.rv)
+                    print '    + Successfully determined Jeffreys prior: {}'.format(symPrior)
+                except:
+                    print '    ! Failed to determine Jeffreys prior. Will use flat prior instead.'
+                    self.prior = None
+            else:
+                self.prior = None
+
+            # provide lambda function for probability density
+            x = abc.x
+            symDensity = density(rv)(x)
+            self.density = lambdify([x]+parameters, symDensity, modules=['numpy', {'factorial': factorial}])
 
     def pdf(self, grid, dataSegment):
         """
-        Probability density function of custom scipy.stats models
+        Probability density function of custom scipy.stats or sympy.stats models
 
         Parameters:
             grid - Parameter grid for discrete rate values
@@ -104,19 +189,24 @@ class Custom(ObservationModel):
         Returns:
             Discretized pdf as numpy array (with same shape as grid)
         """
-        # create dictionary from list
-        freeParameterDict = {key: value for key, value in zip(self.freeParameters, grid)}
+        # SciPy probability distribution
+        if self.module[0] == 'scipy':
+            # create dictionary from list
+            freeParameterDict = {key: value for key, value in zip(self.freeParameters, grid)}
 
-        # merge free/fixed parameter dictionaries
-        parameterDict = freeParameterDict.copy()
-        parameterDict.update(self.fixedParameterDict)
+            # merge free/fixed parameter dictionaries
+            parameterDict = freeParameterDict.copy()
+            parameterDict.update(self.fixedParameterDict)
 
-        # scipy.stats differentiates between 'pdf' and 'pmf' for continuous and discrete variables, respectively
-        if self.isContinuous:
-            return self.rv.pdf(dataSegment[0], **parameterDict)
-        else:
-            return self.rv.pmf(dataSegment[0], **parameterDict)
+            # scipy.stats differentiates between 'pdf' and 'pmf' for continuous and discrete variables, respectively
+            if self.isContinuous:
+                return self.rv.pdf(dataSegment[0], **parameterDict)
+            else:
+                return self.rv.pmf(dataSegment[0], **parameterDict)
 
+        # SymPy random variable
+        elif self.module[0] == 'sympy':
+            return self.density(dataSegment[0], *grid)
 
 class Bernoulli(ObservationModel):
     """
