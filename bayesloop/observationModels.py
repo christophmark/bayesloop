@@ -140,7 +140,6 @@ class Custom(ObservationModel):
             self.segmentLength = 1  # currently only independent observations are supported by Custom class
             self.parameterNames = self.freeParameters
             self.defaultGridSize = [1000]*len(self.parameterNames)
-            self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
             self.prior = None
             self.multiplyLikelihoods = True
 
@@ -158,7 +157,6 @@ class Custom(ObservationModel):
             self.segmentLength = 1  # currently only independent observations are supported by Custom class
             self.parameterNames = [str(p) for p in parameters]
             self.defaultGridSize = [1000]*len(self.parameterNames)
-            self.defaultBoundaries = [[0, 1]]*len(self.parameterNames)
             self.multiplyLikelihoods = True
 
             # determine Jeffreys prior
@@ -220,7 +218,6 @@ class Bernoulli(ObservationModel):
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = ['p']
         self.defaultGridSize = [1000]
-        self.defaultBoundaries = [[0, 1]]
         self.prior = lambda p: 1./np.sqrt(p*(1.-p))  # Jeffreys prior
         self.multiplyLikelihoods = True
 
@@ -246,6 +243,22 @@ class Bernoulli(ObservationModel):
 
         return temp
 
+    def estimateBoundaries(self, rawData):
+        """
+        Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
+        boundaries are defined.
+
+        Parameters:
+            rawData - observed data points that may be used to determine appropiate parameter boundaries
+
+        Returns:
+            List of parameter boundaries.
+        """
+
+        # The parameter of the Bernoulli model is naturally constrained to the [0, 1] interval
+        return [[0, 1]]
+
+
 
 class Poisson(ObservationModel):
     """
@@ -259,7 +272,6 @@ class Poisson(ObservationModel):
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = ['lambda']
         self.defaultGridSize = [1000]
-        self.defaultBoundaries = [[0, 1]]
         self.prior = lambda x: np.sqrt(1./x)  # Jeffreys prior
         self.multiplyLikelihoods = True
 
@@ -276,6 +288,21 @@ class Poisson(ObservationModel):
         """
         return (grid[0] ** dataSegment[0]) * (np.exp(-grid[0])) / (np.math.factorial(dataSegment[0]))
 
+    def estimateBoundaries(self, rawData):
+        """
+        Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
+        boundaries are defined.
+
+        Parameters:
+            rawData - observed data points that may be used to determine appropiate parameter boundaries
+
+        Returns:
+            List of parameter boundaries.
+        """
+
+        # lower is boundary is zero by definition, upper boundary is chosen as 1.25*(largest observation)
+        return [[0, 1.25*np.nanmax(np.ravel(rawData))]]
+
 
 class Gaussian(ObservationModel):
     """
@@ -288,7 +315,6 @@ class Gaussian(ObservationModel):
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = ['mean', 'standard deviation']
         self.defaultGridSize = [200, 200]
-        self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.prior = lambda mu, sigma: 1./sigma**3.  # Jeffreys prior
         self.multiplyLikelihoods = True
 
@@ -306,6 +332,25 @@ class Gaussian(ObservationModel):
         return np.exp(
             -((dataSegment[0] - grid[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(2. * np.pi * grid[1] ** 2.))
 
+    def estimateBoundaries(self, rawData):
+        """
+        Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
+        boundaries are defined.
+
+        Parameters:
+            rawData - observed data points that may be used to determine appropiate parameter boundaries
+
+        Returns:
+            List of parameter boundaries.
+        """
+        mean = np.mean(np.ravel(rawData))
+        std = np.std(np.ravel(rawData))
+
+        mean_boundaries = [mean - 2*std, mean + 2*std]
+        std_boundaries = [0, 2*std]
+
+        return [mean_boundaries, std_boundaries]
+
 
 class ZeroMeanGaussian(ObservationModel):
     """
@@ -319,7 +364,6 @@ class ZeroMeanGaussian(ObservationModel):
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = ['standard deviation']
         self.defaultGridSize = [1000]
-        self.defaultBoundaries = [[0, 1]]
         self.prior = lambda sigma: 1./sigma  # Jeffreys prior
         self.multiplyLikelihoods = True
 
@@ -336,6 +380,20 @@ class ZeroMeanGaussian(ObservationModel):
         """
         return np.exp(-(dataSegment[0] ** 2.) / (2. * grid[0] ** 2.) - .5 * np.log(2. * np.pi * grid[0] ** 2.))
 
+    def estimateBoundaries(self, rawData):
+        """
+        Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
+        boundaries are defined.
+
+        Parameters:
+            rawData - observed data points that may be used to determine appropiate parameter boundaries
+
+        Returns:
+            List of parameter boundaries.
+        """
+        std = np.std(np.ravel(rawData))
+        return [0, 2*std]
+
 
 class AR1(ObservationModel):
     """
@@ -350,7 +408,6 @@ class AR1(ObservationModel):
         self.segmentLength = 2  # number of measurements in one data segment
         self.parameterNames = ['correlation coefficient', 'noise amplitude']
         self.defaultGridSize = [200, 200]
-        self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.prior = lambda rho, sigma: 1  # flat prior
         self.multiplyLikelihoods = True
 
@@ -383,7 +440,6 @@ class ScaledAR1(ObservationModel):
         self.segmentLength = 2  # number of measurements in one data segment
         self.parameterNames = ['correlation coefficient', 'standard deviation']
         self.defaultGridSize = [200, 200]
-        self.defaultBoundaries = [[-1, 1], [0, 1]]
         self.prior = lambda rho, sigma: 1  # flat prior
         self.multiplyLikelihoods = True
 
@@ -420,25 +476,21 @@ class LinearRegression(ObservationModel):
             self.name = 'Linear regression model (including offset)'
             self.parameterNames = ['slope', 'offset', 'standard deviation']
             self.defaultGridSize = [40, 40, 40]
-            self.defaultBoundaries = [[-1, 1], [0, 1], [0, 1]]
             self.prior = lambda rho, sigma: 1  # flat prior
         elif self.offset and self.fixedError:
             self.name = 'Linear regression model (including offset; fixed error = {})'.format(self.fixedError)
             self.parameterNames = ['slope', 'offset']
             self.defaultGridSize = [200, 200]
-            self.defaultBoundaries = [[-1, 1], [0, 1]]
             self.prior = lambda rho, sigma: 1  # flat prior
         elif not self.offset and not self.fixedError:
             self.name = 'Linear regression model'
             self.parameterNames = ['slope', 'standard deviation']
             self.defaultGridSize = [200, 200]
-            self.defaultBoundaries = [[-1, 1], [0, 1]]
             self.prior = lambda rho, sigma: 1  # flat prior
         elif not self.offset and self.fixedError:
             self.name = 'Linear regression model (fixed error = {})'.format(self.fixedError)
             self.parameterNames = ['slope']
             self.defaultGridSize = [1000]
-            self.defaultBoundaries = [[-1, 1]]
             self.prior = lambda rho, sigma: 1  # flat prior
 
     def pdf(self, grid, dataSegment):

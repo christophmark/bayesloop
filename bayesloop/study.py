@@ -693,22 +693,23 @@ class Study(object):
             print '! No transition model chosen.'
             return False
         if not self.boundaries:
-            print '! No parameter boundaries are set.'
-            print '  Setting default boundaries:', self.observationModel.defaultBoundaries
-            print '  Restart analysis to use these boundary values. To change boundaries, call setBoundaries().'
-            self.setBoundaries(self.observationModel.defaultBoundaries)
-            return False
+            print '! No parameter boundaries are set. Trying to estimate appropriate boundaries.'
+            try:
+                estimatedBoundaries = self.observationModel.estimateBoundaries(self.rawData)
+                print '  Setting estimated parameter boundaries:', estimatedBoundaries
+                self.setBoundaries(estimatedBoundaries, silent=True)
+            except:
+                print '! Parameter boundaries could not be estimated. To set boundaries, call setBoundaries().'
+                return False
         if not len(self.observationModel.defaultGridSize) == len(self.gridSize):
             print '! Specified parameter grid expects {0} parameter(s), but observation model has {1} parameter(s).'\
                 .format(len(self.gridSize), len(self.observationModel.defaultGridSize))
             print '  Default grid-size for the chosen observation model: {0}'\
                 .format(self.observationModel.defaultGridSize)
             return False
-        if not len(self.observationModel.defaultBoundaries) == len(self.boundaries):
+        if not len(self.observationModel.parameterNames) == len(self.boundaries):
             print '! Parameter boundaries specify {0} parameter(s), but observation model has {1} parameter(s).'\
-                .format(len(self.boundaries), len(self.observationModel.defaultBoundaries))
-            print '  Default boundaries for the chosen observation model: {0}'\
-                .format(self.observationModel.defaultBoundaries)
+                .format(len(self.boundaries), len(self.observationModel.parameterNames))
             return False
 
         # check if assigning values to selected hyper-parameters is successful
