@@ -25,7 +25,7 @@ class ChangepointStudy(RasterStudy):
         self.mask = []  # mask to select valid change-point combinations
         print '  --> Change-point analysis'
 
-    def fit(self, raster=[], tBoundaries=[], forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
+    def fit(self, raster=[], prior=[], tBoundaries=[], forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
         """
         This method over-rides the according method of the Raster Study-class. It runs the algorithm for all possible
         combinations of change-points (and possible scans a range of values for other hyper-parameters). The posterior
@@ -38,6 +38,11 @@ class ChangepointStudy(RasterStudy):
                 of a hyper-parameter together with a lower and upper boundary as well as a number of steps in
                 between.
                 Example: raster = [['sigma', 0, 1, 20], ['log10pMin', -10, -5, 10]]
+
+            prior - List of SymPy random variables, each of which represents the prior distribution of one change/break-
+                point (and possibly other hyper-parameters). The multiplicative probability (density) will be assigned
+                to the individual raster points. The resulting prior distribution is renormalized such that the sum over
+                all points specified by the raster equals one.
 
             tBoundaries - A list of lists, each of which contains a lower and upper integer boundary for a change-point.
                 This can be set for large data sets, in case the change-point should only be looked for in a specific
@@ -149,6 +154,7 @@ class ChangepointStudy(RasterStudy):
 
         # call fit method of raster-study
         RasterStudy.fit(self,
+                        prior=prior,
                         forwardOnly=forwardOnly,
                         evidenceOnly=evidenceOnly,
                         customRaster=True,
@@ -165,6 +171,10 @@ class ChangepointStudy(RasterStudy):
         temp = np.zeros(len(self.allRasterValues))
         temp[self.mask] = self.hyperParameterDistribution
         self.hyperParameterDistribution = temp
+
+        temp = np.zeros(len(self.allRasterValues))
+        temp[self.mask] = self.hyperParameterPrior
+        self.hyperParameterPrior = temp
 
     def plotChangepointDistribution(self, idx=0, tRange=[], **kwargs):
         """

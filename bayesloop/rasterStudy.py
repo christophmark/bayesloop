@@ -6,8 +6,12 @@ This file introduces an extension to the basic Study-class that allows to comput
 from .study import *
 from .preprocessing import *
 from scipy.misc import logsumexp
+from scipy.misc import factorial
 from mpl_toolkits.mplot3d import Axes3D
 from copy import copy
+import sympy.abc as abc
+from sympy import lambdify
+from sympy.stats import density
 
 
 class RasterStudy(Study):
@@ -30,7 +34,7 @@ class RasterStudy(Study):
 
         print '  --> Raster study'
 
-    def fit(self, raster=[], forwardOnly=False, evidenceOnly=False, customRaster=False, silent=False, nJobs=1):
+    def fit(self, raster=[], prior=[], forwardOnly=False, evidenceOnly=False, customRaster=False, silent=False, nJobs=1):
         """
         This method over-rides the according method of the Study-class. It runs the algorithm for equally spaced hyper-
         parameter values as defined by the variable 'raster'. The posterior sequence represents the average
@@ -40,6 +44,11 @@ class RasterStudy(Study):
             raster - List of lists with each containing the name of a hyper-parameter together with a lower and upper
                 boundary as well as a number of steps in between.
                 Example: raster = [['sigma', 0, 1, 20],['log10pMin', -10, -5, 10]]
+
+            prior - List of SymPy random variables, each of which represents the prior distribution of one hyper-
+                parameter. The multiplicative probability (density) will be assigned to the individual raster points.
+                The resulting prior distribution is renormalized such that the sum over all points specified by the
+                raster equals one.
 
             forwardOnly - If set to True, the fitting process is terminated after the forward pass. The resulting
                 posterior distributions are so-called "filtering distributions" which - at each time step -
@@ -88,15 +97,39 @@ class RasterStudy(Study):
                 print "! The attribute 'rasterConstant' has to be set manually when using customRaster=True."
                 return
 
-        # prepare arrays for change-point distribution and average posterior sequence
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
-        if self.hyperParameterPrior is None:
+
+        # determine prior distribution
+        if not prior:
             self.hyperParameterPrior = np.ones(len(self.rasterValues))/len(self.rasterValues)
         else:
-            # check if given prior is correctly formatted to fit length of raster array
-            if len(self.hyperParameterPrior) != len(self.rasterValues):
-                print '! Given raster expects {0} values for hyper-parameter prior.'.format(len(self.rasterValues))
+            # check if given prior is correctly formatted to fit length of raster array.
+            # we use 'len(self.rasterValues[0])' because self.raster is reformatted within changepointStudy, when using
+            # break-points.
+            if len(prior) != len(self.rasterValues[0]):
+                print '! {} hyper-parameters are specified in raster. Priors are provided for {}.'\
+                    .format(len(self.rasterValues[0]), len(prior))
                 return
+            else:
+                densities = []
+                self.hyperParameterPrior = np.ones(len(self.rasterValues))
+                for i, rv in enumerate(prior):  # loop over all specified priors
+                    if len(list(rv._sorted_args[0].distribution.free_symbols)) > 0:
+                        print '! Prior distribution must not contain free parameters.'
+                        return
+
+                    # get symbolic representation of probability density
+                    x = abc.x
+                    symDensity = density(rv)(x)
+
+                    # get density as lambda function
+                    pdf = lambdify([x], symDensity, modules=['numpy', {'factorial': factorial}])
+
+                    # update hyper-parameter prior
+                    self.hyperParameterPrior *= pdf(self.rasterValues[:, i])
+
+                # renormalize hyper-parameter prior
+                self.hyperParameterPrior /= np.sum(self.hyperParameterPrior)
 
         if not evidenceOnly:
             self.averagePosteriorSequence = np.zeros([len(self.formattedData)]+self.gridSize)
