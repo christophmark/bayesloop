@@ -7,13 +7,14 @@ Time series analysis today is an important cornerstone of quantitative science i
 The underlying algorithm of *bayesloop* has been successfully employed in cancer research, studying the migration paths of invasive tumor cells, see this [article](http://www.nature.com/articles/ncomms8516).
 
 ## Features
-* objective model selection based on Bayesian model evidence
-* optimization of hyper-parameters in hierarchical time series models
-* computes distributions of hyper-parameters
-* computes parameter distributions for each time step
-* analysis of change-points and structural breaks
-* suitable for online analysis as well as retrospective analysis
+* fit time series models with time-varying parameters
+* create custom models based on SymPy and SciPy
+* analyze joint parameter distribution instead of point-estimates
+* employ objective model selection based on Bayesian model evidence
+* test different hypotheses about parameter dynamics
+* analyze change-points and structural breaks in time series data
 * straight-forward handling of missing data points
+* suitable for online analysis as well as retrospective analysis
 
 Note that the module is currently in beta state, so features may change in the future.
 
@@ -49,6 +50,9 @@ plt.bar(range(1851, 1962), S.rawData,
 S.plotParameterEvolution(xLower=1851, xUpper=1962)
 plt.show()
 ```
+
+![Analysis plot](https://raw.githubusercontent.com/christophmark/bayesloop/gh-pages/images/disaster_model.png)
+
 This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the [tutorial](http://nbviewer.ipython.org/github/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb) for further insights!
 
 ## Installation
@@ -76,3 +80,5 @@ pip install git+https://github.com/uqfoundation/pathos
 
 ## License
 [The MIT License (MIT)](https://github.com/christophmark/bayesloop/blob/master/LICENSE)
+
+If you have any further questions, suggestions or comments, do not hesitate to contact me: [&#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;](&#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;)
