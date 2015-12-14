@@ -81,4 +81,4 @@ pip install git+https://github.com/uqfoundation/pathos
 ## License
 [The MIT License (MIT)](https://github.com/christophmark/bayesloop/blob/master/LICENSE)
 
-If you have any further questions, suggestions or comments, do not hesitate to contact me: [&#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;](&#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;)
+If you have any further questions, suggestions or comments, do not hesitate to contact me: [&#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;](&#109;&#097;&#105;&#108;&#116;&#111;:&#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;)
