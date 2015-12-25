@@ -184,7 +184,8 @@ class RasterStudy(Study):
                 self.logEvidenceList.append(self.logEvidence)
                 self.localEvidenceList.append(self.localEvidence)
                 if not evidenceOnly:
-                    self.averagePosteriorSequence += self.posteriorSequence*np.exp(self.logEvidence) *\
+                    self.averagePosteriorSequence += self.posteriorSequence *\
+                                                     np.exp(self.logEvidence - self.logEvidenceList[0]) *\
                                                      self.hyperParameterPrior[i]
 
                 if not silent:
