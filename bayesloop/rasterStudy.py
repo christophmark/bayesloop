@@ -288,7 +288,8 @@ class RasterStudy(Study):
             S.logEvidenceList.append(S.logEvidence)
             S.localEvidenceList.append(S.localEvidence)
             if not evidenceOnly:
-                S.averagePosteriorSequence += S.posteriorSequence*np.exp(S.logEvidence) *\
+                S.averagePosteriorSequence += S.posteriorSequence *\
+                                              np.exp(S.logEvidence - S.logEvidenceList[0]) *\
                                               S.hyperParameterPrior[i]
 
             if not silent:
