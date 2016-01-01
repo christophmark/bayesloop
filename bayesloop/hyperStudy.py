@@ -14,41 +14,42 @@ from sympy import lambdify
 from sympy.stats import density
 
 
-class RasterStudy(Study):
+class HyperStudy(Study):
     """
     This class serves as an extention to the basic Study class and allows to compute the distribution of hyper-
     parameters of a given transition model. For further information, see the documentation of the fit-method of this
     class.
     """
     def __init__(self):
-        super(RasterStudy, self).__init__()
+        super(HyperStudy, self).__init__()
 
-        self.raster = []
-        self.rasterValues = []
-        self.rasterConstant = []
+        self.hyperGrid = []
+        self.hyperGridValues = []
+        self.hyperGridConstant = []
         self.hyperParameterPrior = None
         self.hyperParameterDistribution = None
         self.averagePosteriorSequence = None
         self.logEvidenceList = []
         self.localEvidenceList = []
 
-        print '  --> Raster study'
+        print '  --> Hyper-study'
 
-    def fit(self, raster=[], prior=[], forwardOnly=False, evidenceOnly=False, customRaster=False, silent=False, nJobs=1):
+    def fit(self, hyperGrid=[], prior=[], forwardOnly=False, evidenceOnly=False, customHyperGrid=False, silent=False,
+            nJobs=1):
         """
         This method over-rides the according method of the Study-class. It runs the algorithm for equally spaced hyper-
-        parameter values as defined by the variable 'raster'. The posterior sequence represents the average
+        parameter values as defined by the variable 'hyperGrid'. The posterior sequence represents the average
         model of all analyses. Posterior mean values are computed from this average model.
 
         Parameters:
-            raster - List of lists with each containing the name of a hyper-parameter together with a lower and upper
+            hyperGrid - List of lists with each containing the name of a hyper-parameter together with a lower and upper
                 boundary as well as a number of steps in between.
-                Example: raster = [['sigma', 0, 1, 20],['log10pMin', -10, -5, 10]]
+                Example: hyperGrid = [['sigma', 0, 1, 20],['log10pMin', -10, -5, 10]]
 
             prior - List of SymPy random variables, each of which represents the prior distribution of one hyper-
                 parameter. The multiplicative probability (density) will be assigned to the individual raster points.
                 The resulting prior distribution is renormalized such that the sum over all points specified by the
-                raster equals one.
+                hyper-grid equals one.
 
             forwardOnly - If set to True, the fitting process is terminated after the forward pass. The resulting
                 posterior distributions are so-called "filtering distributions" which - at each time step -
@@ -58,7 +59,7 @@ class RasterStudy(Study):
             evidenceOnly - If set to True, only forward pass is run and evidence is calculated. In contrast to the
                 forwardOnly option, no posterior mean values are computed and no posterior distributions are stored.
 
-            customRaster - If set to True, the keyword argument 'raster' will not be used. Instead, all relevant
+            customHyperGrid - If set to True, the keyword argument 'hyperGrid' will not be used. Instead, all relevant
                 attributes have to be set manually by the user. May be used for irregular grids of hyper-parameter
                 values.
 
@@ -71,48 +72,48 @@ class RasterStudy(Study):
         """
         print '+ Started new fit.'
 
-        if not customRaster:
-            self.raster = raster
+        if not customHyperGrid:
+            self.hyperGrid = hyperGrid
 
-            # in case no raster is provided, call standard fit method.
-            if not self.raster:
-                print '! No raster defined for hyper-parameter values. Using standard fit-method.'
+            # in case no hyper-grid is provided, call standard fit method.
+            if not self.hyperGrid:
+                print '! No hyper-grid defined for hyper-parameter values. Using standard fit-method.'
                 Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=silent)
                 return
 
-            # create array with raster-values
-            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster],
+            # create array with hyper-grid values
+            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.hyperGrid],
                                indexing='ij')
-            self.rasterValues = np.array([t.ravel() for t in temp]).T
-            self.rasterConstant = [np.abs(upper-lower)/(float(steps)-1) for name, lower, upper, steps in self.raster]
+            self.hyperGridValues = np.array([t.ravel() for t in temp]).T
+            self.hyperGridConstant = [np.abs(upper-lower)/(float(steps)-1) for name, lower, upper, steps in self.hyperGrid]
         else:
-            if self.raster == []:
-                print "! A dummy 'raster' attribute has to be set when using customRaster=True."
+            if self.hyperGrid == []:
+                print "! A dummy 'hyperGrid' attribute has to be set when using customHyperGrid=True."
                 print "  (Only hyper-parameter names are extracted from this attribute.)"
                 return
-            if self.rasterValues == []:
-                print "! The attribute 'rasterValues' has to be set manually when using customRaster=True."
+            if self.hyperGridValues == []:
+                print "! The attribute 'hyperGridValues' has to be set manually when using customHyperGrid=True."
                 return
-            if self.rasterConstant == []:
-                print "! The attribute 'rasterConstant' has to be set manually when using customRaster=True."
+            if self.hyperGridConstant == []:
+                print "! The attribute 'hyperGridConstant' has to be set manually when using customHyperGrid=True."
                 return
 
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
 
         # determine prior distribution
         if not prior:
-            self.hyperParameterPrior = np.ones(len(self.rasterValues))/len(self.rasterValues)
+            self.hyperParameterPrior = np.ones(len(self.hyperGridValues))/len(self.hyperGridValues)
         else:
-            # check if given prior is correctly formatted to fit length of raster array.
-            # we use 'len(self.rasterValues[0])' because self.raster is reformatted within changepointStudy, when using
-            # break-points.
-            if len(prior) != len(self.rasterValues[0]):
-                print '! {} hyper-parameters are specified in raster. Priors are provided for {}.'\
-                    .format(len(self.rasterValues[0]), len(prior))
+            # check if given prior is correctly formatted to fit length of hyper-grid array.
+            # we use 'len(self.hyperGridValues[0])' because self.hyperGrid is reformatted within changepointStudy, when
+            # using break-points.
+            if len(prior) != len(self.hyperGridValues[0]):
+                print '! {} hyper-parameters are specified in hyper-grid. Priors are provided for {}.'\
+                    .format(len(self.hyperGridValues[0]), len(prior))
                 return
             else:
                 densities = []
-                self.hyperParameterPrior = np.ones(len(self.rasterValues))
+                self.hyperParameterPrior = np.ones(len(self.hyperGridValues))
                 for i, rv in enumerate(prior):  # loop over all specified priors
                     if len(list(rv._sorted_args[0].distribution.free_symbols)) > 0:
                         print '! Prior distribution must not contain free parameters.'
@@ -126,7 +127,7 @@ class RasterStudy(Study):
                     pdf = lambdify([x], symDensity, modules=['numpy', {'factorial': factorial}])
 
                     # update hyper-parameter prior
-                    self.hyperParameterPrior *= pdf(self.rasterValues[:, i])
+                    self.hyperParameterPrior *= pdf(self.hyperGridValues[:, i])
 
                 # renormalize hyper-parameter prior
                 self.hyperParameterPrior /= np.sum(self.hyperParameterPrior)
@@ -138,12 +139,12 @@ class RasterStudy(Study):
         self.localEvidenceList = []
 
         # we use the setSelectedHyperParameters-method from the Study class
-        self.selectedHyperParameters = [name for name, lower, upper, steps in self.raster]
+        self.selectedHyperParameters = [name for name, lower, upper, steps in self.hyperGrid]
 
         if not self.checkConsistency():
             return
 
-        print '    + {} analyses to run.'.format(len(self.rasterValues))
+        print '    + {} analyses to run.'.format(len(self.hyperGridValues))
 
         # check if multiprocessing is available
         if nJobs > 1:
@@ -159,7 +160,7 @@ class RasterStudy(Study):
             print '    + Creating {} processes.'.format(nJobs)
             pool = ProcessPool(nodes=nJobs)
 
-            # use parallelFit method to create copies of this RasterStudy instance with only partial raster values
+            # use parallelFit method to create copies of this HyperStudy instance with only partial hyper-grid values
             subStudies = pool.map(self.parallelFit,
                                   range(nJobs),
                                   [nJobs]*nJobs,
@@ -175,7 +176,7 @@ class RasterStudy(Study):
                     self.averagePosteriorSequence += S.averagePosteriorSequence
         # single process fit
         else:
-            for i, hyperParamValues in enumerate(self.rasterValues):
+            for i, hyperParamValues in enumerate(self.hyperGridValues):
                 self.setSelectedHyperParameters(hyperParamValues)
 
                 # call fit method from parent class
@@ -190,7 +191,7 @@ class RasterStudy(Study):
 
                 if not silent:
                     print '    + Analysis #{} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
-                        .format(i+1, len(self.rasterValues), hyperParamValues, self.logEvidence / np.log(10))
+                        .format(i+1, len(self.hyperGridValues), hyperParamValues, self.logEvidence / np.log(10))
 
         # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
         self.selectedHyperParameters = []
@@ -218,7 +219,7 @@ class RasterStudy(Study):
         scaledLogHyperParameterDistribution = logHyperParameterDistribution - np.mean(logHyperParameterDistribution)
         self.hyperParameterDistribution = np.exp(scaledLogHyperParameterDistribution)
         self.hyperParameterDistribution /= np.sum(self.hyperParameterDistribution)
-        self.hyperParameterDistribution /= np.prod(self.rasterConstant)  # probability density
+        self.hyperParameterDistribution /= np.prod(self.hyperGridConstant)  # probability density
 
         if not silent:
             print '    + Computed hyper-parameter distribution'
@@ -238,7 +239,7 @@ class RasterStudy(Study):
             if not silent:
                 print '    + Computed mean parameter values.'
 
-        # clear self.hyperParameterPrior (in case fit is called after changing self.raster)
+        # clear self.hyperParameterPrior (in case fit is called after changing self.hyperGrid)
         self.hyperParameterPrior = None
 
         # discard evidence values of individual fits
@@ -249,12 +250,12 @@ class RasterStudy(Study):
 
     def parallelFit(self, idx, nJobs, forwardOnly, evidenceOnly, silent):
         """
-        This method is called by the fit method of the RasterStudy class. It creates a copy of the current class
-        instance and performs a fit based on a subset of the specified hyper-parameter raster. The method thus allows
-        to distribute a RasterStudy fit among multiple processes for multiprocessing.
+        This method is called by the fit method of the HyperStudy class. It creates a copy of the current class
+        instance and performs a fit based on a subset of the specified hyper-parameter grid. The method thus allows
+        to distribute a HyperStudy fit among multiple processes for multiprocessing.
 
         Parameters:
-            idx - Index from 0 to (nJobs-1), indicating which part of the raster values are to be analyzed.
+            idx - Index from 0 to (nJobs-1), indicating which part of the hyper-grid values are to be analyzed.
 
             nJobs - Number of processes to employ. Multiprocessing is based on the 'pathos' module.
 
@@ -266,20 +267,20 @@ class RasterStudy(Study):
             evidenceOnly - If set to True, only forward pass is run and evidence is calculated. In contrast to the
                 forwardOnly option, no posterior mean values are computed and no posterior distributions are stored.
 
-            customRaster - If set to True, the keyword argument 'raster' will not be used. Instead, all relevant
+            customHyperGrid - If set to True, the keyword argument 'hyperGrid' will not be used. Instead, all relevant
                 attributes have to be set manually by the user. May be used for irregular grids of hyper-parameter
                 values.
 
             silent - If set to True, no output is generated by the fitting method.
 
         Returns:
-            RasterStudy instance
+            HyperStudy instance
         """
         S = copy(self)
-        S.rasterValues = np.array_split(S.rasterValues, nJobs)[idx]
+        S.hyperGridValues = np.array_split(S.hyperGridValues, nJobs)[idx]
         S.hyperParameterPrior = np.array_split(S.hyperParameterPrior, nJobs)[idx]
 
-        for i, hyperParamValues in enumerate(S.rasterValues):
+        for i, hyperParamValues in enumerate(S.hyperGridValues):
             S.setSelectedHyperParameters(hyperParamValues)
 
             # call fit method from parent class
@@ -293,23 +294,23 @@ class RasterStudy(Study):
                                               S.hyperParameterPrior[i]
 
             if not silent:
-                print '    + Process {} -- Analysis #{} of {}'.format(idx, i+1, len(S.rasterValues))
+                print '    + Process {} -- Analysis #{} of {}'.format(idx, i+1, len(S.hyperGridValues))
 
         print '    + Process {} finished.'.format(idx)
         return S
 
     # optimization methods are inherited from Study class, but cannot be used in this case
     def optimize(self, *args, **kwargs):
-        print "! 'RasterStudy' object has no attribute 'optimize'"
+        print "! 'HyperStudy' object has no attribute 'optimize'"
         return
 
     def optimizationStep(self, *args, **kwargs):
-        print "! 'RasterStudy' object has no attribute 'optimizationStep'"
+        print "! 'HyperStudy' object has no attribute 'optimizationStep'"
         return
 
     def plotHyperParameterDistribution(self, param=0, **kwargs):
         """
-        Creates a bar chart of a hyper-parameter distribution done with the RasterStudy class. The distribution is
+        Creates a bar chart of a hyper-parameter distribution done with the HyperStudy class. The distribution is
         marginalized with respect to the hyper-parameter passed by name or index.
 
         Parameters:
@@ -320,7 +321,7 @@ class RasterStudy(Study):
             Two numpy arrays. The first array contains the hyper-parameter values, the second one the
             corresponding probability (density) values
         """
-        hyperParameterNames = [name for name, lower, upper, steps in self.raster]
+        hyperParameterNames = [name for name, lower, upper, steps in self.hyperGrid]
 
         if isinstance(param, (int, long)):
             paramIndex = param
@@ -342,22 +343,22 @@ class RasterStudy(Study):
         axesToMarginalize.remove(paramIndex)
 
         # reshape hyper-parameter distribution for easy marginalizing
-        rasterSteps = [steps for name, lower, upper, steps in self.raster]
-        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='C')
+        hyperGridSteps = [steps for name, lower, upper, steps in self.hyperGrid]
+        distribution = self.hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
         # marginal distribution is not created by sum, but by the integral
-        integrationFactor = np.prod([self.rasterConstant[axis] for axis in axesToMarginalize])
+        integrationFactor = np.prod([self.hyperGridConstant[axis] for axis in axesToMarginalize])
         marginalDistribution *= integrationFactor
 
-        x = np.linspace(*self.raster[paramIndex][1:])
-        plt.bar(x, marginalDistribution, align='center', width=self.rasterConstant[paramIndex], **kwargs)
+        x = np.linspace(*self.hyperGrid[paramIndex][1:])
+        plt.bar(x, marginalDistribution, align='center', width=self.hyperGridConstant[paramIndex], **kwargs)
 
         plt.xlabel(hyperParameterNames[paramIndex])
 
         # in case an integer step size for hyper-parameter values is chosen, probability is displayed
         # (probability density otherwise)
-        if self.rasterConstant[paramIndex] == 1.:
+        if self.hyperGridConstant[paramIndex] == 1.:
             plt.ylabel('probability')
         else:
             plt.ylabel('probability density')
@@ -368,7 +369,7 @@ class RasterStudy(Study):
                                             **kwargs):
         """
         Creates a 3D bar chart of a joint hyper-parameter distribution (of two hyper-parameters) done with the
-        RasterStudy class. The distribution is marginalized with respect to the hyper-parameters passed by names or
+        HyperStudy class. The distribution is marginalized with respect to the hyper-parameters passed by names or
         indices. Note that the 3D plot can only be included in an existing plot by passing a figure object and subplot
         specification.
 
@@ -387,7 +388,7 @@ class RasterStudy(Study):
             Three numpy arrays. The first and second array contains the hyper-parameter values, the
             third one the corresponding probability (density) values
         """
-        hyperParameterNames = [name for name, lower, upper, steps in self.raster]
+        hyperParameterNames = [name for name, lower, upper, steps in self.hyperGrid]
 
         # check if list with two elements is provided
         if not isinstance(params, (list, tuple)):
@@ -429,16 +430,16 @@ class RasterStudy(Study):
             axesToMarginalize.remove(p)
 
         # reshape hyper-parameter distribution for easy marginalizing
-        rasterSteps = [steps for name, lower, upper, steps in self.raster]
-        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='C')
+        hyperGridSteps = [steps for name, lower, upper, steps in self.hyperGrid]
+        distribution = self.hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
         # marginal distribution is not created by sum, but by the integral
-        integrationFactor = np.prod([self.rasterConstant[axis] for axis in axesToMarginalize])
+        integrationFactor = np.prod([self.hyperGridConstant[axis] for axis in axesToMarginalize])
         marginalDistribution *= integrationFactor
 
-        x, y = np.meshgrid(np.linspace(*self.raster[paramIndices[0]][1:]),
-                           np.linspace(*self.raster[paramIndices[1]][1:]), indexing='ij')
+        x, y = np.meshgrid(np.linspace(*self.hyperGrid[paramIndices[0]][1:]),
+                           np.linspace(*self.hyperGrid[paramIndices[1]][1:]), indexing='ij')
         z = marginalDistribution
         print np.amax(z)
 
@@ -449,11 +450,11 @@ class RasterStudy(Study):
             fig = figure
         ax = fig.add_subplot(subplot, projection='3d')
 
-        ax.bar3d(x.flatten() - self.rasterConstant[paramIndices[0]]/2.,
-                 y.flatten() - self.rasterConstant[paramIndices[1]]/2.,
+        ax.bar3d(x.flatten() - self.hyperGridConstant[paramIndices[0]]/2.,
+                 y.flatten() - self.hyperGridConstant[paramIndices[1]]/2.,
                  z.flatten()*0.,
-                 self.rasterConstant[paramIndices[0]],
-                 self.rasterConstant[paramIndices[1]],
+                 self.hyperGridConstant[paramIndices[0]],
+                 self.hyperGridConstant[paramIndices[1]],
                  z.flatten(),
                  zsort='max',
                  **kwargs
@@ -464,7 +465,7 @@ class RasterStudy(Study):
 
         # in case an integer step size for hyper-parameter values is chosen, probability is displayed
         # (probability density otherwise)
-        if self.rasterConstant[paramIndices[0]]*self.rasterConstant[paramIndices[1]] == 1.:
+        if self.hyperGridConstant[paramIndices[0]]*self.hyperGridConstant[paramIndices[1]] == 1.:
             ax.set_zlabel('probability')
         else:
             ax.set_zlabel('probability density')

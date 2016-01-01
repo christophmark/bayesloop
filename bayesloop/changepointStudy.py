@@ -4,14 +4,14 @@ This file introduces an extension to the basic Study-class which builds on the c
 """
 
 import numpy as np
-from .rasterStudy import *
+from .hyperStudy import *
 from .preprocessing import *
 from .helper import flatten
 
 
-class ChangepointStudy(RasterStudy):
+class ChangepointStudy(HyperStudy):
     """
-    This class builds on the RasterStudy-class and the change-point transition model to perform a series of analyses
+    This class builds on the HyperStudy-class and the change-point transition model to perform a series of analyses
     with varying change point times. It subsequently computes the average model from all possible change points and
     creates a probability distribution of change point times. It supports any number of change-points and arbitarily
     combined models.
@@ -21,28 +21,28 @@ class ChangepointStudy(RasterStudy):
 
         # store all possible combinations of change-points (even the ones that are assigned a probability of zero),
         # to reconstruct change-point distribution after analysis
-        self.allRasterValues = []
+        self.allHyperGridValues = []
         self.mask = []  # mask to select valid change-point combinations
         print '  --> Change-point analysis'
 
-    def fit(self, raster=[], prior=[], tBoundaries=[], forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
+    def fit(self, hyperGrid=[], prior=[], tBoundaries=[], forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
         """
-        This method over-rides the according method of the Raster Study-class. It runs the algorithm for all possible
+        This method over-rides the according method of the HyperStudy-class. It runs the algorithm for all possible
         combinations of change-points (and possible scans a range of values for other hyper-parameters). The posterior
         sequence represents the average model of all analyses. Posterior mean values are computed from this average
         model.
 
         Parameters:
-            raster - While the class ChangepointStudy automatically iterates over all possible combinations of
+            hyperGrid - While the class ChangepointStudy automatically iterates over all possible combinations of
                 change-points, it is possible to provide an additional list of lists with each containing the name
                 of a hyper-parameter together with a lower and upper boundary as well as a number of steps in
                 between.
-                Example: raster = [['sigma', 0, 1, 20], ['log10pMin', -10, -5, 10]]
+                Example: hyperGrid = [['sigma', 0, 1, 20], ['log10pMin', -10, -5, 10]]
 
             prior - List of SymPy random variables, each of which represents the prior distribution of one change/break-
                 point (and possibly other hyper-parameters). The multiplicative probability (density) will be assigned
                 to the individual raster points. The resulting prior distribution is renormalized such that the sum over
-                all points specified by the raster equals one.
+                all points specified by the hyperGrid equals one.
 
             tBoundaries - A list of lists, each of which contains a lower and upper integer boundary for a change-point.
                 This can be set for large data sets, in case the change-point should only be looked for in a specific
@@ -92,87 +92,87 @@ class ChangepointStudy(RasterStudy):
                   '  transition model.'
             return
 
-        # create raster in the case of change-points
+        # create hyperGrid in the case of change-points
         if nChangepoint > 0:
             print '+ Detected {} change-point(s) in transition model.'.format(nChangepoint)
-            if raster:
-                print '+ {} additional hyper-parameter(s) specified for rastering.'.format(len(raster))
+            if hyperGrid:
+                print '+ {} additional hyper-parameter(s) specified for rastering.'.format(len(hyperGrid))
 
-            # build custom raster of change-point values (have to be ordered) +
-            # standard raster for other hyper-parameters
+            # build custom hyper-grid of change-point values (have to be ordered) +
+            # standard hyper-grid for other hyper-parameters
             if tBoundaries:  # custom boundaries
-                self.raster = []
+                self.hyperGrid = []
                 for b in tBoundaries:
-                    self.raster += [['tChange', b[0], b[1], b[1]-b[0]+1]]
-                self.raster += raster
+                    self.hyperGrid += [['tChange', b[0], b[1], b[1]-b[0]+1]]
+                self.hyperGrid += hyperGrid
             else:  # all possible combinations
-                self.raster = [['tChange', 0, len(self.formattedData)-1, len(self.formattedData)]]*nChangepoint + raster
-            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster],
+                self.hyperGrid = [['tChange', 0, len(self.formattedData)-1, len(self.formattedData)]]*nChangepoint + hyperGrid
+            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.hyperGrid],
                                indexing='ij')
-            self.allRasterValues = np.array([t.flatten() for t in temp]).T  # all value tuples
+            self.allHyperGridValues = np.array([t.flatten() for t in temp]).T  # all value tuples
 
             # only accept if change-point values are ordered (and not equal)
-            self.mask = np.array([all(x[i] < x[i+1] for i in range(nChangepoint-1)) for x in self.allRasterValues],
+            self.mask = np.array([all(x[i] < x[i+1] for i in range(nChangepoint-1)) for x in self.allHyperGridValues],
                                  dtype=bool)
-            self.rasterValues = self.allRasterValues[self.mask]
+            self.hyperGridValues = self.allHyperGridValues[self.mask]
 
-            # set raster constant
-            self.rasterConstant = [1]*nChangepoint + [np.abs(upper-lower)/(float(steps)-1) for
-                                                      name, lower, upper, steps in raster]
+            # set hyper-grid constant
+            self.hyperGridConstant = [1]*nChangepoint + [np.abs(upper-lower)/(float(steps)-1) for
+                                                      name, lower, upper, steps in hyperGrid]
 
-        # create raster in the case of break-points
+        # create hyper-grid in the case of break-points
         if nBreakpoint > 0:
             print '+ Detected {} break-point(s) in transition model.'.format(nBreakpoint)
-            if raster:
-                print '+ Additional {} hyper-parameters specified for rastering.'.format(len(raster))
+            if hyperGrid:
+                print '+ Additional {} hyper-parameters specified for rastering.'.format(len(hyperGrid))
 
-            # build custom raster of change-point values (have to be ordered) +
-            # standard raster for other hyper-parameters
+            # build custom hyper-grid of change-point values (have to be ordered) +
+            # standard hyper-grid for other hyper-parameters
             if tBoundaries:  # custom boundaries
-                self.raster = []
+                self.hyperGrid = []
                 for b in tBoundaries:
-                    self.raster += [['tBreak', b[0], b[1], b[1]-b[0]+1]]
-                self.raster += raster
+                    self.hyperGrid += [['tBreak', b[0], b[1], b[1]-b[0]+1]]
+                self.hyperGrid += hyperGrid
             else:  # all possible combinations
-                self.raster = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]]*nBreakpoint + raster
-            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.raster],
+                self.hyperGrid = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]]*nBreakpoint + hyperGrid
+            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.hyperGrid],
                                indexing='ij')
-            self.allRasterValues = np.array([t.flatten() for t in temp]).T  # all value tuples
+            self.allHyperGridValues = np.array([t.flatten() for t in temp]).T  # all value tuples
 
             # only accept if change-point values are ordered (and not equal)
-            self.mask = np.array([all(x[i] < x[i+1] for i in range(nBreakpoint-1)) for x in self.allRasterValues],
+            self.mask = np.array([all(x[i] < x[i+1] for i in range(nBreakpoint-1)) for x in self.allHyperGridValues],
                                  dtype=bool)
-            self.rasterValues = self.allRasterValues[self.mask]
+            self.hyperGridValues = self.allHyperGridValues[self.mask]
 
-            # set raster constant
-            self.rasterConstant = [1]*nBreakpoint + [np.abs(upper-lower)/(float(steps)-1) for
-                                                     name, lower, upper, steps in raster]
+            # set hyper-grid constant
+            self.hyperGridConstant = [1]*nBreakpoint + [np.abs(upper-lower)/(float(steps)-1) for
+                                                     name, lower, upper, steps in hyperGrid]
 
-            # redefine self.raster, such that 'tBreak' only occurs once (is passed as list)
-            rasterBackup = self.raster[:]
-            self.raster = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]] + raster
+            # redefine self.hyperGrid, such that 'tBreak' only occurs once (is passed as list)
+            hyperGridBackup = self.hyperGrid[:]
+            self.hyperGrid = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]] + hyperGrid
 
-        # call fit method of raster-study
-        RasterStudy.fit(self,
-                        prior=prior,
-                        forwardOnly=forwardOnly,
-                        evidenceOnly=evidenceOnly,
-                        customRaster=True,
-                        silent=silent,
-                        nJobs=nJobs)
+        # call fit method of hyper-study
+        HyperStudy.fit(self,
+                       prior=prior,
+                       forwardOnly=forwardOnly,
+                       evidenceOnly=evidenceOnly,
+                       customHyperGrid=True,
+                       silent=silent,
+                       nJobs=nJobs)
 
-        # for break-points, self.raster has to be restored to original value after fitting
+        # for break-points, self.hyperGrid has to be restored to original value after fitting
         # (containing multiple 'tBreak', for proper plotting)
         if nBreakpoint > 0:
-            self.raster = rasterBackup
+            self.hyperGrid = hyperGridBackup
 
-        # for proper plotting, rasterValues must include all possible combinations of hyper-parameter values. We
+        # for proper plotting, hyperGridValues must include all possible combinations of hyper-parameter values. We
         # therefore have to include invalid combinations and assign the probability zero to them.
-        temp = np.zeros(len(self.allRasterValues))
+        temp = np.zeros(len(self.allHyperGridValues))
         temp[self.mask] = self.hyperParameterDistribution
         self.hyperParameterDistribution = temp
 
-        temp = np.zeros(len(self.allRasterValues))
+        temp = np.zeros(len(self.allHyperGridValues))
         temp[self.mask] = self.hyperParameterPrior
         self.hyperParameterPrior = temp
 
@@ -198,18 +198,18 @@ class ChangepointStudy(RasterStudy):
             print '! A lower AND upper boundary for the time range have to be provided.'
             tRange = []
 
-        # self.raster has to be temporarily altered to display custom times
+        # self.hyperGrid has to be temporarily altered to display custom times
         if tRange:
-            temp = self.raster[:]
-            self.raster[idx][1] = tRange[0]
-            self.raster[idx][2] = tRange[1]
+            temp = self.hyperGrid[:]
+            self.hyperGrid[idx][1] = tRange[0]
+            self.hyperGrid[idx][2] = tRange[1]
 
-        x, marginalDistribution = RasterStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
+        x, marginalDistribution = HyperStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
         plt.xlabel('change-point #{}'.format(idx+1))
 
-        # restore self.raster if necessary
+        # restore self.hyperGrid if necessary
         if tRange:
-            self.raster = temp
+            self.hyperGrid = temp
 
         return x, marginalDistribution
 
@@ -235,18 +235,18 @@ class ChangepointStudy(RasterStudy):
             print '! A lower AND upper boundary for the time range have to be provided.'
             tRange = []
 
-        # self.raster has to be temporarily altered to display custom times
+        # self.hyperGrid has to be temporarily altered to display custom times
         if tRange:
-            temp = self.raster[:]
-            self.raster[idx][1] = tRange[0]
-            self.raster[idx][2] = tRange[1]
+            temp = self.hyperGrid[:]
+            self.hyperGrid[idx][1] = tRange[0]
+            self.hyperGrid[idx][2] = tRange[1]
 
-        x, marginalDistribution = RasterStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
+        x, marginalDistribution = HyperStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
         plt.xlabel('break-point #{}'.format(idx+1))
 
-        # restore self.raster if necessary
+        # restore self.hyperGrid if necessary
         if tRange:
-            self.raster = temp
+            self.hyperGrid = temp
 
         return x, marginalDistribution
 
@@ -279,23 +279,23 @@ class ChangepointStudy(RasterStudy):
             print '! A lower AND upper boundary for the time range have to be provided.'
             tRange = []
 
-        # self.raster has to be temporarily altered to display custom times
+        # self.hyperGrid has to be temporarily altered to display custom times
         if tRange:
-            temp = self.raster[:]
+            temp = self.hyperGrid[:]
             for i in indices:
-                self.raster[i][1] = tRange[0]
-                self.raster[i][2] = tRange[1]
+                self.hyperGrid[i][1] = tRange[0]
+                self.hyperGrid[i][2] = tRange[1]
 
-        x, y, marginalDistribution = RasterStudy.plotJointHyperParameterDistribution(self,
-                                                                                     params=indices,
-                                                                                     figure=figure,
-                                                                                     subplot=subplot, **kwargs)
+        x, y, marginalDistribution = HyperStudy.plotJointHyperParameterDistribution(self,
+                                                                                    params=indices,
+                                                                                    figure=figure,
+                                                                                    subplot=subplot, **kwargs)
         plt.xlabel('change-point #{}'.format(indices[0]+1))
         plt.ylabel('change-point #{}'.format(indices[1]+1))
 
-        # restore self.raster if necessary
+        # restore self.hyperGrid if necessary
         if tRange:
-            self.raster = temp
+            self.hyperGrid = temp
 
         return x, y, marginalDistribution
 
@@ -328,24 +328,24 @@ class ChangepointStudy(RasterStudy):
             print '! A lower AND upper boundary for the time range have to be provided.'
             tRange = []
 
-        # self.raster has to be temporarily altered to display custom times
+        # self.hyperGrid has to be temporarily altered to display custom times
         if tRange:
-            temp = self.raster[:]
+            temp = self.hyperGrid[:]
             for i in indices:
-                self.raster[i][1] = tRange[0]
-                self.raster[i][2] = tRange[1]
+                self.hyperGrid[i][1] = tRange[0]
+                self.hyperGrid[i][2] = tRange[1]
 
-        x, y, marginalDistribution = RasterStudy.plotJointHyperParameterDistribution(self,
-                                                                                     params=indices,
-                                                                                     figure=figure,
-                                                                                     subplot=subplot,
-                                                                                     **kwargs)
+        x, y, marginalDistribution = HyperStudy.plotJointHyperParameterDistribution(self,
+                                                                                    params=indices,
+                                                                                    figure=figure,
+                                                                                    subplot=subplot,
+                                                                                    **kwargs)
         plt.xlabel('break-point #{}'.format(indices[0]+1))
         plt.ylabel('break-point #{}'.format(indices[1]+1))
 
-        # restore self.raster if necessary
+        # restore self.hyperGrid if necessary
         if tRange:
-            self.raster = temp
+            self.hyperGrid = temp
 
         return x, y, marginalDistribution
 
@@ -366,7 +366,7 @@ class ChangepointStudy(RasterStudy):
         Returns:
             Numpy array containing all probability (density) values of the duration distribution
         """
-        hyperParameterNames = [name for name, lower, upper, steps in self.raster]
+        hyperParameterNames = [name for name, lower, upper, steps in self.hyperGrid]
 
         # check if exactly two indices are provided
         if not len(indices) == 2:
@@ -378,12 +378,12 @@ class ChangepointStudy(RasterStudy):
             axesToMarginalize.remove(p)
 
         # reshape hyper-parameter distribution for easy marginalizing
-        rasterSteps = [steps for name, lower, upper, steps in self.raster]
-        distribution = self.hyperParameterDistribution.reshape(rasterSteps, order='C')
+        hyperGridSteps = [steps for name, lower, upper, steps in self.hyperGrid]
+        distribution = self.hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
         # marginal distribution is not created by sum, but by the integral
-        integrationFactor = np.prod([self.rasterConstant[axis] for axis in axesToMarginalize])
+        integrationFactor = np.prod([self.hyperGridConstant[axis] for axis in axesToMarginalize])
         marginalDistribution *= integrationFactor
 
         # compute distribution over number of time steps between the two change/break-times

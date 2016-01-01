@@ -2,7 +2,7 @@
 
 from .study import *
 from .changepointStudy import *
-from .rasterStudy import *
+from .hyperStudy import *
 from .onlineStudy import *
 from .jeffreys import *
 from .fileIO import *
