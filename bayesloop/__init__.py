@@ -5,6 +5,7 @@ from .changepointStudy import *
 from .rasterStudy import *
 from .onlineStudy import *
 from .jeffreys import *
+from .fileIO import *
 
 # observation models and transition models need to be distinguishable
 from . import observationModels
