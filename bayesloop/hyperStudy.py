@@ -72,6 +72,11 @@ class HyperStudy(Study):
         """
         print '+ Started new fit.'
 
+        self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
+
+        if not self.checkConsistency():
+            return
+
         if not customHyperGrid:
             self.hyperGrid = hyperGrid
 
@@ -97,8 +102,6 @@ class HyperStudy(Study):
             if self.hyperGridConstant == []:
                 print "! The attribute 'hyperGridConstant' has to be set manually when using customHyperGrid=True."
                 return
-
-        self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
 
         # determine prior distribution
         if not prior:
@@ -140,9 +143,6 @@ class HyperStudy(Study):
 
         # we use the setSelectedHyperParameters-method from the Study class
         self.selectedHyperParameters = [name for name, lower, upper, steps in self.hyperGrid]
-
-        if not self.checkConsistency():
-            return
 
         print '    + {} analyses to run.'.format(len(self.hyperGridValues))
 
