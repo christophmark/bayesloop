@@ -134,6 +134,33 @@ class Study(object):
         if not silent:
             print '+ Grid size: {}'.format(self.gridSize)
 
+    def setGrid(self, newGrid, silent=False):
+        """
+        Sets parameter boundaries and corresponding grid size. Provides a more convenient way to specify the parameter
+        grid than calling 'setBoundaries' and 'setGridSize' separately.
+
+        Parameters:
+            newGrid - List of lists, one for each parameter, containing the lower and upper parameter boundaries and
+                an integer value describing the size of the grid in the corresponding dimension.
+                Example: [[0., 1., 1000], [-1., 1., 100]]
+
+        Returns:
+            None
+        """
+        newBoundaries = []
+        newGridSize = []
+        for entry in newGrid:
+            newBoundaries.append([entry[0], entry[1]])
+            newGridSize.append(entry[2])
+
+        self.boundaries = newBoundaries
+        self.gridSize = newGridSize
+        self.createGrid()
+
+        if not silent:
+            print '+ Boundaries: {}'.format(self.boundaries)
+            print '+ Grid size: {}'.format(self.gridSize)
+
     def setObservationModel(self, M, silent=False):
         """
         Sets observation model (likelihood function) for analysis.
