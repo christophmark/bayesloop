@@ -11,6 +11,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from copy import copy
 import sympy.abc as abc
 from sympy import lambdify
+import sympy.stats
 from sympy.stats import density
 
 
@@ -26,7 +27,8 @@ class HyperStudy(Study):
         self.hyperGrid = []
         self.hyperGridValues = []
         self.hyperGridConstant = []
-        self.hyperParameterPrior = None
+        self.hyperPrior = None
+        self.hyperPriorValues = []
         self.hyperParameterDistribution = None
         self.averagePosteriorSequence = None
         self.logEvidenceList = []
@@ -65,18 +67,30 @@ class HyperStudy(Study):
             print '+ Set hyper-grid for the following hyper-parameters:'
             print '  {}'.format([n for n, l, u, s in self.hyperGrid])
 
-    def fit(self, prior=[], forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
+    def setHyperPrior(self, hyperPrior):
+        """
+        Assigns prior probability values to all points on the hyper-parameter grid that is used in a hyper-study or
+        change-point study.
+
+        Parameters:
+            hyperPrior - List of SymPy random variables, each of which represents the prior distribution of one hyper-
+                parameter. The multiplicative probability (density) will be assigned to the individual raster points.
+                Alternatively, a function can be provided that takes exactly as many arguments as there are hyper-
+                parameters in the transition model. The resulting prior distribution is renormalized such that the sum
+                over all points specified by the hyper-grid equals one.
+        """
+        # Actual hyper-parameter prior values have to be evaluated inside the fit-method, because hyper-grid values have
+        # to be evaluated first. In the case of a custom hyper-grid, it cannot be ensured, that calling setHyperPrior is
+        # possible before the fit-method is called.
+        self.hyperPrior = hyperPrior
+
+    def fit(self, forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
         """
         This method over-rides the according method of the Study-class. It runs the algorithm for equally spaced hyper-
         parameter values as defined by the variable 'hyperGrid'. The posterior sequence represents the average
         model of all analyses. Posterior mean values are computed from this average model.
 
         Parameters:
-            prior - List of SymPy random variables, each of which represents the prior distribution of one hyper-
-                parameter. The multiplicative probability (density) will be assigned to the individual raster points.
-                The resulting prior distribution is renormalized such that the sum over all points specified by the
-                hyper-grid equals one.
-
             forwardOnly - If set to True, the fitting process is terminated after the forward pass. The resulting
                 posterior distributions are so-called "filtering distributions" which - at each time step -
                 only incorporate the information of past data points. This option thus emulates an online
@@ -84,6 +98,8 @@ class HyperStudy(Study):
 
             evidenceOnly - If set to True, only forward pass is run and evidence is calculated. In contrast to the
                 forwardOnly option, no posterior mean values are computed and no posterior distributions are stored.
+
+            silent - If set to true, reduced output is created by this method.
 
             nJobs - Number of processes to employ. Multiprocessing is based on the 'pathos' module.
 
@@ -108,36 +124,59 @@ class HyperStudy(Study):
                   "  have to be set manually. Using standard fit-method now."
 
         # determine prior distribution
-        if not prior:
-            self.hyperParameterPrior = np.ones(len(self.hyperGridValues))/len(self.hyperGridValues)
-        else:
+        # check whether function is provided
+        if hasattr(self.hyperPrior, '__call__'):
+            try:
+                self.hyperPriorValues = [self.hyperPrior(value) for value in self.hyperGridValues]
+                self.hyperPriorValues /= np.sum(self.hyperPriorValues)  # renormalize hyper-parameter prior
+                if not silent:
+                    print '+ Set custom hyper-parameter prior: {}'.format(self.hyperPrior.__name__)
+            except:
+                print '! Failed to set hyper-parameter prior. Check number of variables of passed function.'
+                self.hyperPriorValues = None
+            return
+
+        # check whether single random variable is provided
+        elif type(self.hyperPrior) is sympy.stats.rv.RandomSymbol:
+            self.hyperPrior = [self.hyperPrior]
+
+        # check if list/tuple is provided
+        elif isinstance(self.hyperPrior, (list, tuple)) and not isinstance(self.hyperPrior, basestring):
             # check if given prior is correctly formatted to fit length of hyper-grid array.
             # we use 'len(self.hyperGridValues[0])' because self.hyperGrid is reformatted within changepointStudy, when
             # using break-points.
-            if len(prior) != len(self.hyperGridValues[0]):
+            if len(self.hyperPrior) != len(self.hyperGridValues[0]):
                 print '! {} hyper-parameters are specified in hyper-grid. Priors are provided for {}.'\
-                    .format(len(self.hyperGridValues[0]), len(prior))
+                    .format(len(self.hyperGridValues[0]), len(self.hyperPrior))
+                self.hyperPriorValues = None
                 return
             else:
-                densities = []
-                self.hyperParameterPrior = np.ones(len(self.hyperGridValues))
-                for i, rv in enumerate(prior):  # loop over all specified priors
+                if not silent:
+                    print '+ Setting custom hyper-parameter priors'
+                self.hyperPriorValues = np.ones(len(self.hyperGridValues))
+                for i, rv in enumerate(self.hyperPrior):  # loop over all specified priors
                     if len(list(rv._sorted_args[0].distribution.free_symbols)) > 0:
                         print '! Prior distribution must not contain free parameters.'
+                        self.hyperPriorValues = None
                         return
 
                     # get symbolic representation of probability density
                     x = abc.x
                     symDensity = density(rv)(x)
+                    print '  {}'.format(symDensity)
 
                     # get density as lambda function
                     pdf = lambdify([x], symDensity, modules=['numpy', {'factorial': factorial}])
 
                     # update hyper-parameter prior
-                    self.hyperParameterPrior *= pdf(self.hyperGridValues[:, i])
+                    self.hyperPriorValues *= pdf(self.hyperGridValues[:, i])
 
                 # renormalize hyper-parameter prior
-                self.hyperParameterPrior /= np.sum(self.hyperParameterPrior)
+                self.hyperPriorValues /= np.sum(self.hyperPriorValues)
+
+        # if no hyper-prior could be assigned, assign flat prior
+        if self.hyperPriorValues == []:
+            self.hyperPriorValues = np.ones(len(self.hyperGridValues))/len(self.hyperGridValues)
 
         if not evidenceOnly:
             self.averagePosteriorSequence = np.zeros([len(self.formattedData)]+self.gridSize)
@@ -191,7 +230,7 @@ class HyperStudy(Study):
                 if not evidenceOnly:
                     self.averagePosteriorSequence += self.posteriorSequence *\
                                                      np.exp(self.logEvidence - self.logEvidenceList[0]) *\
-                                                     self.hyperParameterPrior[i]
+                                                     self.hyperPriorValues[i]
 
                 if not silent:
                     print '    + Analysis #{} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
@@ -214,12 +253,12 @@ class HyperStudy(Study):
                 print '    + Computed average posterior sequence'
 
         # compute log-evidence of average model
-        self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.hyperParameterPrior))
+        self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.hyperPriorValues))
 
         print '    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10))
 
         # compute hyper-parameter distribution
-        logHyperParameterDistribution = self.logEvidenceList + np.log(self.hyperParameterPrior)
+        logHyperParameterDistribution = self.logEvidenceList + np.log(self.hyperPriorValues)
         scaledLogHyperParameterDistribution = logHyperParameterDistribution - np.mean(logHyperParameterDistribution)
         self.hyperParameterDistribution = np.exp(scaledLogHyperParameterDistribution)
         self.hyperParameterDistribution /= np.sum(self.hyperParameterDistribution)
@@ -244,7 +283,7 @@ class HyperStudy(Study):
                 print '    + Computed mean parameter values.'
 
         # clear self.hyperParameterPrior (in case fit is called after changing self.hyperGrid)
-        self.hyperParameterPrior = None
+        self.hyperPriorValues = None
 
         # discard evidence values of individual fits
         self.logEvidenceList = []
@@ -282,7 +321,7 @@ class HyperStudy(Study):
         """
         S = copy(self)
         S.hyperGridValues = np.array_split(S.hyperGridValues, nJobs)[idx]
-        S.hyperParameterPrior = np.array_split(S.hyperParameterPrior, nJobs)[idx]
+        S.hyperPriorValues = np.array_split(S.hyperPriorValues, nJobs)[idx]
 
         for i, hyperParamValues in enumerate(S.hyperGridValues):
             S.setSelectedHyperParameters(hyperParamValues)
@@ -295,7 +334,7 @@ class HyperStudy(Study):
             if not evidenceOnly:
                 S.averagePosteriorSequence += S.posteriorSequence *\
                                               np.exp(S.logEvidence - S.logEvidenceList[0]) *\
-                                              S.hyperParameterPrior[i]
+                                              S.hyperPriorValues[i]
 
             if not silent:
                 print '    + Process {} -- Analysis #{} of {}'.format(idx, i+1, len(S.hyperGridValues))

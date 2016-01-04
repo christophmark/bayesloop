@@ -24,6 +24,7 @@ class ChangepointStudy(HyperStudy):
         self.allHyperGridValues = []
         self.mask = []  # mask to select valid change-point combinations
 
+        self.userDefinedGrid = False  # needed to ensure that user-defined hyper-grid is not overwritten by fit-method
         self.hyperGridBackup = []  # needed to reconstruct hyperGrid attribute in the case of break-point model
         print '  --> Change-point analysis'
 
@@ -122,7 +123,7 @@ class ChangepointStudy(HyperStudy):
             if not silent:
                 print '+ Detected {} break-point(s) in transition model.'.format(nBreakpoint)
                 if hyperGrid:
-                    print '+ Additional {} hyper-parameters specified for rastering:'.format(len(hyperGrid))
+                    print '+ Additional {} hyper-parameter(s) specified for rastering:'.format(len(hyperGrid))
                     print '  {}'.format([n for n, l, u, s in hyperGrid])
 
             # build custom hyper-grid of change-point values (have to be ordered) +
@@ -151,9 +152,12 @@ class ChangepointStudy(HyperStudy):
             self.hyperGridBackup = self.hyperGrid[:]
             self.hyperGrid = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]] + hyperGrid
 
+        if not hyperGrid:
+            self.userDefinedGrid = False  # prevents fit method from overwriting user-defined hyper-grid
+        else:
+            self.userDefinedGrid = True
 
-
-    def fit(self, prior=[], forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
+    def fit(self, forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
         """
         This method over-rides the corresponding method of the HyperStudy-class. It runs the algorithm for all possible
         combinations of change-points (and possible scans a range of values for other hyper-parameters). The posterior
@@ -161,11 +165,6 @@ class ChangepointStudy(HyperStudy):
         model.
 
         Parameters:
-            prior - List of SymPy random variables, each of which represents the prior distribution of one change/break-
-                point (and possibly other hyper-parameters). The multiplicative probability (density) will be assigned
-                to the individual raster points. The resulting prior distribution is renormalized such that the sum over
-                all points specified by the hyperGrid equals one.
-
             forwardOnly - If set to True, the fitting process is terminated after the forward pass. The resulting
                 posterior distributions are so-called "filtering distributions" which - at each time step -
                 only incorporate the information of past data points. This option thus emulates an online
@@ -182,12 +181,11 @@ class ChangepointStudy(HyperStudy):
             None
         """
         # create hyper-grid, if not done by user
-        if not self.hyperGrid:
+        if not self.userDefinedGrid:
             self.setHyperGrid()
 
         # call fit method of hyper-study
         HyperStudy.fit(self,
-                       prior=prior,
                        forwardOnly=forwardOnly,
                        evidenceOnly=evidenceOnly,
                        silent=silent,
@@ -205,8 +203,8 @@ class ChangepointStudy(HyperStudy):
         self.hyperParameterDistribution = temp
 
         temp = np.zeros(len(self.allHyperGridValues))
-        temp[self.mask] = self.hyperParameterPrior
-        self.hyperParameterPrior = temp
+        temp[self.mask] = self.hyperPriorValues
+        self.hyperPriorValues = temp
 
     def plotChangepointDistribution(self, idx=0, tRange=[], **kwargs):
         """
