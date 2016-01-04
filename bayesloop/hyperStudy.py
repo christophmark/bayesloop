@@ -127,14 +127,13 @@ class HyperStudy(Study):
         # check whether function is provided
         if hasattr(self.hyperPrior, '__call__'):
             try:
-                self.hyperPriorValues = [self.hyperPrior(value) for value in self.hyperGridValues]
+                self.hyperPriorValues = [self.hyperPrior(*value) for value in self.hyperGridValues]
                 self.hyperPriorValues /= np.sum(self.hyperPriorValues)  # renormalize hyper-parameter prior
                 if not silent:
                     print '+ Set custom hyper-parameter prior: {}'.format(self.hyperPrior.__name__)
             except:
                 print '! Failed to set hyper-parameter prior. Check number of variables of passed function.'
                 self.hyperPriorValues = None
-            return
 
         # check whether single random variable is provided
         elif type(self.hyperPrior) is sympy.stats.rv.RandomSymbol:
