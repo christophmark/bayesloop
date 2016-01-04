@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='bayesloop',
-    version='0.4',
+    version='0.5',
     description='Framework for fitting hierarchical time series models based on Bayesian inference.',
     url='https://bitbucket.org/chrismark/bayesloop',
     author='Christoph Mark',
