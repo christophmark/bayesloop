@@ -83,6 +83,7 @@ class HyperStudy(Study):
         # to be evaluated first. In the case of a custom hyper-grid, it cannot be ensured, that calling setHyperPrior is
         # possible before the fit-method is called.
         self.hyperPrior = hyperPrior
+        print '+ Will use custom hyper-parameter prior.'
 
     def fit(self, forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
         """
