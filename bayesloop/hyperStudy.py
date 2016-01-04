@@ -174,8 +174,8 @@ class HyperStudy(Study):
                 # renormalize hyper-parameter prior
                 self.hyperPriorValues /= np.sum(self.hyperPriorValues)
 
-        # if no hyper-prior could be assigned, assign flat prior
-        if self.hyperPriorValues == []:
+        # if no hyper-prior could be assigned, or the one defined does not fit, assign flat prior
+        if len(self.hyperPriorValues) != len(self.hyperGridValues):
             self.hyperPriorValues = np.ones(len(self.hyperGridValues))/len(self.hyperGridValues)
 
         if not evidenceOnly:
