@@ -22,6 +22,7 @@ class Static:
         self.study = None
         self.latticeConstant = None
         self.hyperParameters = {}
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Static/constant parameter values'
@@ -56,6 +57,7 @@ class GaussianRandomWalk:
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('sigma', sigma)])
         self.selectedParameter = param
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Gaussian random walk'
@@ -110,6 +112,7 @@ class ChangePoint:
         self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('tChange', tChange)])
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Change-point model'
@@ -148,6 +151,7 @@ class RegimeSwitch:
         self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('log10pMin', log10pMin)])
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Regime-switching model'
@@ -188,6 +192,7 @@ class Linear:
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('slope', slope)])
         self.selectedParameter = param
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Linear deterministic model'
@@ -265,6 +270,7 @@ class CombinedTransitionModel:
         self.study = None
         self.latticeConstant = None
         self.models = args
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Combined transition model'
@@ -285,6 +291,7 @@ class CombinedTransitionModel:
         for m in self.models:
             m.latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated to sub-models
             m.study = self.study  # study needs to be propagated to sub-models
+            m.tOffset = self.tOffset
             newPrior = m.computeForwardPrior(newPrior, t)
 
         return newPrior
@@ -295,6 +302,7 @@ class CombinedTransitionModel:
         for m in self.models:
             m.latticeConstant = self.latticeConstant
             m.study = self.study
+            m.tOffset = self.tOffset
             newPrior = m.computeBackwardPrior(newPrior, t)
 
         return newPrior
@@ -359,6 +367,7 @@ class SerialTransitionModel:
         newPrior = posterior.copy()
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
         self.models[modelIndex].study = self.study  # study needs to be propagated
+        self.models[modelIndex].tOffset = self.hyperParameters['tBreak'][modelIndex-1] if modelIndex > 0 else 0
         newPrior = self.models[modelIndex].computeForwardPrior(newPrior, t)
         return newPrior
 
@@ -369,5 +378,6 @@ class SerialTransitionModel:
         newPrior = posterior.copy()
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
         self.models[modelIndex].study = self.study  # study needs to be propagated
+        self.models[modelIndex].tOffset = self.hyperParameters['tBreak'][modelIndex-1] if modelIndex > 0 else 0
         newPrior = self.models[modelIndex].computeBackwardPrior(newPrior, t)
         return newPrior
