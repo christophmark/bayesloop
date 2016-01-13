@@ -254,7 +254,6 @@ class HyperStudy(Study):
 
         # compute log-evidence of average model
         self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.hyperPriorValues))
-
         print '    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10))
 
         # compute hyper-parameter distribution
@@ -268,7 +267,7 @@ class HyperStudy(Study):
             print '    + Computed hyper-parameter distribution'
 
         # compute local evidence of average model
-        self.localEvidence = np.sum((np.array(self.localEvidenceList).T*self.hyperParameterDistribution).T, axis=0)
+        self.localEvidence = np.sum((np.array(self.localEvidenceList).T*self.hyperPriorValues).T, axis=0)
 
         if not silent:
             print '    + Computed local evidence of average model'
