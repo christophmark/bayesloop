@@ -342,7 +342,12 @@ class Study(object):
                 self.posteriorSequence[i] *= beta  # alpha*beta
 
                 # normalize posterior wrt the parameters
-                self.posteriorSequence[i] /= np.sum(self.posteriorSequence[i])
+                norm = np.sum(self.posteriorSequence[i])
+                if norm > 0.:
+                    self.posteriorSequence[i] /= np.sum(self.posteriorSequence[i])
+                else:
+                    # if all posterior probabilities are zero, normalization is not possible
+                    print '    ! Posterior distribution contains only zeros, check parameter boundaries!'
 
                 # re-compute likelihood
                 likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])
