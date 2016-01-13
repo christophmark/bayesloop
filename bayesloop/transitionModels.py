@@ -256,6 +256,84 @@ class Linear:
 
         return newPrior
 
+class Quadratic:
+    """
+    Quadratic deterministic model. This model assumes a quadratic change of parameter values. Note that this model is
+    entirely deterministic, as the coefficient for all parameters has to be entered by the user. However, the
+    coefficient can be optimized by maximizing the model evidence.
+
+    Parameters (on initialization):
+        coefficient - multiplicative coefficient for quadratic model: coefficient*x^2
+    """
+    def __init__(self, coefficient=None, param=None):
+        self.study = None
+        self.latticeConstant = None
+        self.hyperParameters = OrderedDict([('coefficient', coefficient)])
+        self.selectedParameter = param
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+
+    def __str__(self):
+        return 'Quadratic deterministic model'
+
+    def computeForwardPrior(self, posterior, t):
+        """
+        Compute new prior from old posterior (moving forwards in time).
+
+        Parameters:
+            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
+            t - integer time step
+
+        Returns:
+            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+        """
+        # slope has to be adjusted based on grid size
+        normedCoeff = []
+        if type(self.hyperParameters['coefficient']) is not list:
+            for c in self.latticeConstant:
+                normedCoeff.append(self.hyperParameters['coefficient'] / c)
+        else:
+            for i, c in enumerate(self.latticeConstant):
+                normedCoeff.append(self.hyperParameters['coefficient'][i] / c)
+
+        # check if only one axis is to be transformed
+        if self.selectedParameter is not None:
+            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+            selectedCoeff = normedCoeff[axisToTransform]
+
+            # reinitiate coefficient list (setting only the selected axis to a non-zero value)
+            normedCoeff = [0]*len(normedCoeff)
+            normedCoeff[axisToTransform] = selectedCoeff
+
+        newPrior = posterior.copy()
+
+        # shift interpolated version of distribution according to coefficient
+        shift(newPrior, np.array(normedCoeff)*(t-self.tOffset)**2., output=newPrior, order=3, mode='nearest')
+
+        # transformation above may violate proper normalization; re-normalization needed
+        newPrior /= np.sum(newPrior)
+
+        return newPrior
+
+    def computeBackwardPrior(self, posterior, t):
+        # coefficient has to be adjusted based on grid size
+        normedCoeff = []
+        if type(self.hyperParameters['coefficient']) is not list:
+            for c in self.latticeConstant:
+                normedCoeff.append(self.hyperParameters['coefficient'] / c)
+        else:
+            for i, c in enumerate(self.latticeConstant):
+                normedCoeff.append(self.hyperParameters['coefficient'][i] / c)
+
+        newPrior = posterior.copy()
+
+        # shift interpolated version of distribution according to negative (!) coefficient
+        shift(newPrior, -np.array(normedCoeff)*(t-self.tOffset)**2., output=newPrior, order=3, mode='nearest')
+
+        # transformation above may violate proper normalization; re-normalization needed
+        newPrior /= np.sum(newPrior)
+
+        return newPrior
+
 
 class CombinedTransitionModel:
     """
