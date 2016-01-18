@@ -281,13 +281,6 @@ class HyperStudy(Study):
             if not silent:
                 print '    + Computed mean parameter values.'
 
-        # clear self.hyperParameterPrior (in case fit is called after changing self.hyperGrid)
-        self.hyperPriorValues = None
-
-        # discard evidence values of individual fits
-        self.logEvidenceList = []
-        self.localEvidenceList = []
-
         print '+ Finished fit.'
 
     def parallelFit(self, idx, nJobs, forwardOnly, evidenceOnly, silent):
