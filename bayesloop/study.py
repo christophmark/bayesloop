@@ -313,7 +313,11 @@ class Study(object):
             self.localEvidence[i] = norm  # in case we return before backward pass (forwardOnly = True)
 
             # normalize alpha (for numerical stability)
-            alpha /= norm
+            if norm > 0.:
+                alpha /= norm
+            else:
+                # if all probability values are zero, normalization is not possible
+                print '    ! Forward pass distribution contains only zeros, check parameter boundaries!'
 
             # alphas are stored as preliminary posterior distributions
             if not evidenceOnly:
