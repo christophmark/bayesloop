@@ -417,13 +417,18 @@ class ChangepointStudy(HyperStudy):
         marginalDistribution *= integrationFactor
 
         # compute distribution over number of time steps between the two change/break-times
-        durationDistribution = np.zeros(marginalDistribution.shape[0])
+        lowest = np.amin(np.array(self.hyperGrid)[indices, 1].astype(np.int))
+        highest = np.amax(np.array(self.hyperGrid)[indices, 2].astype(np.int))
+        durationDistribution = np.zeros(highest-lowest+1)
+
         for i in range(marginalDistribution.shape[0]):
+            iLow = self.hyperGrid[indices[0]][1]
             for j in range(marginalDistribution.shape[1]):
-                durationDistribution[abs(i-j)] += marginalDistribution[i, j]
+                jLow = self.hyperGrid[indices[1]][1]
+                durationDistribution[abs((iLow+i)-(jLow+j))] += marginalDistribution[i, j]
 
         # plot result
-        plt.bar(range(marginalDistribution.shape[0]), durationDistribution, align='center', width=1, **kwargs)
+        plt.bar(range(highest-lowest+1), durationDistribution, align='center', width=1, **kwargs)
 
         plt.xlabel('duration between point #{} and #{} (in time steps)'.format(indices[0]+1, indices[1]+1))
         plt.ylabel('probability')
