@@ -318,6 +318,9 @@ class Study(object):
             else:
                 # if all probability values are zero, normalization is not possible
                 print '    ! Forward pass distribution contains only zeros, check parameter boundaries!'
+                print '      Stopping inference process. Setting model evidence to zero.'
+                self.logEvidence = -np.inf
+                return
 
             # alphas are stored as preliminary posterior distributions
             if not evidenceOnly:
@@ -352,6 +355,9 @@ class Study(object):
                 else:
                     # if all posterior probabilities are zero, normalization is not possible
                     print '    ! Posterior distribution contains only zeros, check parameter boundaries!'
+                    print '      Stopping inference process. Setting model evidence to zero.'
+                    self.logEvidence = -np.inf
+                    return
 
                 # re-compute likelihood
                 likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])

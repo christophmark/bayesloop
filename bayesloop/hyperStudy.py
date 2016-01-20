@@ -227,7 +227,7 @@ class HyperStudy(Study):
 
                 self.logEvidenceList.append(self.logEvidence)
                 self.localEvidenceList.append(self.localEvidence)
-                if not evidenceOnly:
+                if (not evidenceOnly) and np.isfinite(self.logEvidence):
                     self.averagePosteriorSequence += self.posteriorSequence *\
                                                      np.exp(self.logEvidence) *\
                                                      self.hyperPriorValues[i]
@@ -258,7 +258,9 @@ class HyperStudy(Study):
 
         # compute hyper-parameter distribution
         logHyperParameterDistribution = self.logEvidenceList + np.log(self.hyperPriorValues)
-        scaledLogHyperParameterDistribution = logHyperParameterDistribution - np.mean(logHyperParameterDistribution)
+        # ignore evidence values of -inf when computing mean value for scaling
+        scaledLogHyperParameterDistribution = logHyperParameterDistribution - \
+                                              np.mean(np.ma.masked_invalid(logHyperParameterDistribution))
         self.hyperParameterDistribution = np.exp(scaledLogHyperParameterDistribution)
         self.hyperParameterDistribution /= np.sum(self.hyperParameterDistribution)
         self.hyperParameterDistribution /= np.prod(self.hyperGridConstant)  # probability density
