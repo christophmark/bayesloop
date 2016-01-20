@@ -328,7 +328,7 @@ class HyperStudy(Study):
 
             S.logEvidenceList.append(S.logEvidence)
             S.localEvidenceList.append(S.localEvidence)
-            if not evidenceOnly:
+            if (not evidenceOnly) and np.isfinite(S.logEvidence):
                 S.averagePosteriorSequence += S.posteriorSequence *\
                                               np.exp(S.logEvidence) *\
                                               S.hyperPriorValues[i]
