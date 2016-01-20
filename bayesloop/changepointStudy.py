@@ -152,7 +152,7 @@ class ChangepointStudy(HyperStudy):
             self.hyperGridBackup = self.hyperGrid[:]
             self.hyperGrid = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]] + hyperGrid
 
-        if not hyperGrid:
+        if (not hyperGrid) and (not tBoundaries):
             self.userDefinedGrid = False  # prevents fit method from overwriting user-defined hyper-grid
         else:
             self.userDefinedGrid = True
