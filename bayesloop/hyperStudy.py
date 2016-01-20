@@ -281,6 +281,9 @@ class HyperStudy(Study):
             if not silent:
                 print '    + Computed mean parameter values.'
 
+        # clear localEvidenceList (to keep file size small for stored studies)
+        self.localEvidenceList = []
+
         print '+ Finished fit.'
 
     def parallelFit(self, idx, nJobs, forwardOnly, evidenceOnly, silent):
