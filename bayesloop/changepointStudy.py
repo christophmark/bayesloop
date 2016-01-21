@@ -4,6 +4,7 @@ This file introduces an extension to the basic Study-class which builds on the c
 """
 
 import numpy as np
+from copy import deepcopy
 from .hyperStudy import *
 from .preprocessing import *
 from .helper import flatten
@@ -73,7 +74,7 @@ class ChangepointStudy(HyperStudy):
             print '! Multiple instances of SerialTransition models are currently not supported by ChangepointStudy.'
             return
         if hyperParameterNames.count('tBreak') == 1:
-            temp = self.selectedHyperParameters[:]  # temporarily store selected hyper-parameters to restore later
+            temp = deepcopy(self.selectedHyperParameters)  # temporarily store selected hyper-parameters to restore later
             self.selectedHyperParameters = ['tBreak']
             nBreakpoint = len(self.unpackSelectedHyperParameters())
 
@@ -149,7 +150,7 @@ class ChangepointStudy(HyperStudy):
                                                      name, lower, upper, steps in hyperGrid]
 
             # redefine self.hyperGrid, such that 'tBreak' only occurs once (is passed as list)
-            self.hyperGridBackup = self.hyperGrid[:]
+            self.hyperGridBackup = deepcopy(self.hyperGrid)
             self.hyperGrid = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]] + hyperGrid
 
         if (not hyperGrid) and (not tBoundaries):
@@ -230,7 +231,7 @@ class ChangepointStudy(HyperStudy):
 
         # self.hyperGrid has to be temporarily altered to display custom times
         if tRange:
-            temp = self.hyperGrid[:]
+            temp = deepcopy(self.hyperGrid)
             self.hyperGrid[idx][1] = tRange[0]
             self.hyperGrid[idx][2] = tRange[1]
 
@@ -267,7 +268,7 @@ class ChangepointStudy(HyperStudy):
 
         # self.hyperGrid has to be temporarily altered to display custom times
         if tRange:
-            temp = self.hyperGrid[:]
+            temp = deepcopy(self.hyperGrid)
             self.hyperGrid[idx][1] = tRange[0]
             self.hyperGrid[idx][2] = tRange[1]
 
@@ -311,7 +312,7 @@ class ChangepointStudy(HyperStudy):
 
         # self.hyperGrid has to be temporarily altered to display custom times
         if tRange:
-            temp = self.hyperGrid[:]
+            temp = deepcopy(self.hyperGrid)
             for i in indices:
                 self.hyperGrid[i][1] = tRange[0]
                 self.hyperGrid[i][2] = tRange[1]
@@ -360,7 +361,7 @@ class ChangepointStudy(HyperStudy):
 
         # self.hyperGrid has to be temporarily altered to display custom times
         if tRange:
-            temp = self.hyperGrid[:]
+            temp = deepcopy(self.hyperGrid)
             for i in indices:
                 self.hyperGrid[i][1] = tRange[0]
                 self.hyperGrid[i][2] = tRange[1]
