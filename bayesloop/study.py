@@ -711,7 +711,7 @@ class Study(object):
                     return 0
         return 1
 
-    def plotParameterEvolution(self, param=0, xLower=None, xUpper=None, color='b', **kwargs):
+    def plotParameterEvolution(self, param=0, xLower=None, xUpper=None, color='b', gamma=0.5, **kwargs):
         """
         Plots a series of marginal posterior distributions corresponding to a single model parameter, together with the
         posterior mean values.
@@ -720,6 +720,8 @@ class Study(object):
             param - parameter name or index of parameter to display; default: 0 (first model parameter)
 
             color - color from which a light colormap is created
+
+            gamma - exponent for gamma correction of the displayed marginal distribution; default: 0.5
 
             kwargs - all further keyword-arguments are passed to the plot of the posterior mean values
 
@@ -760,7 +762,7 @@ class Study(object):
             xLower = 0
             xUpper = len(marginalPosteriorSequence)
 
-        plt.imshow(marginalPosteriorSequence.T,
+        plt.imshow((marginalPosteriorSequence.T)**gamma,
                    origin=0,
                    cmap=sns.light_palette(color, as_cmap=True),
                    extent=[xLower, xUpper - 1] + self.boundaries[paramIndex],
