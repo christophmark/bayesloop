@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
 This file introduces the transition models that can be used by the Study class for data analysis. A transition model
-here referes to a stochastic or deterministic model that describes how the parameter values of a given time series
+here refers to a stochastic or deterministic model that describes how the parameter values of a given time series
 model change from one time step to another. The transition model can thus be compared to the state transition matrix
-of Hidden Markov models. However, instead of explicitely stating transition probabilities for all possible states, a
+of Hidden Markov models. However, instead of explicitly stating transition probabilities for all possible states, a
 transformation is defined that alters the distribution of the model parameters in one time step according to the
 transition model. This altered distribution is subsequently used as a prior distribution in the next time step.
 """
@@ -186,6 +186,7 @@ class RegimeSwitch:
     def computeBackwardPrior(self, posterior, t):
         return self.computeForwardPrior(posterior, t - 1)
 
+
 class Linear:
     """
     Linear deterministic model. This model assumes a constant change of parameter values, resulting in a linear
@@ -263,6 +264,7 @@ class Linear:
         newPrior /= np.sum(newPrior)
 
         return newPrior
+
 
 class Quadratic:
     """
