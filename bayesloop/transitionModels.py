@@ -129,7 +129,15 @@ class ChangePoint:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
         """
         if t == self.hyperParameters['tChange']:
-            return np.ones_like(posterior) / np.sum(np.ones_like(posterior))  # return flat distribution
+            # check if custom prior is used by observation model
+            if self.study.observationModel.prior is not None:
+                prior = self.study.observationModel.prior(*self.study.grid)
+            else:
+                prior = np.ones(self.study.gridSize)  # flat prior
+
+            # normalize prior (necessary in case an improper prior is used)
+            prior /= np.sum(prior)
+            return prior
         else:
             return posterior.copy()
 
