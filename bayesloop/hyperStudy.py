@@ -222,6 +222,12 @@ class HyperStudy(Study):
                                   [silent]*nJobs,
                                   [referenceLogEvidence]*nJobs)
 
+            # prevent memory pile-up in main process
+            pool.close()
+            pool.join()
+            pool.terminate()
+            pool.restart()
+
             # merge all sub-studies
             for S in subStudies:
                 self.logEvidenceList += S.logEvidenceList
