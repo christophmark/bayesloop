@@ -3,6 +3,8 @@
 This file includes basic helper functions.
 """
 
+import matplotlib.colors as colors
+
 def assignNestedItem(lst, index, value):
     """
     Assign a value to an item of an arbitrarily nested list. The list is manipulated inplace.
@@ -64,3 +66,27 @@ def flatten(lst):
                 yield j
         else:
             yield i
+
+def create_colormap(color, min_factor=1.0, max_factor=0.95):
+    """
+    Creates colormap with range 0-1 from white to arbitrary color.
+
+    Parameters:
+        color - Matplotlib-readable color representation. Examples: 'g', '#00FFFF', '0.5', [0.1, 0.5, 0.9]
+        min_factor - Float in the range 0-1, specifying the gray-scale color of the minimal plot value.
+        max_factor - Float in the range 0-1, multiplication factor of 'color' argument for maximal plot value.
+
+    Returns:
+        Colormap object to be used by matplotlib-functions
+    """
+    rgb = colors.colorConverter.to_rgb(color)
+    cdict = {'red':   [(0.0, min_factor, min_factor),
+                       (1.0, max_factor*rgb[0], max_factor*rgb[0])],
+
+             'green': [(0.0, min_factor, min_factor),
+                       (1.0, max_factor*rgb[1], max_factor*rgb[1])],
+
+             'blue':  [(0.0, min_factor, min_factor),
+                       (1.0, max_factor*rgb[2], max_factor*rgb[2])]}
+
+    return colors.LinearSegmentedColormap('custom', cdict)

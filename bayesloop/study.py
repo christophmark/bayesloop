@@ -5,7 +5,6 @@ This file introduces the main class used for data analysis.
 
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 from scipy.optimize import minimize
 from scipy.misc import factorial
 import sympy.abc as abc
@@ -764,7 +763,7 @@ class Study(object):
 
         plt.imshow((marginalPosteriorSequence.T)**gamma,
                    origin=0,
-                   cmap=sns.light_palette(color, as_cmap=True),
+                   cmap=create_colormap(color),
                    extent=[xLower, xUpper - 1] + self.boundaries[paramIndex],
                    aspect='auto')
 
