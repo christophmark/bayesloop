@@ -74,9 +74,10 @@ class ChangepointStudy(HyperStudy):
             print '! Multiple instances of SerialTransition models are currently not supported by ChangepointStudy.'
             return
         if hyperParameterNames.count('tBreak') == 1:
-            temp = deepcopy(self.selectedHyperParameters)  # temporarily store selected hyper-parameters to restore later
+            temp = deepcopy(self.selectedHyperParameters)  # store selected hyper-parameters to restore later
             self.selectedHyperParameters = ['tBreak']
             nBreakpoint = len(self.unpackSelectedHyperParameters())
+            self.selectedHyperParameters = temp
 
         if nChangepoint == 0 and nBreakpoint == 0:
             print '! No change-points or break-points detected in transition model. Check transition model.'
