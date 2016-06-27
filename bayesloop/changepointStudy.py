@@ -105,7 +105,8 @@ class ChangepointStudy(HyperStudy):
                     self.hyperGrid += [['tChange', b[0], b[1], b[1]-b[0]+1]]
                 self.hyperGrid += hyperGrid
             else:  # all possible combinations
-                self.hyperGrid = [['tChange', 0, len(self.formattedData)-1, len(self.formattedData)]]*nChangepoint + hyperGrid
+                self.hyperGrid = [['tChange', 0, len(self.formattedData)-2, len(self.formattedData)-1]]*nChangepoint + \
+                                 hyperGrid
             temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.hyperGrid],
                                indexing='ij')
             self.allHyperGridValues = np.array([t.flatten() for t in temp]).T  # all value tuples
@@ -135,7 +136,8 @@ class ChangepointStudy(HyperStudy):
                     self.hyperGrid += [['tBreak', b[0], b[1], b[1]-b[0]+1]]
                 self.hyperGrid += hyperGrid
             else:  # all possible combinations
-                self.hyperGrid = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]]*nBreakpoint + hyperGrid
+                self.hyperGrid = [['tBreak', 0, len(self.formattedData)-2, len(self.formattedData)-1]]*nBreakpoint + \
+                                 hyperGrid
             temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.hyperGrid],
                                indexing='ij')
             self.allHyperGridValues = np.array([t.flatten() for t in temp]).T  # all value tuples
@@ -147,11 +149,11 @@ class ChangepointStudy(HyperStudy):
 
             # set hyper-grid constant
             self.hyperGridConstant = [1]*nBreakpoint + [np.abs(upper-lower)/(float(steps)-1) for
-                                                     name, lower, upper, steps in hyperGrid]
+                                                        name, lower, upper, steps in hyperGrid]
 
             # redefine self.hyperGrid, such that 'tBreak' only occurs once (is passed as list)
             self.hyperGridBackup = deepcopy(self.hyperGrid)
-            self.hyperGrid = [['tBreak', 0, len(self.formattedData)-1, len(self.formattedData)]] + hyperGrid
+            self.hyperGrid = [['tBreak', 0, len(self.formattedData)-2, len(self.formattedData)-1]] + hyperGrid
 
         if (not hyperGrid) and (not tBoundaries):
             self.userDefinedGrid = False  # prevents fit method from overwriting user-defined hyper-grid
