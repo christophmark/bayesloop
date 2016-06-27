@@ -235,10 +235,8 @@ class Linear:
             normedSlope = [0]*len(normedSlope)
             normedSlope[axisToTransform] = selectedSlope
 
-        newPrior = posterior.copy()
-
         # shift interpolated version of distribution according to slope
-        shift(newPrior, normedSlope, output=newPrior, order=3, mode='nearest')
+        newPrior = shift(posterior, normedSlope, order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
@@ -255,10 +253,8 @@ class Linear:
             for i, c in enumerate(self.latticeConstant):
                 normedSlope.append(self.hyperParameters['slope'][i] / c)
 
-        newPrior = posterior.copy()
-
         # shift interpolated version of distribution according to negative (!) slope
-        shift(newPrior, -np.array(normedSlope), output=newPrior, order=3, mode='nearest')
+        newPrior = shift(posterior, -np.array(normedSlope), order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
@@ -314,10 +310,8 @@ class Quadratic:
             normedCoeff = [0]*len(normedCoeff)
             normedCoeff[axisToTransform] = selectedCoeff
 
-        newPrior = posterior.copy()
-
         # shift interpolated version of distribution according to coefficient
-        shift(newPrior, np.array(normedCoeff)*(t-self.tOffset)**2., output=newPrior, order=3, mode='nearest')
+        newPrior = shift(posterior, np.array(normedCoeff)*(t-self.tOffset)**2., order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
@@ -334,10 +328,8 @@ class Quadratic:
             for i, c in enumerate(self.latticeConstant):
                 normedCoeff.append(self.hyperParameters['coefficient'][i] / c)
 
-        newPrior = posterior.copy()
-
         # shift interpolated version of distribution according to negative (!) coefficient
-        shift(newPrior, -np.array(normedCoeff)*(t-self.tOffset)**2., output=newPrior, order=3, mode='nearest')
+        newPrior = shift(posterior, -np.array(normedCoeff)*(t-self.tOffset)**2., order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
