@@ -38,7 +38,7 @@ class Static:
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
         """
-        return posterior.copy()
+        return posterior
 
     def computeBackwardPrior(self, posterior, t):
         return self.computeForwardPrior(posterior, t - 1)
@@ -73,7 +73,6 @@ class GaussianRandomWalk:
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
         """
-        newPrior = posterior.copy()
 
         normedSigma = []
         if type(self.hyperParameters['sigma']) is not list:
@@ -89,9 +88,9 @@ class GaussianRandomWalk:
             selectedSigma = normedSigma[axisToTransform]
             if selectedSigma < 0.0:  # gaussian_filter1d cannot handle negative st.dev.
                 selectedSigma = 0.0
-            newPrior = gaussian_filter1d(newPrior, selectedSigma, axis=axisToTransform)
+            newPrior = gaussian_filter1d(posterior, selectedSigma, axis=axisToTransform)
         else:
-            newPrior = gaussian_filter(newPrior, normedSigma)
+            newPrior = gaussian_filter(posterior, normedSigma)
 
         return newPrior
 
@@ -139,7 +138,7 @@ class ChangePoint:
             prior /= np.sum(prior)
             return prior
         else:
-            return posterior.copy()
+            return posterior
 
     def computeBackwardPrior(self, posterior, t):
         return self.computeForwardPrior(posterior, t - 1)
@@ -444,20 +443,18 @@ class SerialTransitionModel:
         # the index of the model to choose at time t is given by the number of break times <= t
         modelIndex = np.sum(np.array(self.hyperParameters['tBreak']) <= t)
 
-        newPrior = posterior.copy()
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
         self.models[modelIndex].study = self.study  # study needs to be propagated
         self.models[modelIndex].tOffset = self.hyperParameters['tBreak'][modelIndex-1] if modelIndex > 0 else 0
-        newPrior = self.models[modelIndex].computeForwardPrior(newPrior, t)
+        newPrior = self.models[modelIndex].computeForwardPrior(posterior, t)
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):
         # the index of the model to choose at time t is given by the number of break times <= t
         modelIndex = np.sum(np.array(self.hyperParameters['tBreak']) <= t-1)
 
-        newPrior = posterior.copy()
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
         self.models[modelIndex].study = self.study  # study needs to be propagated
         self.models[modelIndex].tOffset = self.hyperParameters['tBreak'][modelIndex-1] if modelIndex > 0 else 0
-        newPrior = self.models[modelIndex].computeBackwardPrior(newPrior, t)
+        newPrior = self.models[modelIndex].computeBackwardPrior(posterior, t)
         return newPrior
