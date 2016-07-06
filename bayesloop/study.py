@@ -307,7 +307,7 @@ class Study(object):
             # normalization constant of alpha is used to compute evidence
             norm = np.sum(alpha)
             self.logEvidence += np.log(norm)
-            self.localEvidence[i] = norm  # in case we return before backward pass (forwardOnly = True)
+            self.localEvidence[i] = norm*np.prod(self.latticeConstant)  # integration yields evidence, not only sum
 
             # normalize alpha (for numerical stability)
             if norm > 0.:
@@ -326,6 +326,7 @@ class Study(object):
             # compute alpha for next iteration
             alpha = self.transitionModel.computeForwardPrior(alpha, i)
 
+        self.logEvidence += np.log(np.prod(self.latticeConstant))  # integration yields evidence, not only sum
         if not silent:
             print '    + Finished forward pass.'
             print '    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10))
@@ -361,7 +362,8 @@ class Study(object):
 
                 # compute local evidence
                 try:
-                    self.localEvidence[i] = 1./np.sum(self.posteriorSequence[i]/likelihood)
+                    self.localEvidence[i] = 1./(np.sum(self.posteriorSequence[i]/likelihood) *
+                                                np.prod(self.latticeConstant))  # integration, not only sum
                 except:  # in case division by zero happens
                     self.localEvidence[i] = np.nan
 
