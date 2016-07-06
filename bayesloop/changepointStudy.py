@@ -38,8 +38,9 @@ class ChangepointStudy(HyperStudy):
 
         Parameters:
             hyperGrid - List of lists with each containing the name of a hyper-parameter together with a lower and upper
-                boundary as well as a number of steps in between.
-                Example: hyperGrid = [['sigma', 0, 1, 20], ['log10pMin', -10, -5, 10]]
+                boundary as well as a number of steps in between, or a list containing the name of a hyper-parameter
+                together with a list of discrete values to fit.
+                Example: hyperGrid = [['sigma', 0, 1, 20], ['log10pMin', [-7, -4, -1]]
 
             tBoundaries - A list of lists, each of which contains a lower and upper integer boundary for a change-point.
                 This can be set for large data sets, in case the change-point should only be looked for in a specific
@@ -108,18 +109,31 @@ class ChangepointStudy(HyperStudy):
             else:  # all possible combinations
                 self.hyperGrid = [['tChange', 0, len(self.formattedData)-2, len(self.formattedData)-1]]*nChangepoint + \
                                  hyperGrid
-            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.hyperGrid],
-                               indexing='ij')
-            self.allHyperGridValues = np.array([t.flatten() for t in temp]).T  # all value tuples
+
+            # create tuples of hyper-grid parameter values and determine grid spacing in each dimension
+            temp = []
+            self.hyperGridConstant = []
+            for x in self.hyperGrid:
+                if len(x) == 2:  # format ['sigma', [0, 0.1, 0.2, 0.3]]
+                    temp.append(x[1])
+                    self.hyperGridConstant.append(1)
+                elif len(x) == 4:  # format ['sigma', 0, 0.3, 4]
+                    name, lower, upper, steps = x
+                    temp.append(np.linspace(lower, upper, steps))
+                    self.hyperGridConstant.append(np.abs(upper - lower) / (float(steps) - 1))
+                else:
+                    print '! Wrong hyper-grid format: {}'.format(x)
+                    print '  Use either hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]]'
+                    self.hyperGrid = []
+                    self.hyperGridConstant = []
+                    return
+            temp = np.meshgrid(*temp, indexing='ij')
+            self.allHyperGridValues = np.array([t.ravel() for t in temp]).T
 
             # only accept if change-point values are ordered (and not equal)
             self.mask = np.array([all(x[i] < x[i+1] for i in range(nChangepoint-1)) for x in self.allHyperGridValues],
                                  dtype=bool)
             self.hyperGridValues = self.allHyperGridValues[self.mask]
-
-            # set hyper-grid constant
-            self.hyperGridConstant = [1]*nChangepoint + [np.abs(upper-lower)/(float(steps)-1) for
-                                                      name, lower, upper, steps in hyperGrid]
 
         # create hyper-grid in the case of break-points
         if nBreakpoint > 0:
@@ -139,18 +153,31 @@ class ChangepointStudy(HyperStudy):
             else:  # all possible combinations
                 self.hyperGrid = [['tBreak', 0, len(self.formattedData)-2, len(self.formattedData)-1]]*nBreakpoint + \
                                  hyperGrid
-            temp = np.meshgrid(*[np.linspace(lower, upper, steps) for name, lower, upper, steps in self.hyperGrid],
-                               indexing='ij')
-            self.allHyperGridValues = np.array([t.flatten() for t in temp]).T  # all value tuples
+
+            # create tuples of hyper-grid parameter values and determine grid spacing in each dimension
+            temp = []
+            self.hyperGridConstant = []
+            for x in self.hyperGrid:
+                if len(x) == 2:  # format ['sigma', [0, 0.1, 0.2, 0.3]]
+                    temp.append(x[1])
+                    self.hyperGridConstant.append(1)
+                elif len(x) == 4:  # format ['sigma', 0, 0.3, 4]
+                    name, lower, upper, steps = x
+                    temp.append(np.linspace(lower, upper, steps))
+                    self.hyperGridConstant.append(np.abs(upper - lower) / (float(steps) - 1))
+                else:
+                    print '! Wrong hyper-grid format: {}'.format(x)
+                    print '  Use either hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]]'
+                    self.hyperGrid = []
+                    self.hyperGridConstant = []
+                    return
+            temp = np.meshgrid(*temp, indexing='ij')
+            self.allHyperGridValues = np.array([t.ravel() for t in temp]).T
 
             # only accept if change-point values are ordered (and not equal)
             self.mask = np.array([all(x[i] < x[i+1] for i in range(nBreakpoint-1)) for x in self.allHyperGridValues],
                                  dtype=bool)
             self.hyperGridValues = self.allHyperGridValues[self.mask]
-
-            # set hyper-grid constant
-            self.hyperGridConstant = [1]*nBreakpoint + [np.abs(upper-lower)/(float(steps)-1) for
-                                                        name, lower, upper, steps in hyperGrid]
 
             # redefine self.hyperGrid, such that 'tBreak' only occurs once (is passed as list)
             self.hyperGridBackup = deepcopy(self.hyperGrid)
@@ -412,7 +439,13 @@ class ChangepointStudy(HyperStudy):
             axesToMarginalize.remove(p)
 
         # reshape hyper-parameter distribution for easy marginalizing
-        hyperGridSteps = [steps for name, lower, upper, steps in self.hyperGrid]
+        hyperGridSteps = []
+        for x in self.hyperGrid:
+            if len(x) == 2:
+                hyperGridSteps.append(len(x[1]))
+            else:
+                hyperGridSteps.append(x[3])
+
         distribution = self.hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
