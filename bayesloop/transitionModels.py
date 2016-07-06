@@ -268,11 +268,11 @@ class RegimeSwitch:
     """
     Regime-switching model. In case the number of change-points in a given data set is unknown, the regime-switching
     model may help to identify potential abrupt changes in parameter values. At each time step, all parameter values
-    within the set boundaries are assigned a minimal probability of being realized in the next time step, effectively
-    allowing abrupt parameter changes at every time step.
+    within the set boundaries are assigned a minimal probability density of being realized in the next time step,
+    effectively allowing abrupt parameter changes at every time step.
 
     Parameters (on initialization):
-        log10pMin - Minimal probability (on a log10 scale) that is assigned to every parameter value
+        log10pMin - Minimal probability density (log10 value) that is assigned to every parameter value
     """
     def __init__(self, log10pMin=None):
         self.study = None
@@ -295,7 +295,8 @@ class RegimeSwitch:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
         """
         newPrior = posterior.copy()
-        newPrior[newPrior < 10**self.hyperParameters['log10pMin']] = 10**self.hyperParameters['log10pMin']
+        limit = (10**self.hyperParameters['log10pMin'])*np.prod(self.latticeConstant)  # convert prob. density to prob.
+        newPrior[newPrior < limit] = limit
 
         # transformation above violates proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
