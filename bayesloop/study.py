@@ -95,7 +95,7 @@ class Study(object):
 
         self.marginalGrid = [np.linspace(b[0], b[1], g+2)[1:-1] for b, g in zip(self.boundaries, self.gridSize)]
         self.grid = [m for m in np.meshgrid(*self.marginalGrid, indexing='ij')]
-        self.latticeConstant = [g[1]-g[0] for g in self.marginalGrid]
+        self.latticeConstant = [np.abs(g[0]-g[1]) for g in self.marginalGrid]
 
         if self.transitionModel != None:
             self.transitionModel.latticeConstant = self.latticeConstant
