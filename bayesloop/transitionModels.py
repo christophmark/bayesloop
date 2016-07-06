@@ -9,6 +9,7 @@ transition model. This altered distribution is subsequently used as a prior dist
 """
 
 import numpy as np
+from scipy.signal import fftconvolve
 from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d
 from scipy.ndimage.interpolation import shift
 from collections import OrderedDict
@@ -96,6 +97,125 @@ class GaussianRandomWalk:
 
     def computeBackwardPrior(self, posterior, t):
         return self.computeForwardPrior(posterior, t - 1)
+
+
+class AlphaStableRandomWalk:
+    """
+    Alpha stable random walk model. This model assumes that parameter changes are distributed according to the symmetric
+    alpha-stable distribution. For each parameter, two hyper-parameters can be set: the width of the distribution (c)
+    and the shape (alpha).
+
+    Parameters (on initialization):
+        c - Float or list of floats defining the width of the distribution (c >= 0).
+        alpha - Float or list of floats defining the shape of the distribution (0 < alpha <= 2).
+    """
+    def __init__(self, c=None, alpha=None, param=None):
+        self.study = None
+        self.latticeConstant = None
+        self.hyperParameters = OrderedDict([('c', c), ('alpha', alpha)])
+        self.selectedParameter = param
+        self.kernel = None
+        self.kernelParameters = None
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+
+    def __str__(self):
+        return 'Alpha-stable random walk'
+
+    def computeForwardPrior(self, posterior, t):
+        """
+        Compute new prior from old posterior (moving forwards in time).
+
+        Parameters:
+            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
+            t - integer time step
+
+        Returns:
+            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+        """
+
+        # if hyper-parameter values have changed, a new convolution kernel needs to be created
+        if not self.kernelParameters == self.hyperParameters:
+            normedC = []
+            if type(self.hyperParameters['c']) is not list:
+                for lc in self.latticeConstant:
+                    normedC.append(self.hyperParameters['c'] / lc)
+            else:
+                for i, lc in enumerate(self.latticeConstant):
+                    normedC.append(self.hyperParameters['c'][i] / lc)
+
+            if type(self.hyperParameters['alpha']) is not list:
+                alpha = [self.hyperParameters['alpha']] * len(normedC)
+            else:
+                alpha = self.hyperParameters['alpha']
+
+            # check if only one axis is to be transformed
+            if self.selectedParameter is not None:
+                axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+                selectedC = normedC[axisToTransform]
+                normedC = [0.]*len(normedC)
+                normedC[axisToTransform] = selectedC
+
+            self.kernel = self.createKernel(normedC[0], alpha[0], 0)
+            for i, (a, c) in enumerate(zip(alpha, normedC)[1:]):
+                self.kernel *= self.createKernel(c, a, i+1)
+
+            self.kernel = self.kernel.T
+            self.kernelParameters = self.hyperParameters
+
+        newPrior = self.convolve(posterior)
+        newPrior /= np.sum(newPrior)
+        return newPrior
+
+    def computeBackwardPrior(self, posterior, t):
+        return self.computeForwardPrior(posterior, t - 1)
+
+    def createKernel(self, c, alpha, axis):
+        gs = self.study.gridSize
+        if len(gs) == 2:
+            if axis == 1:
+                l1 = gs[1]
+                l2 = gs[0]
+            elif axis == 0:
+                l1 = gs[0]
+                l2 = gs[1]
+            else:
+                print '! Transformation axis must either be 0 or 1.'
+                return
+        elif len(gs) == 1:
+            l1 = gs[0]
+            l2 = 0
+            axis = 0
+        else:
+            print '! Parameter grid must either be 1- or 2-dimensional.'
+            return
+
+        kernel_fft = np.exp(-np.abs(c*np.linspace(0, np.pi, 3*l1/2+1))**alpha)
+        kernel = np.fft.irfft(kernel_fft)
+        kernel = np.roll(kernel, 3*l1/2-1)
+
+        if len(gs) == 2:
+            kernel = np.array([kernel]*(3*l2))
+
+        if axis == 1:
+            return kernel.T
+        elif axis == 0:
+            return kernel
+
+    def convolve(self, distribution):
+        gs = np.array(self.study.gridSize)
+        padded_distribution = np.zeros(3*np.array(gs))
+        if len(gs) == 2:
+            padded_distribution[gs[0]:2*gs[0], gs[1]:2*gs[1]] = distribution
+        elif len(gs) == 1:
+            padded_distribution[gs[0]:2*gs[0]] = distribution
+
+        padded_convolution = fftconvolve(padded_distribution, self.kernel, mode='same')
+        if len(gs) == 2:
+            convolution = padded_convolution[gs[0]:2*gs[0], gs[1]:2*gs[1]]
+        elif len(gs) == 1:
+            convolution = padded_convolution[gs[0]:gs[0]]
+
+        return convolution
 
 
 class ChangePoint:
