@@ -196,7 +196,7 @@ class Study(object):
 
         # check whether correctly shaped numpy array is provided
         if isinstance(prior, np.ndarray):
-            if prior.shape == self.gridSize:
+            if np.all(prior.shape == self.grid[0].shape):
                 self.observationModel.prior = prior
                 print '+ Set custom prior.'
                 return
@@ -348,7 +348,10 @@ class Study(object):
         if not (forwardOnly or evidenceOnly):
             # set prior distribution for backward-pass
             if self.observationModel.prior is not None:
-                beta = self.observationModel.prior(*self.grid)
+                if isinstance(self.observationModel.prior, np.ndarray):
+                    beta = self.observationModel.prior
+                else:  # prior is set as a function
+                    beta = self.observationModel.prior(*self.grid)
             else:
                 beta = np.ones(self.gridSize)  # flat prior
 
