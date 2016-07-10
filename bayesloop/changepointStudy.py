@@ -62,8 +62,9 @@ class ChangepointStudy(HyperStudy):
             print "! Transition model has to be loaded before calling 'setHyperGrid' in a change-point study."
             return
 
-        # format data once, so number of data segments is known
+        # format data/timestamps once, so number of data segments is known
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
+        self.formattedTimestamps = self.rawTimestamps[self.observationModel.segmentLength - 1:]
 
         # check for 'tChange' hyper-parameters in transition model
         hyperParameterNames = list(flatten(self.unpackHyperParameters(self.transitionModel)))
@@ -104,11 +105,11 @@ class ChangepointStudy(HyperStudy):
             if tBoundaries:  # custom boundaries
                 self.hyperGrid = []
                 for b in tBoundaries:
-                    self.hyperGrid += [['tChange', b[0], b[1], b[1]-b[0]+1]]
+                    mask = (self.formattedTimestamps >= b[0])*(self.formattedTimestamps <= b[1])
+                    self.hyperGrid += [['tChange', self.formattedTimestamps[mask]]]
                 self.hyperGrid += hyperGrid
             else:  # all possible combinations
-                self.hyperGrid = [['tChange', 0, len(self.formattedData)-2, len(self.formattedData)-1]]*nChangepoint + \
-                                 hyperGrid
+                self.hyperGrid = [['tChange', self.formattedTimestamps[:-1]]]*nChangepoint + hyperGrid
 
             # create tuples of hyper-grid parameter values and determine grid spacing in each dimension
             temp = []
@@ -153,11 +154,11 @@ class ChangepointStudy(HyperStudy):
             if tBoundaries:  # custom boundaries
                 self.hyperGrid = []
                 for b in tBoundaries:
-                    self.hyperGrid += [['tBreak', b[0], b[1], b[1]-b[0]+1]]
+                    mask = (self.formattedTimestamps >= b[0]) * (self.formattedTimestamps <= b[1])
+                    self.hyperGrid += [['tBreak', self.formattedTimestamps[mask]]]
                 self.hyperGrid += hyperGrid
             else:  # all possible combinations
-                self.hyperGrid = [['tBreak', 0, len(self.formattedData)-2, len(self.formattedData)-1]]*nBreakpoint + \
-                                 hyperGrid
+                self.hyperGrid = [['tBreak', self.formattedTimestamps[:-1]]]*nBreakpoint + hyperGrid
 
             # create tuples of hyper-grid parameter values and determine grid spacing in each dimension
             temp = []
@@ -191,7 +192,7 @@ class ChangepointStudy(HyperStudy):
 
             # redefine self.hyperGrid, such that 'tBreak' only occurs once (is passed as list)
             self.hyperGridBackup = deepcopy(self.hyperGrid)
-            self.hyperGrid = [['tBreak', 0, len(self.formattedData)-2, len(self.formattedData)-1]] + hyperGrid
+            self.hyperGrid = [['tBreak', self.formattedTimestamps[:-1], len(self.formattedTimestamps)-1]] + hyperGrid
 
         if (not hyperGrid) and (not tBoundaries):
             self.userDefinedGrid = False  # prevents fit method from overwriting user-defined hyper-grid
@@ -247,93 +248,57 @@ class ChangepointStudy(HyperStudy):
         temp[self.mask] = self.hyperPriorValues
         self.hyperPriorValues = temp
 
-    def plotChangepointDistribution(self, idx=0, tRange=[], **kwargs):
+    def getChangepointDistribution(self, idx=0, plot=False, **kwargs):
         """
-        Creates a bar chart of a change-point distribution done with the ChangepointStudy class. The distribution is
-        marginalized with respect to the specific change-point passed by index (first change-point of the transition
-        model: idx=0).
+        Computes a marginalized change-point distribution with respect to the specific change-point passed by index
+        (first change-point of the transition model: idx=0) and optionally creates a bar chart.
 
         Parameters:
             idx - Index of the change-point to be analyzed (default: 0 (first change-point))
-
-            tRange - A list containing a lower and an upper boundary for the times displayed in the plots.
-                     (can be used to display e.g. years instead of time steps)
-
+            plot - If True, a bar chart of the distribution is created
             **kwargs - All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
             Two numpy arrays. The first array contains the change-point times, the second one the corresponding
             probability values
         """
-        if tRange and len(tRange) != 2:
-            print '! A lower AND upper boundary for the time range have to be provided.'
-            tRange = []
-
-        # self.hyperGrid has to be temporarily altered to display custom times
-        if tRange:
-            temp = deepcopy(self.hyperGrid)
-            self.hyperGrid[idx][1] = tRange[0]
-            self.hyperGrid[idx][2] = tRange[1]
-
-        x, marginalDistribution = HyperStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
-        plt.xlabel('change-point #{}'.format(idx+1))
-
-        # restore self.hyperGrid if necessary
-        if tRange:
-            self.hyperGrid = temp
+        x, marginalDistribution = HyperStudy.getHyperParameterDistribution(self, param=idx, plot=plot, **kwargs)
+        if plot:
+            plt.xlabel('change-point #{}'.format(idx+1))
 
         return x, marginalDistribution
 
-    def plotBreakpointDistribution(self, idx=0, tRange=[], **kwargs):
+    def getBreakpointDistribution(self, idx=0, plot=False, **kwargs):
         """
-        Creates a bar chart of a break-point distribution done with the ChangepointStudy class. The distribution is
-        marginalized with respect to the specific break-point passed by index (first break-point of the transition
-        model: idx=0).
+        Computes a marginalized break-point distribution with respect to the specific change-point passed by index
+        (first break-point of the transition model: idx=0) and optionally creates a bar chart.
 
         Parameters:
             idx - Index of the break-point to be analyzed (default: 0 (first break-point))
-
-            tRange - A list containing a lower and an upper boundary for the times displayed in the plots.
-                     (can be used to display e.g. years instead of time steps)
-
+            plot - If True, a bar chart of the distribution is created
             **kwargs - All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
             Two numpy arrays. The first array contains the break-point times, the second one the corresponding
             probability values
         """
-        if tRange and len(tRange) != 2:
-            print '! A lower AND upper boundary for the time range have to be provided.'
-            tRange = []
-
-        # self.hyperGrid has to be temporarily altered to display custom times
-        if tRange:
-            temp = deepcopy(self.hyperGrid)
-            self.hyperGrid[idx][1] = tRange[0]
-            self.hyperGrid[idx][2] = tRange[1]
-
-        x, marginalDistribution = HyperStudy.plotHyperParameterDistribution(self, param=idx, **kwargs)
-        plt.xlabel('break-point #{}'.format(idx+1))
-
-        # restore self.hyperGrid if necessary
-        if tRange:
-            self.hyperGrid = temp
+        x, marginalDistribution = HyperStudy.getHyperParameterDistribution(self, param=idx, plot=plot, **kwargs)
+        if plot:
+            plt.xlabel('break-point #{}'.format(idx+1))
 
         return x, marginalDistribution
 
-    def plotJointChangepointDistribution(self, indices=[0, 1], tRange=[], figure=None, subplot=111, **kwargs):
+    def getJointChangepointDistribution(self, indices=[0, 1], plot=False, figure=None, subplot=111, **kwargs):
         """
-        Creates a 3D bar chart of a joint change-point distribution (of two change-points) done with the
-        ChangepointStudy class. The distribution is marginalized with respect to the change-points passed by their
-        indices. Note that the 3D plot can only be included in an existing plot by passing a figure object and subplot
-        specification.
+        Computes a joint change-point distribution (of two change-points). The distribution is marginalized with respect
+        to the change-points passed by their indices. Note that the optional 3D plot can only be included in an existing
+        plot by passing a figure object and subplot specification.
 
         Parameters:
             indices - List of two indices of change-points to display; default: [0, 1]
                       (first and second change-point of the transition model)
 
-            tRange - A list containing a lower and an upper boundary for the times displayed in the plots.
-                     (can be used to display e.g. years instead of time steps)
+            plot - If True, a 3D-bar chart of the distribution is created
 
             figure - In case the plot is supposed to be part of an existing figure, it can be passed to the method.
                      By default, a new figure is created.
@@ -346,43 +311,28 @@ class ChangepointStudy(HyperStudy):
             Three numpy arrays. The first and second array contains the change-point times, the third one the
             corresponding probability (density) values
         """
-        if tRange and len(tRange) != 2:
-            print '! A lower AND upper boundary for the time range have to be provided.'
-            tRange = []
-
-        # self.hyperGrid has to be temporarily altered to display custom times
-        if tRange:
-            temp = deepcopy(self.hyperGrid)
-            for i in indices:
-                self.hyperGrid[i][1] = tRange[0]
-                self.hyperGrid[i][2] = tRange[1]
-
-        x, y, marginalDistribution = HyperStudy.plotJointHyperParameterDistribution(self,
-                                                                                    params=indices,
-                                                                                    figure=figure,
-                                                                                    subplot=subplot, **kwargs)
-        plt.xlabel('change-point #{}'.format(indices[0]+1))
-        plt.ylabel('change-point #{}'.format(indices[1]+1))
-
-        # restore self.hyperGrid if necessary
-        if tRange:
-            self.hyperGrid = temp
+        x, y, marginalDistribution = HyperStudy.getJointHyperParameterDistribution(self,
+                                                                                   params=indices,
+                                                                                   plot=plot,
+                                                                                   figure=figure,
+                                                                                   subplot=subplot, **kwargs)
+        if plot:
+            plt.xlabel('change-point #{}'.format(indices[0]+1))
+            plt.ylabel('change-point #{}'.format(indices[1]+1))
 
         return x, y, marginalDistribution
 
-    def plotJointBreakpointDistribution(self, indices=[0, 1], tRange=[], figure=None, subplot=111, **kwargs):
+    def getJointBreakpointDistribution(self, indices=[0, 1], plot=False, figure=None, subplot=111, **kwargs):
         """
-        Creates a 3D bar chart of a joint break-point distribution (of two break-points) done with the
-        ChangepointStudy class. The distribution is marginalized with respect to the break-points passed by their
-        indices. Note that the 3D plot can only be included in an existing plot by passing a figure object and subplot
-        specification.
+        Computes a joint break-point distribution (of two break-points). The distribution is marginalized with respect
+        to the break-points passed by their indices. Note that the optional 3D plot can only be included in an existing
+        plot by passing a figure object and subplot specification.
 
         Parameters:
             indices - List of two indices of break-points to display; default: [0, 1]
                       (first and second break-point of the transition model)
 
-            tRange - A list containing a lower and an upper boundary for the times displayed in the plots.
-                     (can be used to display e.g. years instead of time steps)
+            plot - If True, a 3D-bar chart of the distribution is created
 
             figure - In case the plot is supposed to be part of an existing figure, it can be passed to the method.
                      By default, a new figure is created.
@@ -395,49 +345,36 @@ class ChangepointStudy(HyperStudy):
             Three numpy arrays. The first and second array contains the break-point times, the third one the
             corresponding probability (density) values
         """
-        if tRange and len(tRange) != 2:
-            print '! A lower AND upper boundary for the time range have to be provided.'
-            tRange = []
-
-        # self.hyperGrid has to be temporarily altered to display custom times
-        if tRange:
-            temp = deepcopy(self.hyperGrid)
-            for i in indices:
-                self.hyperGrid[i][1] = tRange[0]
-                self.hyperGrid[i][2] = tRange[1]
-
-        x, y, marginalDistribution = HyperStudy.plotJointHyperParameterDistribution(self,
-                                                                                    params=indices,
-                                                                                    figure=figure,
-                                                                                    subplot=subplot,
-                                                                                    **kwargs)
-        plt.xlabel('break-point #{}'.format(indices[0]+1))
-        plt.ylabel('break-point #{}'.format(indices[1]+1))
-
-        # restore self.hyperGrid if necessary
-        if tRange:
-            self.hyperGrid = temp
+        x, y, marginalDistribution = HyperStudy.getJointHyperParameterDistribution(self,
+                                                                                   params=indices,
+                                                                                   plot=plot,
+                                                                                   figure=figure,
+                                                                                   subplot=subplot,
+                                                                                   **kwargs)
+        if plot:
+            plt.xlabel('break-point #{}'.format(indices[0]+1))
+            plt.ylabel('break-point #{}'.format(indices[1]+1))
 
         return x, y, marginalDistribution
 
-    def plotDuration(self, indices=[0, 1], returnDistribution=False, **kwargs):
+    def getDurationDistribution(self, indices=[0, 1], plot=False, **kwargs):
         """
-        Creates a histogram for the number of time steps between two change/break-points. This distribution of duration
-        is created from the joint distribution of the two specified change/break-points.
+        Computes the distribution of the number of time steps between two change/break-points. This distribution of
+        duration is created from the joint distribution of the two specified change/break-points.
 
         Parameters:
             indices - List of two indices of change/break-points to display; default: [0, 1]
                 (first and second change/break-point of the transition model)
 
-            returnDistribution - If set to True, this function returns a numpy array containing all probability
-                (density) values of the duration distribution
+            plot - If True, a bar chart of the distribution is created
 
             **kwargs - All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
-            Numpy array containing all probability (density) values of the duration distribution
+            Two numpy arrays. The first array contains the number of time steps, the second one the corresponding
+            probability values.
         """
-        hyperParameterNames = [name for name, lower, upper, steps in self.hyperGrid]
+        hyperParameterNames = [x[0] for x in self.hyperGrid]
 
         # check if exactly two indices are provided
         if not len(indices) == 2:
@@ -448,36 +385,24 @@ class ChangepointStudy(HyperStudy):
         for p in indices:
             axesToMarginalize.remove(p)
 
-        # reshape hyper-parameter distribution for easy marginalizing
-        hyperGridSteps = []
-        for x in self.hyperGrid:
-            if len(x) == 2:
-                hyperGridSteps.append(len(x[1]))
-            else:
-                hyperGridSteps.append(x[3])
+        values = self.hyperGridValues[:, indices].T
+        duration = np.unique(values[1] - values[0])  # get all possible differences between time points
+        durationDistribution = np.zeros(len(duration))  # initialize array for distribution
 
-        distribution = self.hyperParameterDistribution.reshape(hyperGridSteps, order='C')
-        marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
+        # loop over all hyper-grid points and collect probabilities for different durations
+        for i, values in enumerate(self.allHyperGridValues[:, indices]):
+            if values[1] > values[0]:
+                # get matching index in duration (rounding needed because of finite precision)
+                idx = np.where(duration.round(10) == (values[1]-values[0]).round(10))[0][0]
+                durationDistribution[idx] += self.hyperParameterDistribution[i]
 
-        # marginal distribution is not created by sum, but by the integral
-        integrationFactor = np.prod([self.hyperGridConstant[axis] for axis in axesToMarginalize])
-        marginalDistribution *= integrationFactor
+        # properly normalize duration distribution
+        durationDistribution /= np.sum(durationDistribution)
 
-        # compute distribution over number of time steps between the two change/break-times
-        lowest = np.amin(np.array(self.hyperGrid)[indices, 1].astype(np.int))
-        highest = np.amax(np.array(self.hyperGrid)[indices, 2].astype(np.int))
-        durationDistribution = np.zeros(highest-lowest+1)
+        if plot:
+            plt.bar(duration, durationDistribution, align='center', width=duration[0], **kwargs)
 
-        for i in range(marginalDistribution.shape[0]):
-            iLow = self.hyperGrid[indices[0]][1]
-            for j in range(marginalDistribution.shape[1]):
-                jLow = self.hyperGrid[indices[1]][1]
-                durationDistribution[abs((iLow+i)-(jLow+j))] += marginalDistribution[i, j]
+            plt.xlabel('duration between point #{} and #{} (in time steps)'.format(indices[0]+1, indices[1]+1))
+            plt.ylabel('probability')
 
-        # plot result
-        plt.bar(range(highest-lowest+1), durationDistribution, align='center', width=1, **kwargs)
-
-        plt.xlabel('duration between point #{} and #{} (in time steps)'.format(indices[0]+1, indices[1]+1))
-        plt.ylabel('probability')
-
-        return durationDistribution
+        return duration, durationDistribution

@@ -35,6 +35,8 @@ class Study(object):
 
         self.rawData = np.array([])
         self.formattedData = np.array([])
+        self.rawTimestamps = None
+        self.formattedTimestamps = None
 
         self.posteriorSequence = []
         self.posteriorMeanValues = []
@@ -61,19 +63,29 @@ class Study(object):
                                  0, 2, 1, 0, 0, 0, 1, 1, 0, 2, 3, 3, 1, 1, 2, 1, 1, 1, 1, 2, 3, 3, 0,
                                  0, 0, 1, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0])
 
+        self.rawTimestamps = np.arange(1852, 1962)
+
         print '+ Successfully imported example data.'
 
-    def loadData(self, array):
+    def loadData(self, array, timestamps=None):
         """
         Loads Numpy array as data.
 
         Parameters:
             array - Numpy array containing time series data
+            timestamps - Array of timestamps (same length as data array)
 
         Returns:
             None
         """
         self.rawData = array
+        if timestamps is not None:  # load custom timestamps
+            if len(timestamps) == len(array):
+                self.rawTimestamps = timestamps
+            else:
+                print '! number of timestamps does not match number of data points. Omitting timestamps.'
+        else:  # set default timestamps (integer range)
+            self.rawTimestamps = np.arange(len(self.rawData))
         print '+ Successfully imported array.'
 
     def createGrid(self):
@@ -286,6 +298,7 @@ class Study(object):
             print '+ Started new fit:'
 
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
+        self.formattedTimestamps = self.rawTimestamps[self.observationModel.segmentLength-1:]
         if not silent:
             print '    + Formatted data.'
 
@@ -338,7 +351,7 @@ class Study(object):
                 self.posteriorSequence[i] = alpha
 
             # compute alpha for next iteration
-            alpha = self.transitionModel.computeForwardPrior(alpha, i)
+            alpha = self.transitionModel.computeForwardPrior(alpha, self.formattedTimestamps[i])
 
         self.logEvidence += np.log(np.prod(self.latticeConstant))  # integration yields evidence, not only sum
         if not silent:
@@ -385,7 +398,7 @@ class Study(object):
                     self.localEvidence[i] = np.nan
 
                 # compute beta for next iteration
-                beta = self.transitionModel.computeBackwardPrior(beta*likelihood, i)
+                beta = self.transitionModel.computeBackwardPrior(beta*likelihood, self.formattedTimestamps[i])
 
                 # normalize beta (for numerical stability)
                 beta /= np.sum(beta)
@@ -750,6 +763,10 @@ class Study(object):
             print '! Cannot plot posterior sequence as it has not yet been computed. Run complete fit.'
             return
 
+        dt = self.formattedTimestamps[1:] - self.formattedTimestamps[:-1]
+        if not np.all(dt == dt[0]):
+            print '! Time stamps are not equally spaced. This may result in false plotting of parameter distributions.'
+
         if isinstance(param, (int, long)):
             paramIndex = param
         elif isinstance(param, basestring):
@@ -783,7 +800,7 @@ class Study(object):
         plt.imshow((marginalPosteriorSequence.T)**gamma,
                    origin=0,
                    cmap=create_colormap(color),
-                   extent=[xLower, xUpper - 1] + self.boundaries[paramIndex],
+                   extent=[self.formattedTimestamps[0], self.formattedTimestamps[-1]] + self.boundaries[paramIndex],
                    aspect='auto')
 
         # set default color of plot to black
@@ -794,7 +811,7 @@ class Study(object):
         if (not 'lw' in kwargs) and (not 'linewidth' in kwargs):
             kwargs['lw'] = 1.5
 
-        plt.plot(np.arange(xLower, xUpper), self.posteriorMeanValues[paramIndex], **kwargs)
+        plt.plot(self.formattedTimestamps, self.posteriorMeanValues[paramIndex], **kwargs)
 
         plt.ylim(self.boundaries[paramIndex])
         plt.ylabel(self.observationModel.parameterNames[paramIndex])

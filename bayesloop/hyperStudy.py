@@ -393,13 +393,13 @@ class HyperStudy(Study):
         print "! 'HyperStudy' object has no attribute 'optimizationStep'"
         return
 
-    def plotHyperParameterDistribution(self, param=0, **kwargs):
+    def getHyperParameterDistribution(self, param=0, plot=False, **kwargs):
         """
-        Creates a bar chart of a hyper-parameter distribution done with the HyperStudy class. The distribution is
-        marginalized with respect to the hyper-parameter passed by name or index.
+        Computes marginal hyper-parameter distribution of a single hyper-parameter in a HyperStudy fit.
 
         Parameters:
             param - Parameter name or index of hyper-parameter to display; default: 0 (first model hyper-parameter)
+            plot - If True, a bar chart of the distribution is created
             **kwargs - All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
@@ -446,30 +446,32 @@ class HyperStudy(Study):
             x = self.hyperGrid[paramIndex][1]
         else:
             x = np.linspace(*self.hyperGrid[paramIndex][1:])
-        plt.bar(x, marginalDistribution, align='center', width=self.hyperGridConstant[paramIndex], **kwargs)
 
-        plt.xlabel(hyperParameterNames[paramIndex])
+        if plot:
+            plt.bar(x, marginalDistribution, align='center', width=self.hyperGridConstant[paramIndex], **kwargs)
 
-        # in case an integer step size for hyper-parameter values is chosen, probability is displayed
-        # (probability density otherwise)
-        if self.hyperGridConstant[paramIndex] == 1.:
-            plt.ylabel('probability')
-        else:
-            plt.ylabel('probability density')
+            plt.xlabel(hyperParameterNames[paramIndex])
+
+            # in case an integer step size for hyper-parameter values is chosen, probability is displayed
+            # (probability density otherwise)
+            if self.hyperGridConstant[paramIndex] == 1.:
+                plt.ylabel('probability')
+            else:
+                plt.ylabel('probability density')
 
         return x, marginalDistribution
 
-    def plotJointHyperParameterDistribution(self, params=[0, 1], figure=None, subplot=111,
-                                            **kwargs):
+    def getJointHyperParameterDistribution(self, params=[0, 1], plot=False, figure=None, subplot=111, **kwargs):
         """
-        Creates a 3D bar chart of a joint hyper-parameter distribution (of two hyper-parameters) done with the
-        HyperStudy class. The distribution is marginalized with respect to the hyper-parameters passed by names or
-        indices. Note that the 3D plot can only be included in an existing plot by passing a figure object and subplot
+        Computes the joint distribution of two hyper-parameters of a HyperStudy and optionally creates a 3D bar chart.
+        Note that the 3D plot can only be included in an existing plot by passing a figure object and subplot
         specification.
 
         Parameters:
             params - List of two parameter names or indices of hyper-parameters to display; default: [0, 1]
                 (first and second model parameter)
+
+            plot - If True, a 3D-bar chart of the distribution is created
 
             figure - In case the plot is supposed to be part of an existing figure, it can be passed to the method. By
                 default, a new figure is created.
@@ -548,34 +550,37 @@ class HyperStudy(Study):
         else:
             y = np.linspace(*self.hyperGrid[paramIndices[1]][1:])
 
+        x2 = np.tile(x, (len(y), 1)).T
+        y2 = np.tile(y, (len(x), 1))
+
         z = marginalDistribution
-        print np.amax(z)
 
-        # allow to add plot to predefined figure
-        if figure is None:
-            fig = plt.figure()
-        else:
-            fig = figure
-        ax = fig.add_subplot(subplot, projection='3d')
+        if plot:
+            # allow to add plot to predefined figure
+            if figure is None:
+                fig = plt.figure()
+            else:
+                fig = figure
+            ax = fig.add_subplot(subplot, projection='3d')
 
-        ax.bar3d(x.flatten() - self.hyperGridConstant[paramIndices[0]]/2.,
-                 y.flatten() - self.hyperGridConstant[paramIndices[1]]/2.,
-                 z.flatten()*0.,
-                 self.hyperGridConstant[paramIndices[0]],
-                 self.hyperGridConstant[paramIndices[1]],
-                 z.flatten(),
-                 zsort='max',
-                 **kwargs
-                 )
+            ax.bar3d(x2.flatten() - self.hyperGridConstant[paramIndices[0]]/2.,
+                     y2.flatten() - self.hyperGridConstant[paramIndices[1]]/2.,
+                     z.flatten()*0.,
+                     self.hyperGridConstant[paramIndices[0]],
+                     self.hyperGridConstant[paramIndices[1]],
+                     z.flatten(),
+                     zsort='max',
+                     **kwargs
+                     )
 
-        ax.set_xlabel(hyperParameterNames[paramIndices[0]])
-        ax.set_ylabel(hyperParameterNames[paramIndices[1]])
+            ax.set_xlabel(hyperParameterNames[paramIndices[0]])
+            ax.set_ylabel(hyperParameterNames[paramIndices[1]])
 
-        # in case an integer step size for hyper-parameter values is chosen, probability is displayed
-        # (probability density otherwise)
-        if self.hyperGridConstant[paramIndices[0]]*self.hyperGridConstant[paramIndices[1]] == 1.:
-            ax.set_zlabel('probability')
-        else:
-            ax.set_zlabel('probability density')
+            # in case an integer step size for hyper-parameter values is chosen, probability is displayed
+            # (probability density otherwise)
+            if self.hyperGridConstant[paramIndices[0]]*self.hyperGridConstant[paramIndices[1]] == 1.:
+                ax.set_zlabel('probability')
+            else:
+                ax.set_zlabel('probability density')
 
         return x, y, marginalDistribution
