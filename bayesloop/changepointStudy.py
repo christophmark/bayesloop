@@ -116,7 +116,12 @@ class ChangepointStudy(HyperStudy):
             for x in self.hyperGrid:
                 if len(x) == 2:  # format ['sigma', [0, 0.1, 0.2, 0.3]]
                     temp.append(x[1])
-                    self.hyperGridConstant.append(1)
+                    d = np.array(x[1])[1:] - np.array(x[1])[:-1]
+                    dd = d[1:] - d[:-1]
+                    if np.all(dd < 10**-10):  # for equally spaced values, set difference as grid-constant
+                        self.hyperGridConstant.append(d[0])
+                    else:  # for irregularly spaced values (e.g. categorical), set grid-constant to 1
+                        self.hyperGridConstant.append(1)
                 elif len(x) == 4:  # format ['sigma', 0, 0.3, 4]
                     name, lower, upper, steps = x
                     temp.append(np.linspace(lower, upper, steps))
@@ -141,7 +146,7 @@ class ChangepointStudy(HyperStudy):
                 print '+ Detected {} break-point(s) in transition model.'.format(nBreakpoint)
                 if hyperGrid:
                     print '+ Additional {} hyper-parameter(s) specified for rastering:'.format(len(hyperGrid))
-                    print '  {}'.format([n for n, l, u, s in hyperGrid])
+                    print '  {}'.format([x[0] for x in hyperGrid])
 
             # build custom hyper-grid of change-point values (have to be ordered) +
             # standard hyper-grid for other hyper-parameters
@@ -160,7 +165,12 @@ class ChangepointStudy(HyperStudy):
             for x in self.hyperGrid:
                 if len(x) == 2:  # format ['sigma', [0, 0.1, 0.2, 0.3]]
                     temp.append(x[1])
-                    self.hyperGridConstant.append(1)
+                    d = np.array(x[1])[1:] - np.array(x[1])[:-1]
+                    dd = d[1:] - d[:-1]
+                    if np.all(dd < 10 ** -10):  # for equally spaced values, set difference as grid-constant
+                        self.hyperGridConstant.append(d[0])
+                    else:  # for irregularly spaced values (e.g. categorical), set grid-constant to 1
+                        self.hyperGridConstant.append(1)
                 elif len(x) == 4:  # format ['sigma', 0, 0.3, 4]
                     name, lower, upper, steps = x
                     temp.append(np.linspace(lower, upper, steps))
