@@ -32,9 +32,9 @@ class Static:
         """
         Compute new prior from old posterior (moving forwards in time).
 
-        Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
@@ -50,8 +50,8 @@ class GaussianRandomWalk:
     Gaussian random walk model. This model assumes that parameter changes are Gaussian-distributed. The standard
     deviation can be set individually for each model parameter.
 
-    Parameters (on initialization):
-        sigma - Float or list of floats defining the standard deviation of the Gaussian random walk for each parameter
+    Args:
+        sigma: Float or list of floats defining the standard deviation of the Gaussian random walk for each parameter
     """
     def __init__(self, sigma=None, param=None):
         self.study = None
@@ -67,9 +67,9 @@ class GaussianRandomWalk:
         """
         Compute new prior from old posterior (moving forwards in time).
 
-        Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
@@ -105,9 +105,9 @@ class AlphaStableRandomWalk:
     alpha-stable distribution. For each parameter, two hyper-parameters can be set: the width of the distribution (c)
     and the shape (alpha).
 
-    Parameters (on initialization):
-        c - Float or list of floats defining the width of the distribution (c >= 0).
-        alpha - Float or list of floats defining the shape of the distribution (0 < alpha <= 2).
+    Args:
+        c: Float or list of floats defining the width of the distribution (c >= 0).
+        alpha: Float or list of floats defining the shape of the distribution (0 < alpha <= 2).
     """
     def __init__(self, c=None, alpha=None, param=None):
         self.study = None
@@ -125,9 +125,9 @@ class AlphaStableRandomWalk:
         """
         Compute new prior from old posterior (moving forwards in time).
 
-        Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
@@ -170,6 +170,17 @@ class AlphaStableRandomWalk:
         return self.computeForwardPrior(posterior, t - 1)
 
     def createKernel(self, c, alpha, axis):
+        """
+        Create alpha-stable distribution on a grid as a kernel for concolution.
+
+        Args:
+            c: Scale parameter.
+            alpha: Tail parameter (alpha = 1: Cauchy, alpha = 2: Gauss)
+            axis: Axis along which the distribution is defined, for 2D-Kernels
+
+        Returns:
+            Numpy array containing kernel.
+        """
         gs = self.study.gridSize
         if len(gs) == 2:
             if axis == 1:
@@ -202,6 +213,15 @@ class AlphaStableRandomWalk:
             return kernel
 
     def convolve(self, distribution):
+        """
+        Convolves distribution with alpha-stabel kernel.
+
+        Args:
+            distribution: Discrete probability distribution to convolve.
+
+        Returns:
+            Numpy array containing convolution.
+        """
         gs = np.array(self.study.gridSize)
         padded_distribution = np.zeros(3*np.array(gs))
         if len(gs) == 2:
@@ -224,8 +244,8 @@ class ChangePoint:
     time step (Hyper-parameter tChange). Note that a uniform parameter distribution is used at this time step to
     achieve this "reset" of parameter values.
 
-    Parameters (on initialization):
-        tChange - Integer value of the time step of the change point
+    Args:
+        tChange: Integer value of the time step of the change point
     """
     def __init__(self, tChange=None):
         self.study = None
@@ -240,9 +260,9 @@ class ChangePoint:
         """
         Compute new prior from old posterior (moving forwards in time).
 
-        Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
@@ -271,8 +291,8 @@ class RegimeSwitch:
     within the set boundaries are assigned a minimal probability density of being realized in the next time step,
     effectively allowing abrupt parameter changes at every time step.
 
-    Parameters (on initialization):
-        log10pMin - Minimal probability density (log10 value) that is assigned to every parameter value
+    Args:
+        log10pMin: Minimal probability density (log10 value) that is assigned to every parameter value
     """
     def __init__(self, log10pMin=None):
         self.study = None
@@ -288,8 +308,8 @@ class RegimeSwitch:
         Compute new prior from old posterior (moving forwards in time).
 
         Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
@@ -313,8 +333,8 @@ class Linear:
     parameter evolution. Note that this model is entirely deterministic, as the slope for all parameters has to be
     entered by the user. However, the slope can be optimized by maximizing the model evidence.
 
-    Parameters (on initialization):
-        slope - Float or list of floats defining the change in parameter value for each time step for all parameters
+    Args:
+        slope: Float or list of floats defining the change in parameter value for each time step for all parameters
     """
     def __init__(self, slope=None, param=None):
         self.study = None
@@ -330,9 +350,9 @@ class Linear:
         """
         Compute new prior from old posterior (moving forwards in time).
 
-        Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
@@ -388,8 +408,8 @@ class Quadratic:
     entirely deterministic, as the coefficient for all parameters has to be entered by the user. However, the
     coefficient can be optimized by maximizing the model evidence.
 
-    Parameters (on initialization):
-        coefficient - multiplicative coefficient for quadratic model: coefficient*x^2
+    Args:
+        coefficient: multiplicative coefficient for quadratic model: coefficient*x^2
     """
     def __init__(self, coefficient=None, param=None):
         self.study = None
@@ -405,9 +425,9 @@ class Quadratic:
         """
         Compute new prior from old posterior (moving forwards in time).
 
-        Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
@@ -463,8 +483,8 @@ class CombinedTransitionModel:
     complex parameter dynamics. All sub-models are passed to this class as arguments on initialization. Note that a
     different order of the sub-models can result in different parameter dynamics.
 
-    Parameters (on initialization):
-        args - Sequence of transition models
+    Args:
+        *args: Sequence of transition models
     """
     def __init__(self, *args):
         self.study = None
@@ -479,9 +499,9 @@ class CombinedTransitionModel:
         """
         Compute new prior from old posterior (moving forwards in time).
 
-        Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
@@ -514,11 +534,11 @@ class SerialTransitionModel:
     serially coupled. Depending on the time step, a corresponding sub-model is chosen to compute the new prior
     distribution from the posterior distribution.
 
-    Parameters (on initialization):
-        args - Sequence of transition models and integer time steps for structural breaks
-               (for n models, n-1 time steps have to be provided)
+    Args:
+        *args: Sequence of transition models and integer time steps for structural breaks
+            (for n models, n-1 time steps have to be provided)
 
-    Usage example:
+    Example:
         K = bl.transitionModels.SerialTransitionModel(bl.transitionModels.Static(),
                                                       50,
                                                       bl.transitionModels.RegimeSwitch(log10pMin=-7),
@@ -554,9 +574,9 @@ class SerialTransitionModel:
         """
         Compute new prior from old posterior (moving forwards in time).
 
-        Parameters:
-            posterior - Parameter distribution (numpy array shaped according to grid size) from current time step
-            t - integer time step
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)

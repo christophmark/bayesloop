@@ -15,8 +15,8 @@ def getJeffreysPrior(rv):
     """
     Uses SymPy to determine the Jeffreys prior of a random variable analytically.
 
-    Parameters:
-        rv - SymPy RandomSymbol, corresponding to a probability distribution
+    Args:
+        rv: SymPy RandomSymbol, corresponding to a probability distribution
 
     Returns:
         List, containing Jeffreys prior in symbolic form and corresponding lambda function
@@ -64,8 +64,11 @@ def computeJeffreysPriorAR1(study):
     prior when using the exact likelihood function." (Econometric Theory 10 (1994): 633-633. Equation 31). Note that
     only the case of abs(r) < 1 (stationary process) is implemented at the moment.
 
-    Parameters:
-        study - Instance of the Study class that this prior is added to
+    Args:
+        study: Instance of the Study class that this prior is added to
+
+    Returns:
+        Array with prior probabilities.
     """
     if str(study.observationModel) == 'Autoregressive process of first order (AR1)':
         r, s = study.grid

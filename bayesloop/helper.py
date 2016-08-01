@@ -5,14 +5,15 @@ This file includes basic helper functions.
 
 import matplotlib.colors as colors
 
+
 def assignNestedItem(lst, index, value):
     """
     Assign a value to an item of an arbitrarily nested list. The list is manipulated inplace.
 
-    Parameters:
-        lst - list object
-        index - list of indices
-        value - value to assign to list item
+    Args:
+        lst: list object
+        index: list of indices
+        value: value to assign to list item
 
     Returns:
         None
@@ -22,14 +23,15 @@ def assignNestedItem(lst, index, value):
         x = x[i]
     x[index[-1]] = value
 
+
 def recursiveIndex(lst, target):
     """
     Find index of element (first occurrence) in an arbitrarily nested list.
     (Source: http://stackoverflow.com/questions/24419487/find-index-of-nested-item-in-python)
 
-    Parameters:
-        lst - list object
-        target - target element to find
+    Args:
+        lst: list object
+        target: target element to find
 
     Returns:
         Index as list
@@ -48,14 +50,15 @@ def recursiveIndex(lst, target):
                 return [index] + path
     return []
 
+
 def flatten(lst):
     """
     Flatten arbitrarily nested list. Returns a generator object.
     (Source: http://stackoverflow.com/questions/10823877/
              what-is-the-fastest-way-to-flatten-arbitrarily-nested-lists-in-python)
 
-    Parameters:
-        lst - list object
+    Args:
+        lst: list object
 
     Returns:
         Generator object for flattened list (simply call list(flatten(lst)) to get the result as a list).
@@ -67,14 +70,15 @@ def flatten(lst):
         else:
             yield i
 
+
 def create_colormap(color, min_factor=1.0, max_factor=0.95):
     """
     Creates colormap with range 0-1 from white to arbitrary color.
 
-    Parameters:
-        color - Matplotlib-readable color representation. Examples: 'g', '#00FFFF', '0.5', [0.1, 0.5, 0.9]
-        min_factor - Float in the range 0-1, specifying the gray-scale color of the minimal plot value.
-        max_factor - Float in the range 0-1, multiplication factor of 'color' argument for maximal plot value.
+    Args:
+        color: Matplotlib-readable color representation. Examples: 'g', '#00FFFF', '0.5', [0.1, 0.5, 0.9]
+        min_factor: Float in the range 0-1, specifying the gray-scale color of the minimal plot value.
+        max_factor: Float in the range 0-1, multiplication factor of 'color' argument for maximal plot value.
 
     Returns:
         Colormap object to be used by matplotlib-functions

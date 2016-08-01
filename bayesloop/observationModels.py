@@ -27,9 +27,9 @@ class ObservationModel:
         This method is called by the fit-method of the Study class (and the step method of the OnlineStudy class) and
         processes multidimensional data and missing data and passes it to the pdf-method of the child class.
 
-        Parameters:
-            grid - Discrete parameter grid
-            dataSegment - Data segment from formatted data
+        Args:
+            grid: Discrete parameter grid
+            dataSegment: Data segment from formatted data
 
         Returns:
             Discretized pdf as numpy array (with same shape as grid)
@@ -59,7 +59,7 @@ class Custom(ObservationModel):
     See http://docs.scipy.org/doc/scipy/reference/stats.html for further information on the available distributions and
     the parameter notation.
 
-    Example usage:
+    Example::
         M = bl.observationModels.Custom(scipy.stats.norm, fixedParameters={'loc': 4})
 
     This will result in a model for normally distributed observations with a fixed 'loc' (mean) of 4, leaving the
@@ -72,12 +72,12 @@ class Custom(ObservationModel):
     SymPy.stats
     -----------
     Observation models can be defined symbolically using the SymPy module in a convenient way. In contrast to the
-    SciPy probability distirbutions, fixed parameters are directly set and not passed as a dictionary.
+    SciPy probability distributions, fixed parameters are directly set and not passed as a dictionary.
 
     See http://docs.sympy.org/dev/modules/stats.html for further information on the available distributions and the
     parameter notation.
 
-    Example usage:
+    Example:
         from sympy import Symbol
         from sympy.stats import Normal
 
@@ -180,9 +180,9 @@ class Custom(ObservationModel):
         """
         Probability density function of custom scipy.stats or sympy.stats models
 
-        Parameters:
-            grid - Parameter grid for discrete rate values
-            dataSegment - Data segment from formatted data
+        Args:
+            grid: Parameter grid for discrete rate values
+            dataSegment: Data segment from formatted data
 
         Returns:
             Discretized pdf as numpy array (with same shape as grid)
@@ -225,9 +225,9 @@ class Bernoulli(ObservationModel):
         """
         Probability density function of the Bernoulli model
 
-        Parameters:
-            grid - Parameter grid for discrete values of the parameter p
-            dataSegment - Data segment from formatted data (in this case a single number of events)
+        Args:
+            grid: Parameter grid for discrete values of the parameter p
+            dataSegment: Data segment from formatted data (in this case a single number of events)
 
         Returns:
             Discretized Bernoulli pdf as numpy array (with same shape as grid)
@@ -248,8 +248,8 @@ class Bernoulli(ObservationModel):
         Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
         boundaries are defined.
 
-        Parameters:
-            rawData - observed data points that may be used to determine appropiate parameter boundaries
+        Args:
+            rawData: observed data points that may be used to determine appropriate parameter boundaries
 
         Returns:
             List of parameter boundaries.
@@ -279,9 +279,9 @@ class Poisson(ObservationModel):
         """
         Probability density function of the Poisson model
 
-        Parameters:
-            grid - Parameter grid for discrete rate (lambda) values
-            dataSegment - Data segment from formatted data (in this case a single number of events)
+        Args:
+            grid: Parameter grid for discrete rate (lambda) values
+            dataSegment: Data segment from formatted data (in this case a single number of events)
 
         Returns:
             Discretized Poisson pdf as numpy array (with same shape as grid)
@@ -293,8 +293,8 @@ class Poisson(ObservationModel):
         Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
         boundaries are defined.
 
-        Parameters:
-            rawData - observed data points that may be used to determine appropiate parameter boundaries
+        Args:
+            rawData: observed data points that may be used to determine appropiate parameter boundaries
 
         Returns:
             List of parameter boundaries.
@@ -322,9 +322,9 @@ class Gaussian(ObservationModel):
         """
         Probability density function of the Gaussian model.
 
-        Parameters:
-            grid - Parameter grid for discrete values of mean and standard deviation
-            dataSegment - Data segment from formatted data (containing a single measurement)
+        Args:
+            grid: Parameter grid for discrete values of mean and standard deviation
+            dataSegment: Data segment from formatted data (containing a single measurement)
 
         Returns:
             Discretized Normal pdf as numpy array (with same shape as grid).
@@ -337,8 +337,8 @@ class Gaussian(ObservationModel):
         Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
         boundaries are defined.
 
-        Parameters:
-            rawData - observed data points that may be used to determine appropiate parameter boundaries
+        Args:
+            rawData: observed data points that may be used to determine appropiate parameter boundaries
 
         Returns:
             List of parameter boundaries.
@@ -371,9 +371,9 @@ class ZeroMeanGaussian(ObservationModel):
         """
         Probability density function of the white noise process.
 
-        Parameters:
-            grid - Parameter grid for discrete values of noise amplitude
-            dataSegment - Data segment from formatted data (containing a single measurement)
+        Args:
+            grid: Parameter grid for discrete values of noise amplitude
+            dataSegment: Data segment from formatted data (containing a single measurement)
 
         Returns:
             Discretized Normal pdf (with zero mean) as numpy array (with same shape as grid).
@@ -385,8 +385,8 @@ class ZeroMeanGaussian(ObservationModel):
         Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
         boundaries are defined.
 
-        Parameters:
-            rawData - observed data points that may be used to determine appropiate parameter boundaries
+        Args:
+            rawData: observed data points that may be used to determine appropiate parameter boundaries
 
         Returns:
             List of parameter boundaries.
@@ -415,9 +415,9 @@ class AR1(ObservationModel):
         """
         Probability density function of the Auto-regressive process of first order
 
-        Parameters:
-            grid - Parameter grid for discerete values of the correlation coefficient and noise amplitude
-            dataSegment - Data segment from formatted data (in this case a pair of measurements)
+        Args:
+            grid: Parameter grid for discerete values of the correlation coefficient and noise amplitude
+            dataSegment: Data segment from formatted data (in this case a pair of measurements)
 
         Returns:
             Discretized pdf (for data point d_t, given d_(t-1) and parameters) as numpy array (with same shape as grid).
@@ -447,9 +447,9 @@ class ScaledAR1(ObservationModel):
         """
         Probability density function of the Auto-regressive process of first order
 
-        Parameters:
-            grid - Parameter grid for discerete values of the correlation coefficient and standard deviation
-            dataSegment - Data segment from formatted data (in this case a pair of measurements)
+        Args:
+            grid: Parameter grid for discerete values of the correlation coefficient and standard deviation
+            dataSegment: Data segment from formatted data (in this case a pair of measurements)
 
         Returns:
             Discretized pdf (for data point d_t, given d_(t-1) and parameters) as numpy array (with same shape as grid).
