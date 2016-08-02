@@ -690,7 +690,7 @@ class Study(object):
                     return 0
         return 1
 
-    def plotParameterEvolution(self, param=0, xLower=None, xUpper=None, color='b', gamma=0.5, **kwargs):
+    def plotParameterEvolution(self, param=0, color='b', gamma=0.5, **kwargs):
         """
         Plots a series of marginal posterior distributions corresponding to a single model parameter, together with the
         posterior mean values.
@@ -727,30 +727,20 @@ class Study(object):
 
         axesToMarginalize = list(range(1, len(self.observationModel.parameterNames) + 1))  # axis 0 is time
         axesToMarginalize.remove(paramIndex + 1)
-
         marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize))
 
-        if not xLower:
-            xLower = 0
-        if not xUpper:
-            if xLower:
-                print('! If lower x limit is provided, upper limit has to be provided, too.')
-                print('  Setting lower limit to zero.')
-            xLower = 0
-            xUpper = len(marginalPosteriorSequence)
-
-        plt.imshow((marginalPosteriorSequence.T)**gamma,
+        plt.imshow(marginalPosteriorSequence.T**gamma,
                    origin=0,
                    cmap=create_colormap(color),
                    extent=[self.formattedTimestamps[0], self.formattedTimestamps[-1]] + self.boundaries[paramIndex],
                    aspect='auto')
 
         # set default color of plot to black
-        if (not 'c' in kwargs) and (not 'color' in kwargs):
+        if ('c' not in kwargs) and ('color' not in kwargs):
             kwargs['c'] = 'k'
 
         # set default linewidth to 1.5
-        if (not 'lw' in kwargs) and (not 'linewidth' in kwargs):
+        if ('lw' not in kwargs) and ('linewidth' not in kwargs):
             kwargs['lw'] = 1.5
 
         plt.plot(self.formattedTimestamps, self.posteriorMeanValues[paramIndex], **kwargs)
