@@ -28,7 +28,6 @@ def assignNestedItem(lst, index, value):
 def recursiveIndex(lst, target):
     """
     Find index of element (first occurrence) in an arbitrarily nested list.
-    (Source: http://stackoverflow.com/questions/24419487/find-index-of-nested-item-in-python)
 
     Args:
         lst: list object
@@ -55,8 +54,6 @@ def recursiveIndex(lst, target):
 def flatten(lst):
     """
     Flatten arbitrarily nested list. Returns a generator object.
-    (Source: http://stackoverflow.com/questions/10823877/
-             what-is-the-fastest-way-to-flatten-arbitrarily-nested-lists-in-python)
 
     Args:
         lst: list object
