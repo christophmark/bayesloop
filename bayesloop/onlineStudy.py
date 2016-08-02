@@ -199,7 +199,6 @@ class OnlineStudy(Study):
                 # update normalization constant
                 self.normi[idx] = ni
 
-                print(idx)
                 idx += 1
 
         # normalize hyper-posterior
