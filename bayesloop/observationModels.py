@@ -5,6 +5,7 @@ here refers to a likelihood function, stating the probability of a measurement a
 parameter values.
 """
 
+from __future__ import division, print_function
 import numpy as np
 import sympy.abc as abc
 from sympy import lambdify
@@ -103,18 +104,18 @@ class Custom(ObservationModel):
             assert self.module[0] == 'scipy' or self.module[0] == 'sympy'
             assert self.module[1] == 'stats'
         except:
-            print '! Custom observation models have to be based on probability distributions from SciPy'
-            print '  or random variables from SymPy.'
+            print('! Custom observation models have to be based on probability distributions from SciPy')
+            print('  or random variables from SymPy.')
             return
 
         # SciPy probability distribution
         if self.module[0] == 'scipy':
-            print '+ Creating custom observation model based on probability distribution from SciPy.'
+            print('+ Creating custom observation model based on probability distribution from SciPy.')
 
             # auto-Jeffreys is only available for SymPy RVs
             if determineJeffreysPrior:
-                print '  ! A flat prior is used.'
-                print '    Automatic determination of Jeffreys priors is only available for SymPy RVs.'
+                print('  ! A flat prior is used.')
+                print('    Automatic determination of Jeffreys priors is only available for SymPy RVs.')
 
             # check whether random variable is a continuous variable
             if "pdf" in dir(self.rv):
@@ -145,10 +146,10 @@ class Custom(ObservationModel):
 
         # SymPy random variable
         elif self.module[0] == 'sympy':
-            print '+ Creating custom observation model based on random variable from SymPy.'
+            print('+ Creating custom observation model based on random variable from SymPy.')
 
             if fixedParameters:
-                print '    ! The keyword argument "fixedParameters" can only be used for SciPy probability distributions.'
+                print('    ! The keyword argument "fixedParameters" can only be used for SciPy probability distributions.')
 
             # extract free variables from SymPy random variable
             parameters = list(self.rv._sorted_args[0].distribution.free_symbols)
@@ -162,11 +163,11 @@ class Custom(ObservationModel):
             # determine Jeffreys prior
             if determineJeffreysPrior:
                 try:
-                    print '    + Trying to determine Jeffreys prior. This might take a moment...'
+                    print('    + Trying to determine Jeffreys prior. This might take a moment...')
                     symPrior, self.prior = getJeffreysPrior(self.rv)
-                    print '    + Successfully determined Jeffreys prior: {}'.format(symPrior)
+                    print('    + Successfully determined Jeffreys prior: {}'.format(symPrior))
                 except:
-                    print '    ! Failed to determine Jeffreys prior. Will use flat prior instead.'
+                    print('    ! Failed to determine Jeffreys prior. Will use flat prior instead.')
                     self.prior = None
             else:
                 self.prior = None
@@ -205,6 +206,7 @@ class Custom(ObservationModel):
         # SymPy random variable
         elif self.module[0] == 'sympy':
             return self.density(dataSegment[0], *grid)
+
 
 class Bernoulli(ObservationModel):
     """
@@ -257,7 +259,6 @@ class Bernoulli(ObservationModel):
 
         # The parameter of the Bernoulli model is naturally constrained to the [0, 1] interval
         return [[0, 1]]
-
 
 
 class Poisson(ObservationModel):

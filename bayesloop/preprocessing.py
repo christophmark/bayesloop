@@ -7,6 +7,7 @@ Example: The auto-regressive process of first order needs two subsequent data po
 data is separated into overlapping data segments containing two data points.
 """
 
+from __future__ import division, print_function
 import numpy as np
 
 

@@ -4,6 +4,7 @@ This file provides a single function that uses SymPy to determine the Jeffreys p
 distribution defined within SymPy.
 """
 
+from __future__ import division, print_function
 import numpy as np
 import sympy.abc as abc
 from sympy.stats import density
@@ -76,20 +77,20 @@ def computeJeffreysPriorAR1(study):
         r, s = study.grid
         s = s*np.sqrt(1 - r**2.)
     else:
-        print '! Jeffreys prior for autoregressive process can only be used with AR1 and ScaledAR1 models.'
+        print('! Jeffreys prior for autoregressive process can only be used with AR1 and ScaledAR1 models.')
         return
 
     # if abs(rho) >= 1., flat prior is returned
     if np.any(np.abs(r) >= 1.):
-        print '! Jeffreys prior for auto-regressive process is only implemented for stationary processes.'
-        print '  Values abs(r) >= 1 are not allowed for this implementation of the prior.'
-        print '  Will set flat prior instead.'
+        print('! Jeffreys prior for auto-regressive process is only implemented for stationary processes.')
+        print('  Values abs(r) >= 1 are not allowed for this implementation of the prior.')
+        print('  Will set flat prior instead.')
         flat = np.ones_like(r)
         flat /= np.sum(flat)
         return flat
 
     if len(study.rawData) == 0:
-        print '! Data must be loaded before computing the Jeffreys prior for the autoregressive process.'
+        print('! Data must be loaded before computing the Jeffreys prior for the autoregressive process.')
         return
 
     d0 = study.rawData[0]  # first observation is accounted for in the prior

@@ -3,6 +3,7 @@
 This file introduces an extension to the basic Study-class that allows to compute the distribution of hyper-parameters.
 """
 
+from __future__ import division, print_function
 from .study import *
 from .preprocessing import *
 from scipy.misc import logsumexp
@@ -34,7 +35,7 @@ class HyperStudy(Study):
         self.logEvidenceList = []
         self.localEvidenceList = []
 
-        print '  --> Hyper-study'
+        print('  --> Hyper-study')
 
     def setHyperGrid(self, hyperGrid, silent=False):
         """
@@ -49,7 +50,7 @@ class HyperStudy(Study):
         """
         # in case no hyper-grid is provided, return directly
         if not hyperGrid:
-            print '! No hyper-grid provided.'
+            print('! No hyper-grid provided.')
             return
         self.hyperGrid = hyperGrid
 
@@ -70,8 +71,8 @@ class HyperStudy(Study):
                 temp.append(np.linspace(lower, upper, steps))
                 self.hyperGridConstant.append(np.abs(upper-lower)/(float(steps)-1))
             else:
-                print '! Wrong hyper-grid format: {}'.format(x)
-                print '  Use either hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]]'
+                print('! Wrong hyper-grid format: {}'.format(x))
+                print('  Use either hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]]')
                 self.hyperGrid = []
                 self.hyperGridConstant = []
                 return
@@ -79,8 +80,8 @@ class HyperStudy(Study):
         self.hyperGridValues = np.array([t.ravel() for t in temp]).T
 
         if not silent:
-            print '+ Set hyper-grid for the following hyper-parameters:'
-            print '  {}'.format([x[0] for x in self.hyperGrid])
+            print('+ Set hyper-grid for the following hyper-parameters:')
+            print('  {}'.format([x[0] for x in self.hyperGrid]))
 
     def setHyperPrior(self, hyperPrior):
         """
@@ -98,7 +99,7 @@ class HyperStudy(Study):
         # to be evaluated first. In the case of a custom hyper-grid, it cannot be ensured, that calling setHyperPrior is
         # possible before the fit-method is called.
         self.hyperPrior = hyperPrior
-        print '+ Will use custom hyper-parameter prior.'
+        print('+ Will use custom hyper-parameter prior.')
 
     def fit(self, forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1, referenceLogEvidence=None):
         """
@@ -119,7 +120,7 @@ class HyperStudy(Study):
                 sequence. Ideally, this value represents the mean value of all log-evidence values. As an approximation,
                 the default behavior sets it to the log-evidence of the first set of hyper-parameter values.
         """
-        print '+ Started new fit.'
+        print('+ Started new fit.')
 
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
 
@@ -127,14 +128,14 @@ class HyperStudy(Study):
             return
 
         if not self.hyperGrid:
-            print '! No hyper-grid defined for hyper-parameter values. Using standard fit-method.'
+            print('! No hyper-grid defined for hyper-parameter values. Using standard fit-method.')
             Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=silent)
             return
 
         # in case a custom hyper-grid is defined by the user, check if all attributes are set
         if self.hyperGridValues == [] or self.hyperGridConstant == []:
-            print "! To set a custom hyper-grid, the attributes 'hyperGrid', 'hyperGridValues' and 'hyperGridConstant'"\
-                  "  have to be set manually. Using standard fit-method now."
+            print("! To set a custom hyper-grid, the attributes 'hyperGrid', 'hyperGridValues' and 'hyperGridConstant'"\
+                  "  have to be set manually. Using standard fit-method now.")
 
         # determine prior distribution
         # check whether function is provided
@@ -143,9 +144,9 @@ class HyperStudy(Study):
                 self.hyperPriorValues = [self.hyperPrior(*value) for value in self.hyperGridValues]
                 self.hyperPriorValues /= np.sum(self.hyperPriorValues)  # renormalize hyper-parameter prior
                 if not silent:
-                    print '+ Set custom hyper-parameter prior: {}'.format(self.hyperPrior.__name__)
+                    print('+ Set custom hyper-parameter prior: {}'.format(self.hyperPrior.__name__))
             except:
-                print '! Failed to set hyper-parameter prior. Check number of variables of passed function.'
+                print('! Failed to set hyper-parameter prior. Check number of variables of passed function.')
                 self.hyperPriorValues = None
 
         # check whether single random variable is provided
@@ -153,29 +154,29 @@ class HyperStudy(Study):
             self.hyperPrior = [self.hyperPrior]
 
         # check if list/tuple is provided
-        elif isinstance(self.hyperPrior, (list, tuple)) and not isinstance(self.hyperPrior, basestring):
+        elif isinstance(self.hyperPrior, (list, tuple)) and not isinstance(self.hyperPrior, str):
             # check if given prior is correctly formatted to fit length of hyper-grid array.
             # we use 'len(self.hyperGridValues[0])' because self.hyperGrid is reformatted within changepointStudy, when
             # using break-points.
             if len(self.hyperPrior) != len(self.hyperGridValues[0]):
-                print '! {} hyper-parameters are specified in hyper-grid. Priors are provided for {}.'\
-                    .format(len(self.hyperGridValues[0]), len(self.hyperPrior))
+                print('! {} hyper-parameters are specified in hyper-grid. Priors are provided for {}.'\
+                    .format(len(self.hyperGridValues[0]), len(self.hyperPrior)))
                 self.hyperPriorValues = None
                 return
             else:
                 if not silent:
-                    print '+ Setting custom hyper-parameter priors'
+                    print('+ Setting custom hyper-parameter priors')
                 self.hyperPriorValues = np.ones(len(self.hyperGridValues))
                 for i, rv in enumerate(self.hyperPrior):  # loop over all specified priors
                     if len(list(rv._sorted_args[0].distribution.free_symbols)) > 0:
-                        print '! Prior distribution must not contain free parameters.'
+                        print('! Prior distribution must not contain free parameters.')
                         self.hyperPriorValues = None
                         return
 
                     # get symbolic representation of probability density
                     x = abc.x
                     symDensity = density(rv)(x)
-                    print '  {}'.format(symDensity)
+                    print('  {}'.format(symDensity))
 
                     # get density as lambda function
                     pdf = lambdify([x], symDensity, modules=['numpy', {'factorial': factorial}])
@@ -199,15 +200,15 @@ class HyperStudy(Study):
         # we use the setSelectedHyperParameters-method from the Study class
         self.selectedHyperParameters = [x[0] for x in self.hyperGrid]
 
-        print '    + {} analyses to run.'.format(len(self.hyperGridValues))
+        print('    + {} analyses to run.'.format(len(self.hyperGridValues)))
 
         # check if multiprocessing is available
         if nJobs > 1:
             try:
                 from pathos.multiprocessing import ProcessPool
             except:
-                print "! Install 'pathos.multiprocessing' to enable multiprocessing."
-                print "! Switching back to single process."
+                print("! Install 'pathos.multiprocessing' to enable multiprocessing.")
+                print("! Switching back to single process.")
                 nJobs=1
 
         # prepare parallel execution if necessary
@@ -218,7 +219,7 @@ class HyperStudy(Study):
                 Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=True)
                 referenceLogEvidence = self.logEvidence
 
-            print '    + Creating {} processes.'.format(nJobs)
+            print('    + Creating {} processes.'.format(nJobs))
             pool = ProcessPool(nodes=nJobs)
 
             # use parallelFit method to create copies of this HyperStudy instance with only partial hyper-grid values
@@ -264,8 +265,8 @@ class HyperStudy(Study):
                                                      self.hyperPriorValues[i]
 
                 if not silent:
-                    print '    + Analysis #{} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
-                        .format(i+1, len(self.hyperGridValues), hyperParamValues, self.logEvidence / np.log(10))
+                    print('    + Analysis #{} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
+                        .format(i+1, len(self.hyperGridValues), hyperParamValues, self.logEvidence / np.log(10)))
 
         # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
         self.selectedHyperParameters = []
@@ -281,11 +282,11 @@ class HyperStudy(Study):
             self.posteriorSequence = self.averagePosteriorSequence
 
             if not silent:
-                print '    + Computed average posterior sequence'
+                print('    + Computed average posterior sequence')
 
         # compute log-evidence of average model
         self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.hyperPriorValues))
-        print '    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10))
+        print('    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10)))
 
         # compute hyper-parameter distribution
         logHyperParameterDistribution = self.logEvidenceList + np.log(self.hyperPriorValues)
@@ -297,13 +298,13 @@ class HyperStudy(Study):
         self.hyperParameterDistribution /= np.prod(self.hyperGridConstant)  # probability density
 
         if not silent:
-            print '    + Computed hyper-parameter distribution'
+            print('    + Computed hyper-parameter distribution')
 
         # compute local evidence of average model
         self.localEvidence = np.sum((np.array(self.localEvidenceList).T*self.hyperPriorValues).T, axis=0)
 
         if not silent:
-            print '    + Computed local evidence of average model'
+            print('    + Computed local evidence of average model')
 
         # compute posterior mean values
         if not evidenceOnly:
@@ -312,12 +313,12 @@ class HyperStudy(Study):
                 self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
 
             if not silent:
-                print '    + Computed mean parameter values.'
+                print('    + Computed mean parameter values.')
 
         # clear localEvidenceList (to keep file size small for stored studies)
         self.localEvidenceList = []
 
-        print '+ Finished fit.'
+        print('+ Finished fit.')
 
     def parallelFit(self, idx, nJobs, forwardOnly, evidenceOnly, silent, referenceLogEvidence):
         """
@@ -359,18 +360,18 @@ class HyperStudy(Study):
                                               S.hyperPriorValues[i]
 
             if not silent:
-                print '    + Process {} -- Analysis #{} of {}'.format(idx, i+1, len(S.hyperGridValues))
+                print('    + Process {} -- Analysis #{} of {}'.format(idx, i+1, len(S.hyperGridValues)))
 
-        print '    + Process {} finished.'.format(idx)
+        print('    + Process {} finished.'.format(idx))
         return S
 
     # optimization methods are inherited from Study class, but cannot be used in this case
     def optimize(self, *args, **kwargs):
-        print "! 'HyperStudy' object has no attribute 'optimize'"
+        print("! 'HyperStudy' object has no attribute 'optimize'")
         return
 
     def optimizationStep(self, *args, **kwargs):
-        print "! 'HyperStudy' object has no attribute 'optimizationStep'"
+        print("! 'HyperStudy' object has no attribute 'optimizationStep'")
         return
 
     def getHyperParameterDistribution(self, param=0, plot=False, **kwargs):
@@ -388,9 +389,9 @@ class HyperStudy(Study):
         """
         hyperParameterNames = [x[0] for x in self.hyperGrid]
 
-        if isinstance(param, (int, long)):
+        if isinstance(param, int):
             paramIndex = param
-        elif isinstance(param, basestring):
+        elif isinstance(param, str):
             paramIndex = -1
             for i, name in enumerate(hyperParameterNames):
                 if name == param:
@@ -398,13 +399,13 @@ class HyperStudy(Study):
 
             # check if match was found
             if paramIndex == -1:
-                print '! Wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames)
+                print('! Wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames))
                 return
         else:
-            print '! Wrong parameter format. Specify parameter via name or index.'
+            print('! Wrong parameter format. Specify parameter via name or index.')
             return
 
-        axesToMarginalize = range(len(hyperParameterNames))
+        axesToMarginalize = list(range(len(hyperParameterNames)))
         axesToMarginalize.remove(paramIndex)
 
         # reshape hyper-parameter distribution for easy marginalizing
@@ -464,16 +465,16 @@ class HyperStudy(Study):
 
         # check if list with two elements is provided
         if not isinstance(params, (list, tuple)):
-            print '! A list of exactly two hyper-parameters has to be provided.'
+            print('! A list of exactly two hyper-parameters has to be provided.')
             return
         elif not len(params) == 2:
-            print '! A list of exactly two hyper-parameters has to be provided.'
+            print('! A list of exactly two hyper-parameters has to be provided.')
             return
 
         # check for type of parameters (indices or names)
-        if all(isinstance(p, (int, long)) for p in params):
+        if all(isinstance(p, int) for p in params):
             paramIndices = params
-        elif all(isinstance(p, basestring) for p in params):
+        elif all(isinstance(p, str) for p in params):
             paramIndices = []
             for i, name in enumerate(hyperParameterNames):
                 for p in params:
@@ -482,22 +483,22 @@ class HyperStudy(Study):
 
             # check if match was found
             if paramIndices == []:
-                print '! Wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames)
+                print('! Wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames))
                 return
         else:
-            print '! Wrong parameter format. Specify parameters either via name or index.'
+            print('! Wrong parameter format. Specify parameters either via name or index.')
             return
 
         # check if one of the parameter names provided is wrong
         if not len(paramIndices) == 2:
-            print '! Probably one wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames)
+            print('! Probably one wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames))
 
         # check if parameter indices are in ascending order (so axes are labeled correctly)
         if not paramIndices[0] < paramIndices[1]:
-            print '! Switching hyper-parameter order for plotting.'
+            print('! Switching hyper-parameter order for plotting.')
             paramIndices = paramIndices[::-1]
 
-        axesToMarginalize = range(len(hyperParameterNames))
+        axesToMarginalize = list(range(len(hyperParameterNames)))
         for p in paramIndices:
             axesToMarginalize.remove(p)
 

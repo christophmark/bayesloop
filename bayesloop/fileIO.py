@@ -3,6 +3,8 @@
 This file includes functions for saving and loading instances of Study objects using dill.
 """
 
+from __future__ import division, print_function
+
 
 def save(filename, study):
     """
@@ -15,12 +17,12 @@ def save(filename, study):
     try:
         import dill
     except:
-        print "! The module 'dill' is needed to save study instances as file."
+        print("! The module 'dill' is needed to save study instances as file.")
         return
 
     with open(filename, 'wb') as f:
         dill.dump(study, f, protocol=dill.HIGHEST_PROTOCOL)
-    print '+ Successfully saved current study.'
+    print('+ Successfully saved current study.')
 
 
 def load(filename):
@@ -36,11 +38,11 @@ def load(filename):
     try:
         import dill
     except:
-        print "! The module 'dill' is needed to load study instances from file."
+        print("! The module 'dill' is needed to load study instances from file.")
         return
 
     with open(filename, 'rb') as f:
         S = dill.load(f)
-    print '+ Successfully loaded study.'
+    print('+ Successfully loaded study.')
 
     return S

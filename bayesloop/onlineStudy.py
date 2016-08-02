@@ -4,8 +4,11 @@ This file introduces an extension to the basic Study-class which allows to add d
 parameter distribution, allowing to analyze data streams online.
 """
 
+from __future__ import division, print_function
 import numpy as np
 from .study import Study
+import matplotlib.pyplot as plt
+from .helper import create_colormap
 
 
 class OnlineStudy(Study):
@@ -38,7 +41,7 @@ class OnlineStudy(Study):
         self.posteriorSequence = []
         self.hyperPosteriorSequence = []
         self.parameterPosteriorSequence = []
-        print '  --> Loops model.'
+        print('  --> Loops model.')
 
     def addTransitionModel(self, transitionModel):
         """
@@ -81,23 +84,23 @@ class OnlineStudy(Study):
 
         # only proceed if at least one data segment can be created
         if len(self.rawData) < self.observationModel.segmentLength:
-            print '    ! Not enough data points to start analysis. Will wait for more data.'
+            print('    ! Not enough data points to start analysis. Will wait for more data.')
             return
 
         # initialize hyper-prior as flat
         if self.hyperPrior is None:
             self.hyperPrior = np.ones(self.tmCount) / self.tmCount
-            print '    + Initialized flat hyper-prior.'
+            print('    + Initialized flat hyper-prior.')
 
         # initialize alpha as flat distribution
         if self.alpha is None:
             self.alpha = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))
-            print '    + Initialized flat alpha.'
+            print('    + Initialized flat alpha.')
 
         # initialize normi as an array of ones
         if self.normi is None:
             self.normi = np.ones(self.tmCount)
-            print '    + Initialized normalization factors.'
+            print('    + Initialized normalization factors.')
 
         # initialize parameter posterior
         if self.parameterPosterior is None:
@@ -175,12 +178,12 @@ class OnlineStudy(Study):
         posteriorMeanValues = np.array(self.posteriorMeanValues).T
 
         if self.posteriorSequence == []:
-            print '! Cannot plot posterior sequence as it has not yet been computed. Run complete fit.'
+            print('! Cannot plot posterior sequence as it has not yet been computed. Run complete fit.')
             return
 
-        if isinstance(param, (int, long)):
+        if isinstance(param, int):
             paramIndex = param
-        elif isinstance(param, basestring):
+        elif isinstance(param, str):
             paramIndex = -1
             for i, name in enumerate(self.observationModel.parameterNames):
                 if name == param:
@@ -188,13 +191,13 @@ class OnlineStudy(Study):
 
             # check if match was found
             if paramIndex == -1:
-                print '! Wrong parameter name. Available options: {0}'.format(self.observationModel.parameterNames)
+                print('! Wrong parameter name. Available options: {0}'.format(self.observationModel.parameterNames))
                 return
         else:
-            print '! Wrong parameter format. Specify parameter via name or index.'
+            print('! Wrong parameter format. Specify parameter via name or index.')
             return
 
-        axesToMarginalize = range(1, len(self.observationModel.parameterNames) + 1)  # axis 0 is time
+        axesToMarginalize = list(range(1, len(self.observationModel.parameterNames) + 1))  # axis 0 is time
         axesToMarginalize.remove(paramIndex + 1)
 
         marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, posteriorSequence, axesToMarginalize))
@@ -203,8 +206,8 @@ class OnlineStudy(Study):
             xLower = 0
         if not xUpper:
             if xLower:
-                print '! If lower x limit is provided, upper limit has to be provided, too.'
-                print '  Setting lower limit to zero.'
+                print('! If lower x limit is provided, upper limit has to be provided, too.')
+                print('  Setting lower limit to zero.')
             xLower = 0
             xUpper = len(marginalPosteriorSequence)
 

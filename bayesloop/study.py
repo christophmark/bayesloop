@@ -3,6 +3,7 @@
 This file introduces the main class used for data analysis.
 """
 
+from __future__ import division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
@@ -45,7 +46,7 @@ class Study(object):
 
         self.selectedHyperParameters = []
 
-        print '+ Created new study.'
+        print('+ Created new study.')
 
     def loadExampleData(self):
         """
@@ -59,7 +60,7 @@ class Study(object):
 
         self.rawTimestamps = np.arange(1852, 1962)
 
-        print '+ Successfully imported example data.'
+        print('+ Successfully imported example data.')
 
     def loadData(self, array, timestamps=None):
         """
@@ -74,10 +75,10 @@ class Study(object):
             if len(timestamps) == len(array):
                 self.rawTimestamps = timestamps
             else:
-                print '! number of timestamps does not match number of data points. Omitting timestamps.'
+                print('! number of timestamps does not match number of data points. Omitting timestamps.')
         else:  # set default timestamps (integer range)
             self.rawTimestamps = np.arange(len(self.rawData))
-        print '+ Successfully imported array.'
+        print('+ Successfully imported array.')
 
     def createGrid(self):
         """
@@ -86,15 +87,15 @@ class Study(object):
         """
 
         if not self.gridSize:
-            print '! Grid-size not set (needed to set boundaries).'
-            print '  Setting default grid-size:', self.observationModel.defaultGridSize
+            print('! Grid-size not set (needed to set boundaries).')
+            print('  Setting default grid-size:', self.observationModel.defaultGridSize)
             self.gridSize = self.observationModel.defaultGridSize
 
         self.marginalGrid = [np.linspace(b[0], b[1], g+2)[1:-1] for b, g in zip(self.boundaries, self.gridSize)]
         self.grid = [m for m in np.meshgrid(*self.marginalGrid, indexing='ij')]
         self.latticeConstant = [np.abs(g[0]-g[1]) for g in self.marginalGrid]
 
-        if self.transitionModel != None:
+        if self.transitionModel is not  None:
             self.transitionModel.latticeConstant = self.latticeConstant
 
     def setBoundaries(self, newBoundaries, silent=False):
@@ -108,7 +109,7 @@ class Study(object):
         self.boundaries = newBoundaries
         self.createGrid()
         if not silent:
-            print '+ Boundaries: {}'.format(self.boundaries)
+            print('+ Boundaries: {}'.format(self.boundaries))
 
     def setGridSize(self, newGridSize, silent=False):
         """
@@ -120,7 +121,7 @@ class Study(object):
         self.gridSize = newGridSize
         self.createGrid()
         if not silent:
-            print '+ Grid size: {}'.format(self.gridSize)
+            print('+ Grid size: {}'.format(self.gridSize))
 
     def setGrid(self, newGrid, silent=False):
         """
@@ -143,8 +144,8 @@ class Study(object):
         self.createGrid()
 
         if not silent:
-            print '+ Boundaries: {}'.format(self.boundaries)
-            print '+ Grid size: {}'.format(self.gridSize)
+            print('+ Boundaries: {}'.format(self.boundaries))
+            print('+ Grid size: {}'.format(self.gridSize))
 
     def setObservationModel(self, M, silent=False):
         """
@@ -157,7 +158,7 @@ class Study(object):
         self.observationModel = M
 
         if not silent:
-            print '+ Observation model: {}. Parameter(s): {}'.format(M, M.parameterNames)
+            print('+ Observation model: {}. Parameter(s): {}'.format(M, M.parameterNames))
 
     def setPrior(self, prior, silent=False):
         """
@@ -173,24 +174,24 @@ class Study(object):
         """
         # check whether observation model is defined
         if self.observationModel is None:
-            print '! Observation model has to be defined before setting prior distribution.'
+            print('! Observation model has to be defined before setting prior distribution.')
             return
 
         # check whether correctly shaped numpy array is provided
         if isinstance(prior, np.ndarray):
             if np.all(prior.shape == self.grid[0].shape):
                 self.observationModel.prior = prior
-                print '+ Set custom prior.'
+                print('+ Set custom prior.')
                 return
             else:
-                print '! Prior array does not match parameter grid size. Using flat prior instead.'
+                print('! Prior array does not match parameter grid size. Using flat prior instead.')
                 return
 
         # check whether function is provided
         if hasattr(prior, '__call__'):
             self.observationModel.prior = prior
             if not silent:
-                print '+ Set custom prior: {}'.format(prior.__name__)
+                print('+ Set custom prior: {}'.format(prior.__name__))
             return
 
         # check whether single random variable is provided
@@ -198,23 +199,22 @@ class Study(object):
             prior = [prior]
 
         # check if list/tuple is provided
-        if isinstance(prior, (list, tuple)) and not isinstance(prior, basestring):
+        if isinstance(prior, (list, tuple)) and not isinstance(prior, str):
             if len(prior) != len(self.observationModel.parameterNames):
-                print '! Observation model contains {} parameters, but {} priors were provided.'.format(
-                     len(self.observationModel.parameterNames),
-                    len(prior)
-                    )
-                print '  Using flat prior.'
+                print('! Observation model contains {} parameters, but {} priors were provided.'.format(
+                      len(self.observationModel.parameterNames),
+                      len(prior)))
+                print('  Using flat prior.')
                 return
 
             pdf = 1
             x = [abc.x]*len(prior)
             for i, rv in enumerate(prior):
                 if type(rv) is not sympy.stats.rv.RandomSymbol:
-                    print '! Only lambda functions or SymPy random variables can be used as a prior.'
+                    print('! Only lambda functions or SymPy random variables can be used as a prior.')
                     return
                 if len(list(rv._sorted_args[0].distribution.free_symbols)) > 0:
-                    print '! Prior distribution must not contain free parameters.'
+                    print('! Prior distribution must not contain free parameters.')
                     return
 
                 # multiply total pdf with density for current parameter
@@ -223,7 +223,7 @@ class Study(object):
             # set density as lambda function
             self.observationModel.prior = lambdify(x, pdf, modules=['numpy', {'factorial': factorial}])
             if not silent:
-                print '+ Set custom prior: {}'.format(pdf)
+                print('+ Set custom prior: {}'.format(pdf))
 
     def setTransitionModel(self, K, silent=False):
         """
@@ -237,7 +237,7 @@ class Study(object):
         self.transitionModel.latticeConstant = self.latticeConstant
 
         if not silent:
-            print '+ Transition model:', K
+            print('+ Transition model:', K)
 
     def fit(self, forwardOnly=False, evidenceOnly=False, silent=False):
         """
@@ -257,12 +257,12 @@ class Study(object):
             return
 
         if not silent:
-            print '+ Started new fit:'
+            print('+ Started new fit:')
 
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
         self.formattedTimestamps = self.rawTimestamps[self.observationModel.segmentLength-1:]
         if not silent:
-            print '    + Formatted data.'
+            print('    + Formatted data.')
 
         # initialize array for posterior distributions
         if not evidenceOnly:
@@ -303,8 +303,8 @@ class Study(object):
                 alpha /= norm
             else:
                 # if all probability values are zero, normalization is not possible
-                print '    ! Forward pass distribution contains only zeros, check parameter boundaries!'
-                print '      Stopping inference process. Setting model evidence to zero.'
+                print('    ! Forward pass distribution contains only zeros, check parameter boundaries!')
+                print('      Stopping inference process. Setting model evidence to zero.')
                 self.logEvidence = -np.inf
                 return
 
@@ -317,8 +317,8 @@ class Study(object):
 
         self.logEvidence += np.log(np.prod(self.latticeConstant))  # integration yields evidence, not only sum
         if not silent:
-            print '    + Finished forward pass.'
-            print '    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10))
+            print('    + Finished forward pass.')
+            print('    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10)))
 
         if not (forwardOnly or evidenceOnly):
             # set prior distribution for backward-pass
@@ -344,8 +344,8 @@ class Study(object):
                     self.posteriorSequence[i] /= np.sum(self.posteriorSequence[i])
                 else:
                     # if all posterior probabilities are zero, normalization is not possible
-                    print '    ! Posterior distribution contains only zeros, check parameter boundaries!'
-                    print '      Stopping inference process. Setting model evidence to zero.'
+                    print('    ! Posterior distribution contains only zeros, check parameter boundaries!')
+                    print('      Stopping inference process. Setting model evidence to zero.')
                     self.logEvidence = -np.inf
                     return
 
@@ -366,7 +366,7 @@ class Study(object):
                 beta /= np.sum(beta)
 
             if not silent:
-                print '    + Finished backward pass.'
+                print('    + Finished backward pass.')
 
         # posterior mean values do not need to be computed for evidence
         if evidenceOnly:
@@ -378,7 +378,7 @@ class Study(object):
                 self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
 
             if not silent:
-                print '    + Computed mean parameter values.'
+                print('    + Computed mean parameter values.')
 
     def optimize(self, parameterList=[], **kwargs):
         """
@@ -396,19 +396,19 @@ class Study(object):
             **kwargs - All other keyword parameters are passed to the 'minimize' routine of scipy.optimize.
         """
         # set list of parameters to optimize
-        if isinstance(parameterList, basestring):  # in case only a single parameter name is provided as a string
+        if isinstance(parameterList, str):  # in case only a single parameter name is provided as a string
             self.selectedHyperParameters = [parameterList]
         else:
             self.selectedHyperParameters = parameterList
 
-        print '+ Starting optimization...'
+        print('+ Starting optimization...')
         if not self.checkConsistency():
             return
 
         if self.selectedHyperParameters:
-            print '  --> Parameter(s) to optimize:', self.selectedHyperParameters
+            print('  --> Parameter(s) to optimize:', self.selectedHyperParameters)
         else:
-            print '  --> All model parameters are optimized (except change/break-points).'
+            print('  --> All model parameters are optimized (except change/break-points).')
             # load all hyper-parameter names
             self.selectedHyperParameters = list(flatten(self.unpackHyperParameters(self.transitionModel)))
             # delete all occurrences of 'tChange' or 'tBreak'
@@ -420,7 +420,7 @@ class Study(object):
 
         # check if valid parameter names were entered
         if len(x0) == 0:
-            print '! No parameters to optimize. Check parameter names.'
+            print('! No parameters to optimize. Check parameter names.')
             # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
             self.selectedHyperParameters = []
             return
@@ -428,7 +428,7 @@ class Study(object):
         # perform optimization (maximization of log-evidence)
         result = minimize(self.optimizationStep, x0, method='COBYLA', **kwargs)
 
-        print '+ Finished optimization.'
+        print('+ Finished optimization.')
 
         # set optimal hyperparameters in transition model
         self.setSelectedHyperParameters(result.x)
@@ -452,7 +452,7 @@ class Study(object):
         # compute log-evidence
         self.fit(evidenceOnly=True, silent=True)
 
-        print '    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10)), '- Parameter values:', x
+        print('    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10)), '- Parameter values:', x)
 
         # return negative log-evidence (is minimized to maximize evidence)
         return -self.logEvidence
@@ -525,7 +525,7 @@ class Study(object):
             if len(index) == 0:
                 iFound = recursiveIndex(nameTree, name)  # choose first hit
                 if len(iFound) == 0:
-                    print '! Could not find any hyper-parameter named {}.'.format(name)
+                    print('! Could not find any hyper-parameter named {}.'.format(name))
                     return 0
 
                 value = valueTree[:]
@@ -551,7 +551,7 @@ class Study(object):
                         temp = temp[i-1]
                         value = value[i-1]  # notation starts to count at 1
                     except:
-                        print '! Could not find any hyper-parameter at index {}.'.format(index)
+                        print('! Could not find any hyper-parameter at index {}.'.format(index))
                         return 0
 
                 # find parameter within sub-model
@@ -564,7 +564,7 @@ class Study(object):
                     else:
                         output.append(value)
                 except:
-                    print '! Could not find hyper-parameter {} at index {}.'.format(name, index)
+                    print('! Could not find hyper-parameter {} at index {}.'.format(name, index))
                     return 0
 
         # return selected values of hyper-parameters
@@ -641,7 +641,7 @@ class Study(object):
             if len(index) == 0:
                 iFound = recursiveIndex(nameTree, name)  # choose first hit
                 if len(iFound) == 0:
-                    print '! Could not find any hyper-parameter named {}.'.format(name)
+                    print('! Could not find any hyper-parameter named {}.'.format(name))
                     return 0
 
                 # get correct sub-model
@@ -670,7 +670,7 @@ class Study(object):
                     try:
                         model = model.models[i-1]  # user indices begin at 1
                     except:
-                        print '! Could not find any hyper-parameter at index {}.'.format(index)
+                        print('! Could not find any hyper-parameter at index {}.'.format(index))
                         return 0
 
                 # find parameter within sub-model
@@ -686,7 +686,7 @@ class Study(object):
                         model.hyperParameters[name] = paramList[0]
                         paramList.pop(0)
                 except:
-                    print '! Could not find hyper-parameter {} at index {}.'.format(name, index)
+                    print('! Could not find hyper-parameter {} at index {}.'.format(name, index))
                     return 0
         return 1
 
@@ -702,16 +702,16 @@ class Study(object):
             kwargs: all further keyword-arguments are passed to the plot of the posterior mean values
         """
         if self.posteriorSequence == []:
-            print '! Cannot plot posterior sequence as it has not yet been computed. Run complete fit.'
+            print('! Cannot plot posterior sequence as it has not yet been computed. Run complete fit.')
             return
 
         dt = self.formattedTimestamps[1:] - self.formattedTimestamps[:-1]
         if not np.all(dt == dt[0]):
-            print '! Time stamps are not equally spaced. This may result in false plotting of parameter distributions.'
+            print('! Time stamps are not equally spaced. This may result in false plotting of parameter distributions.')
 
-        if isinstance(param, (int, long)):
+        if isinstance(param, int):
             paramIndex = param
-        elif isinstance(param, basestring):
+        elif isinstance(param, str):
             paramIndex = -1
             for i, name in enumerate(self.observationModel.parameterNames):
                 if name == param:
@@ -719,13 +719,13 @@ class Study(object):
 
             # check if match was found
             if paramIndex == -1:
-                print '! Wrong parameter name. Available options: {0}'.format(self.observationModel.parameterNames)
+                print('! Wrong parameter name. Available options: {0}'.format(self.observationModel.parameterNames))
                 return
         else:
-            print '! Wrong parameter format. Specify parameter via name or index.'
+            print('! Wrong parameter format. Specify parameter via name or index.')
             return
 
-        axesToMarginalize = range(1, len(self.observationModel.parameterNames) + 1)  # axis 0 is time
+        axesToMarginalize = list(range(1, len(self.observationModel.parameterNames) + 1))  # axis 0 is time
         axesToMarginalize.remove(paramIndex + 1)
 
         marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize))
@@ -734,8 +734,8 @@ class Study(object):
             xLower = 0
         if not xUpper:
             if xLower:
-                print '! If lower x limit is provided, upper limit has to be provided, too.'
-                print '  Setting lower limit to zero.'
+                print('! If lower x limit is provided, upper limit has to be provided, too.')
+                print('  Setting lower limit to zero.')
             xLower = 0
             xUpper = len(marginalPosteriorSequence)
 
@@ -768,34 +768,34 @@ class Study(object):
             True if all is well; False if problem with user input is detected.
         """
         if not self.observationModel:
-            print '! No observation model chosen.'
+            print('! No observation model chosen.')
             return False
         if not self.transitionModel:
-            print '! No transition model chosen.'
+            print('! No transition model chosen.')
             return False
         if not self.boundaries:
-            print '! No parameter boundaries are set. Trying to estimate appropriate boundaries.'
+            print('! No parameter boundaries are set. Trying to estimate appropriate boundaries.')
             try:
                 estimatedBoundaries = self.observationModel.estimateBoundaries(self.rawData)
-                print '  Setting estimated parameter boundaries:', estimatedBoundaries
+                print('  Setting estimated parameter boundaries:', estimatedBoundaries)
                 self.setBoundaries(estimatedBoundaries, silent=True)
             except:
-                print '! Parameter boundaries could not be estimated. To set boundaries, call setBoundaries().'
+                print('! Parameter boundaries could not be estimated. To set boundaries, call setBoundaries().')
                 return False
         if not len(self.observationModel.defaultGridSize) == len(self.gridSize):
-            print '! Specified parameter grid expects {0} parameter(s), but observation model has {1} parameter(s).'\
-                .format(len(self.gridSize), len(self.observationModel.defaultGridSize))
-            print '  Default grid-size for the chosen observation model: {0}'\
-                .format(self.observationModel.defaultGridSize)
+            print('! Specified parameter grid expects {0} parameter(s), but observation model has {1} parameter(s).'\
+                .format(len(self.gridSize), len(self.observationModel.defaultGridSize)))
+            print('  Default grid-size for the chosen observation model: {0}'\
+                .format(self.observationModel.defaultGridSize))
             return False
         if not len(self.observationModel.parameterNames) == len(self.boundaries):
-            print '! Parameter boundaries specify {0} parameter(s), but observation model has {1} parameter(s).'\
-                .format(len(self.boundaries), len(self.observationModel.parameterNames))
+            print('! Parameter boundaries specify {0} parameter(s), but observation model has {1} parameter(s).'\
+                .format(len(self.boundaries), len(self.observationModel.parameterNames)))
             return False
 
         # check if assigning values to selected hyper-parameters is successful
         if self.unpackSelectedHyperParameters() == 0:
-            print '! Setting hyper-parameter values failed. Check hyper-parameter names.'
+            print('! Setting hyper-parameter values failed. Check hyper-parameter names.')
             return False
 
         # all is well

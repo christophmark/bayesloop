@@ -8,6 +8,7 @@ transformation is defined that alters the distribution of the model parameters i
 transition model. This altered distribution is subsequently used as a prior distribution in the next time step.
 """
 
+from __future__ import division, print_function
 import numpy as np
 from scipy.signal import fftconvolve
 from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d
@@ -190,19 +191,19 @@ class AlphaStableRandomWalk:
                 l1 = gs[0]
                 l2 = gs[1]
             else:
-                print '! Transformation axis must either be 0 or 1.'
+                print('! Transformation axis must either be 0 or 1.')
                 return
         elif len(gs) == 1:
             l1 = gs[0]
             l2 = 0
             axis = 0
         else:
-            print '! Parameter grid must either be 1- or 2-dimensional.'
+            print('! Parameter grid must either be 1- or 2-dimensional.')
             return
 
-        kernel_fft = np.exp(-np.abs(c*np.linspace(0, np.pi, 3*l1/2+1))**alpha)
+        kernel_fft = np.exp(-np.abs(c*np.linspace(0, np.pi, int(3*l1/2+1)))**alpha)
         kernel = np.fft.irfft(kernel_fft)
-        kernel = np.roll(kernel, 3*l1/2-1)
+        kernel = np.roll(kernel, int(3*l1/2-1))
 
         if len(gs) == 2:
             kernel = np.array([kernel]*(3*l2))
@@ -371,7 +372,7 @@ class Linear:
             axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
             selectedSlope = normedSlope[axisToTransform]
 
-            # reinitiate slope list (setting only the selected axis to a non-zero value)
+            # re-initiate slope list (setting only the selected axis to a non-zero value)
             normedSlope = [0]*len(normedSlope)
             normedSlope[axisToTransform] = selectedSlope
 
@@ -561,11 +562,11 @@ class SerialTransitionModel:
 
         # check: break times have to be passed in monotonically increasing order
         if not all(x < y for x, y in zip(self.hyperParameters['tBreak'], self.hyperParameters['tBreak'][1:])):
-            print '! Time steps for structural breaks ave to be passed in monotonically increasing order.'
+            print('! Time steps for structural breaks have to be passed in monotonically increasing order.')
 
         # check: n models require n-1 break times
         if not (len(self.models)-1 == len(self.hyperParameters['tBreak'])):
-            print '! Wrong number of structural breaks/models. For n models, n-1 structural breaks are required.'
+            print('! Wrong number of structural breaks/models. For n models, n-1 structural breaks are required.')
 
     def __str__(self):
         return 'Serial transition model'

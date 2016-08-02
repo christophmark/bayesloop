@@ -3,6 +3,7 @@
 This file includes basic helper functions.
 """
 
+from __future__ import division, print_function
 import matplotlib.colors as colors
 
 
@@ -39,7 +40,7 @@ def recursiveIndex(lst, target):
     for index, item in enumerate(lst):
         if item == target:
             return [index]
-        if isinstance(item, basestring):
+        if isinstance(item, str):
             return []
         try:
             path = recursiveIndex(item, target)
