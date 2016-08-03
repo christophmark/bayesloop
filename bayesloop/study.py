@@ -729,6 +729,7 @@ class Study(object):
         axesToMarginalize.remove(paramIndex + 1)
         marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize))
 
+        # clean up very small probability values, as they may create image artefacts
         pmax = np.amax(marginalPosteriorSequence)
         marginalPosteriorSequence[marginalPosteriorSequence < pmax*(10**-20)] = 0
 
