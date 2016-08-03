@@ -14,6 +14,7 @@ from scipy.signal import fftconvolve
 from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d
 from scipy.ndimage.interpolation import shift
 from collections import OrderedDict
+from inspect import getargspec
 
 
 class Static:
@@ -328,24 +329,52 @@ class RegimeSwitch:
         return self.computeForwardPrior(posterior, t - 1)
 
 
-class Linear:
+class Deterministic:
     """
-    Linear deterministic model. This model assumes a constant change of parameter values, resulting in a linear
-    parameter evolution. Note that this model is entirely deterministic, as the slope for all parameters has to be
-    entered by the user. However, the slope can be optimized by maximizing the model evidence.
+    Generic deterministic model. Given a function with time as the first argument and further  keyword-arguments as
+    hyper-parameters, plus the name of a parameter of the observation model that is supposed to follow this function
+    over time, this transition model shifts the parameter distribution accordingly. Note that these models are entirely
+    deterministic, as the hyper-parameter values are entered by the user. However, the hyper-parameter distributions can
+    be inferred using a Hyper-study or can be optimized using the 'optimize' method of the Study class.
 
     Args:
-        slope: Float or list of floats defining the change in parameter value for each time step for all parameters
+        function: A function that takes the time as its first argument and further takes keyword-arguments that
+            correspond to the hyper-parameters of the transition model which the function defines.
+        param: The observation model parameter that is manipulated according to the function defined above.
+
+    Example:
+        def quadratic(t, a=0, b=0):
+            return a*(t**2) + b*t
+
+        S = bl.Study()
+        ...
+        S.setObservationModel(bl.om.Gaussian())
+        S.setTransitionModel(bl.tm.Deterministic(quadratic, param='standard deviation'))
     """
-    def __init__(self, slope=None, param=None):
+    def __init__(self, function=None, param=None):
         self.study = None
         self.latticeConstant = None
-        self.hyperParameters = OrderedDict([('slope', slope)])
+        self.function = function
         self.selectedParameter = param
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
+        # create ordered dictionary of hyper-parameters from keyword-arguments of function
+        self.hyperParameters = OrderedDict()
+        argspec = getargspec(self.function)
+
+        # only keyword arguments are allowed
+        if not len(argspec.args) == len(argspec.defaults)+1:
+            print('    ! Function to define deterministic transition model can only contain one non-keyword argument'
+                  '      (time; first argument) and keyword-arguments (hyper-parameters) with default values.')
+            return
+
+        # define hyper-parameters of transition model
+        self.hyperParameters = OrderedDict()
+        for arg, default in zip(argspec.args[1:], argspec.defaults):
+            self.hyperParameters[arg] = default
+
     def __str__(self):
-        return 'Linear deterministic model'
+        return 'Deterministic model ({})'.format(self.function.__name__)
 
     def computeForwardPrior(self, posterior, t):
         """
@@ -353,106 +382,38 @@ class Linear:
 
         Args:
             posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            t: time stamp (integer time index by default)
 
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
         """
-        # slope has to be adjusted based on grid size
-        normedSlope = []
-        if type(self.hyperParameters['slope']) is not list:
-            for c in self.latticeConstant:
-                normedSlope.append(self.hyperParameters['slope'] / c)
-        else:
-            for i, c in enumerate(self.latticeConstant):
-                normedSlope.append(self.hyperParameters['slope'][i] / c)
+
+        # compute normed shift of grid values
+        normedHyperParameters = self.hyperParameters.copy()
+        for key, value in self.hyperParameters.items():
+            if type(value) is not list:
+                normedHyperParameters[key] = [value / c for c in self.latticeConstant]
+            else:
+                normedHyperParameters[key] = [v / c for v, c in zip(value, self.latticeConstant)]
+
+        d = []
+        for i in range(len(self.latticeConstant)):
+            params = {key: value[i] for (key, value) in normedHyperParameters.items()}
+            ftp1 = self.function(t + 1 - self.tOffset, **params)
+            ft = self.function(t-self.tOffset, **params)
+            d.append(ftp1-ft)
 
         # check if only one axis is to be transformed
         if self.selectedParameter is not None:
             axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-            selectedSlope = normedSlope[axisToTransform]
-
-            # re-initiate slope list (setting only the selected axis to a non-zero value)
-            normedSlope = [0]*len(normedSlope)
-            normedSlope[axisToTransform] = selectedSlope
-
-        # shift interpolated version of distribution according to slope
-        newPrior = shift(posterior, normedSlope, order=3, mode='nearest')
-
-        # transformation above may violate proper normalization; re-normalization needed
-        newPrior /= np.sum(newPrior)
-
-        return newPrior
-
-    def computeBackwardPrior(self, posterior, t):
-        # slope has to be adjusted based on grid size
-        normedSlope = []
-        if type(self.hyperParameters['slope']) is not list:
-            for c in self.latticeConstant:
-                normedSlope.append(self.hyperParameters['slope'] / c)
-        else:
-            for i, c in enumerate(self.latticeConstant):
-                normedSlope.append(self.hyperParameters['slope'][i] / c)
-
-        # shift interpolated version of distribution according to negative (!) slope
-        newPrior = shift(posterior, -np.array(normedSlope), order=3, mode='nearest')
-
-        # transformation above may violate proper normalization; re-normalization needed
-        newPrior /= np.sum(newPrior)
-
-        return newPrior
-
-
-class Quadratic:
-    """
-    Quadratic deterministic model. This model assumes a quadratic change of parameter values. Note that this model is
-    entirely deterministic, as the coefficient for all parameters has to be entered by the user. However, the
-    coefficient can be optimized by maximizing the model evidence.
-
-    Args:
-        coefficient: multiplicative coefficient for quadratic model: coefficient*x^2
-    """
-    def __init__(self, coefficient=None, param=None):
-        self.study = None
-        self.latticeConstant = None
-        self.hyperParameters = OrderedDict([('coefficient', coefficient)])
-        self.selectedParameter = param
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
-
-    def __str__(self):
-        return 'Quadratic deterministic model'
-
-    def computeForwardPrior(self, posterior, t):
-        """
-        Compute new prior from old posterior (moving forwards in time).
-
-        Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
-
-        Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
-        """
-        # slope has to be adjusted based on grid size
-        normedCoeff = []
-        if type(self.hyperParameters['coefficient']) is not list:
-            for c in self.latticeConstant:
-                normedCoeff.append(self.hyperParameters['coefficient'] / c)
-        else:
-            for i, c in enumerate(self.latticeConstant):
-                normedCoeff.append(self.hyperParameters['coefficient'][i] / c)
-
-        # check if only one axis is to be transformed
-        if self.selectedParameter is not None:
-            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-            selectedCoeff = normedCoeff[axisToTransform]
+            selectedD = d[axisToTransform]
 
             # reinitiate coefficient list (setting only the selected axis to a non-zero value)
-            normedCoeff = [0]*len(normedCoeff)
-            normedCoeff[axisToTransform] = selectedCoeff
+            d = [0] * len(d)
+            d[axisToTransform] = selectedD
 
-        # shift interpolated version of distribution according to coefficient
-        newPrior = shift(posterior, np.array(normedCoeff)*(t-self.tOffset)**2., order=3, mode='nearest')
+        # shift interpolated version of distribution
+        newPrior = shift(posterior, d, order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
@@ -460,17 +421,32 @@ class Quadratic:
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):
-        # coefficient has to be adjusted based on grid size
-        normedCoeff = []
-        if type(self.hyperParameters['coefficient']) is not list:
-            for c in self.latticeConstant:
-                normedCoeff.append(self.hyperParameters['coefficient'] / c)
-        else:
-            for i, c in enumerate(self.latticeConstant):
-                normedCoeff.append(self.hyperParameters['coefficient'][i] / c)
+        # compute normed shift of grid values
+        normedHyperParameters = self.hyperParameters.copy()
+        for key, value in self.hyperParameters.items():
+            if type(value) is not list:
+                normedHyperParameters[key] = [value / c for c in self.latticeConstant]
+            else:
+                normedHyperParameters[key] = [v / c for v, c in zip(value, self.latticeConstant)]
 
-        # shift interpolated version of distribution according to negative (!) coefficient
-        newPrior = shift(posterior, -np.array(normedCoeff)*(t-self.tOffset)**2., order=3, mode='nearest')
+        d = []
+        for i in range(len(self.latticeConstant)):
+            params = {key: value[i] for (key, value) in normedHyperParameters.items()}
+            ftm1 = self.function(t - 1 - self.tOffset, **params)
+            ft = self.function(t - self.tOffset, **params)
+            d.append(ftm1 - ft)
+
+        # check if only one axis is to be transformed
+        if self.selectedParameter is not None:
+            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+            selectedD = d[axisToTransform]
+
+            # reinitiate coefficient list (setting only the selected axis to a non-zero value)
+            d = [0] * len(d)
+            d[axisToTransform] = selectedD
+
+        # shift interpolated version of distribution
+        newPrior = shift(posterior, d, order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
