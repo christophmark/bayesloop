@@ -729,6 +729,9 @@ class Study(object):
         axesToMarginalize.remove(paramIndex + 1)
         marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize))
 
+        pmax = np.amax(marginalPosteriorSequence)
+        marginalPosteriorSequence[marginalPosteriorSequence < pmax*(10**-20)] = 0
+
         plt.imshow(marginalPosteriorSequence.T**gamma,
                    origin=0,
                    cmap=create_colormap(color),
