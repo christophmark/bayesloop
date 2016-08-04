@@ -393,7 +393,7 @@ class ZeroMeanGaussian(ObservationModel):
             List of parameter boundaries.
         """
         std = np.std(np.ravel(rawData))
-        return [0, 2*std]
+        return [[0, 2*std]]
 
 
 class AR1(ObservationModel):
