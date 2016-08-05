@@ -116,7 +116,10 @@ class OnlineStudy(Study):
             dataPoint = [dataPoint]
 
         if len(self.rawData) == 0:
+            # to check the model consistency the first time that 'step' is called
             self.rawData = np.array(dataPoint)
+            Study.checkConsistency(self)
+
             self.rawTimestamps = np.array([0])
             self.formattedTimestamps = []
         else:
