@@ -16,9 +16,9 @@ def save(filename, study):
     """
     try:
         import dill
-    except:
-        print("! The module 'dill' is needed to save study instances as file.")
-        return
+    except ImportError:
+        raise ImportError('No module named dill. This module represents an optional dependency of bayesloop and is '
+                          'therefore not installed alongside bayesloop.')
 
     with open(filename, 'wb') as f:
         dill.dump(study, f, protocol=dill.HIGHEST_PROTOCOL)
@@ -37,9 +37,9 @@ def load(filename):
     """
     try:
         import dill
-    except:
-        print("! The module 'dill' is needed to load study instances from file.")
-        return
+    except ImportError:
+        raise ImportError('No module named dill. This module represents an optional dependency of bayesloop and is '
+                          'therefore not installed alongside bayesloop.')
 
     with open(filename, 'rb') as f:
         S = dill.load(f)

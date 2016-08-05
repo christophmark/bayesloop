@@ -69,7 +69,7 @@ def flatten(lst):
             yield i
 
 
-def create_colormap(color, min_factor=1.0, max_factor=0.95):
+def createColormap(color, min_factor=1.0, max_factor=0.95):
     """
     Creates colormap with range 0-1 from white to arbitrary color.
 

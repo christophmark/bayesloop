@@ -12,6 +12,7 @@ from sympy import lambdify
 from sympy.stats import density
 from .jeffreys import getJeffreysPrior
 from scipy.misc import factorial
+from .exceptions import *
 
 
 class ObservationModel:
@@ -104,9 +105,8 @@ class Custom(ObservationModel):
             assert self.module[0] == 'scipy' or self.module[0] == 'sympy'
             assert self.module[1] == 'stats'
         except:
-            print('! Custom observation models have to be based on probability distributions from SciPy')
-            print('  or random variables from SymPy.')
-            return
+            raise ConfigurationError('Custom observation models have to be based on probability distributions from '
+                                     'SciPy or random variables from SymPy.')
 
         # SciPy probability distribution
         if self.module[0] == 'scipy':
@@ -114,7 +114,7 @@ class Custom(ObservationModel):
 
             # auto-Jeffreys is only available for SymPy RVs
             if determineJeffreysPrior:
-                print('  ! A flat prior is used.')
+                print('  ! WARNING: A flat prior is used.')
                 print('    Automatic determination of Jeffreys priors is only available for SymPy RVs.')
 
             # check whether random variable is a continuous variable
@@ -149,7 +149,8 @@ class Custom(ObservationModel):
             print('+ Creating custom observation model based on random variable from SymPy.')
 
             if fixedParameters:
-                print('    ! The keyword argument "fixedParameters" can only be used for SciPy probability distributions.')
+                raise ConfigurationError('The keyword argument "fixedParameters" can only be used for SciPy '
+                                         'probability distributions')
 
             # extract free variables from SymPy random variable
             parameters = list(self.rv._sorted_args[0].distribution.free_symbols)
@@ -167,7 +168,7 @@ class Custom(ObservationModel):
                     symPrior, self.prior = getJeffreysPrior(self.rv)
                     print('    + Successfully determined Jeffreys prior: {}'.format(symPrior))
                 except:
-                    print('    ! Failed to determine Jeffreys prior. Will use flat prior instead.')
+                    print('    ! WARNING: Failed to determine Jeffreys prior. Will use flat prior instead.')
                     self.prior = None
             else:
                 self.prior = None
@@ -464,7 +465,15 @@ class ScaledAR1(ObservationModel):
 
 class LinearRegression(ObservationModel):
     """
-    Linear regression model.
+    Linear regression model. It consists of three parameters: slope, offset and standard deviation. It assumes that the
+    observed data follows the relation: data_y = slope * data_x + offset + error. Here, each data point consists of a
+    list of two values, data_x and data_y. The error term is assumed to be normally distributed and the corresponding
+    standard deviation can be inferred from data or can be set to a fixed value (e.g. fixedError=1). If the keyword-
+    argument offset is set to False, this parameter is not included in the fitting process.
+
+    Args:
+        offset: If true, the constant term of the linear regression model is inferred from data.
+        fixedError: If the error of data_y is known, it can be set using this argument.
     """
 
     def __init__(self, offset=True, fixedError=False):
@@ -496,7 +505,15 @@ class LinearRegression(ObservationModel):
 
     def pdf(self, grid, dataSegment):
         """
-        Linear regression PDF
+        Probability density function of the Auto-regressive process of first order
+
+        Args:
+            grid: Parameter grid for discrete parameter values
+            dataSegment: Data segment from formatted data (in this case a pair consisting of a x and y-value)
+
+        Returns:
+            Discretized pdf.
+
         """
         slope = grid[0]
         offset = grid[1] if self.offset else 0.
@@ -510,6 +527,3 @@ class LinearRegression(ObservationModel):
 
         return np.exp(-((dataSegment[0, 1] - slope * dataSegment[0, 0] - offset) ** 2.) /
                       (2. * sigma ** 2.) - .5 * np.log(2. * np.pi * sigma ** 2.))
-
-
-

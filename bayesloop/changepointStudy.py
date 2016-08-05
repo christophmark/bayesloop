@@ -48,14 +48,13 @@ class ChangepointStudy(HyperStudy):
                 Example (two change/break-points): tBoundaries = [[0, 20], [80, 100]]
         """
         if len(self.rawData) == 0:
-            print("! Data has to be loaded before calling 'setHyperGrid' in a change-point study.")
-            return
+            raise ConfigurationError("Data has to be loaded before calling 'setHyperGrid' in a change-point study.")
         if not self.observationModel:
-            print("! Observation model has to be loaded before calling 'setHyperGrid' in a change-point study.")
-            return
+            raise ConfigurationError("Observation model has to be loaded before calling 'setHyperGrid' in a "
+                                     "change-point study.")
         if not self.transitionModel:
-            print("! Transition model has to be loaded before calling 'setHyperGrid' in a change-point study.")
-            return
+            raise ConfigurationError("Transition model has to be loaded before calling 'setHyperGrid' in a change-point"
+                                     " study.")
 
         # format data/timestamps once, so number of data segments is known
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
@@ -68,8 +67,9 @@ class ChangepointStudy(HyperStudy):
         # check for 'tBreak' hyper-parameter in transition model
         nBreakpoint = 0
         if hyperParameterNames.count('tBreak') > 1:
-            print('! Multiple instances of SerialTransition models are currently not supported by ChangepointStudy.')
-            return
+            raise NotImplementedError("Multiple instances of SerialTransition models are currently not supported by "
+                                      "ChangepointStudy.")
+
         if hyperParameterNames.count('tBreak') == 1:
             temp = deepcopy(self.selectedHyperParameters)  # store selected hyper-parameters to restore later
             self.selectedHyperParameters = ['tBreak']
@@ -77,15 +77,14 @@ class ChangepointStudy(HyperStudy):
             self.selectedHyperParameters = temp
 
         if nChangepoint == 0 and nBreakpoint == 0:
-            print('! No change-points or break-points detected in transition model. Check transition model.')
-            return
+            raise ConfigurationError('No change-points or break-points detected in transition model. Check transition '
+                                     'model.')
 
         # using both types is not supported at the moment
         if nChangepoint > 0 and nBreakpoint > 0:
-            print('! Detected both change-points (Changepoint transition model) and break-points ' \
-                  '  (SerialTransitionModel). Currently, only one type is supported in a single ' \
-                  '  transition model.')
-            return
+            raise NotImplementedError('Detected both change-points (Changepoint transition model) and break-points '
+                                      '(SerialTransitionModel). Currently, only one type is supported in a single '
+                                      'transition model.')
 
         # create hyperGrid in the case of change-points
         if nChangepoint > 0:
@@ -122,11 +121,13 @@ class ChangepointStudy(HyperStudy):
                     temp.append(np.linspace(lower, upper, steps))
                     self.hyperGridConstant.append(np.abs(upper - lower) / (float(steps) - 1))
                 else:
-                    print('! Wrong hyper-grid format: {}'.format(x))
-                    print('  Use either hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]]')
                     self.hyperGrid = []
                     self.hyperGridConstant = []
-                    return
+
+                    raise ConfigurationError('Wrong hyper-grid format: {}. Use either '
+                                             'hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]], ...]'
+                                             .format(x))
+
             temp = np.meshgrid(*temp, indexing='ij')
             self.allHyperGridValues = np.array([t.ravel() for t in temp]).T
 
@@ -170,11 +171,13 @@ class ChangepointStudy(HyperStudy):
                     temp.append(np.linspace(lower, upper, steps))
                     self.hyperGridConstant.append(np.abs(upper - lower) / (float(steps) - 1))
                 else:
-                    print('! Wrong hyper-grid format: {}'.format(x))
-                    print('  Use either hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]]')
                     self.hyperGrid = []
                     self.hyperGridConstant = []
-                    return
+
+                    raise ConfigurationError('Wrong hyper-grid format: {}. Use either '
+                                             'hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]], ...]'
+                                             .format(x))
+
             temp = np.meshgrid(*temp, indexing='ij')
             self.allHyperGridValues = np.array([t.ravel() for t in temp]).T
 
@@ -355,8 +358,8 @@ class ChangepointStudy(HyperStudy):
 
         # check if exactly two indices are provided
         if not len(indices) == 2:
-            print('! Exactly two change/break-points have to be specified ([0, 1]: first two change/break-points).')
-            return
+            raise PostProcessingError('Exactly two change/break-points have to be specified ([0, 1]: first two '
+                                      'change/break-points).')
 
         axesToMarginalize = list(range(len(hyperParameterNames)))
         for p in indices:

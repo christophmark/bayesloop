@@ -14,6 +14,7 @@ import sympy.abc as abc
 from sympy import lambdify
 import sympy.stats
 from sympy.stats import density
+from collections import Iterable
 
 
 class HyperStudy(Study):
@@ -49,8 +50,7 @@ class HyperStudy(Study):
         """
         # in case no hyper-grid is provided, return directly
         if not hyperGrid:
-            print('! No hyper-grid provided.')
-            return
+            raise ConfigurationError('No hyper-grid provided.')
         self.hyperGrid = hyperGrid
 
         # create array with hyper-grid values
@@ -70,11 +70,12 @@ class HyperStudy(Study):
                 temp.append(np.linspace(lower, upper, steps))
                 self.hyperGridConstant.append(np.abs(upper-lower)/(float(steps)-1))
             else:
-                print('! Wrong hyper-grid format: {}'.format(x))
-                print('  Use either hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]]')
                 self.hyperGrid = []
                 self.hyperGridConstant = []
-                return
+                raise ConfigurationError('Wrong hyper-grid format: {}. Use either '
+                                         'hyperGrid=[["sigma", 0, 1, 3], ...] or [["sigma", [0, 0.5, 1]], ...]'
+                                         .format(x))
+
         temp = np.meshgrid(*temp, indexing='ij')
         self.hyperGridValues = np.array([t.ravel() for t in temp]).T
 
@@ -126,14 +127,14 @@ class HyperStudy(Study):
             return
 
         if not self.hyperGrid:
-            print('! No hyper-grid defined for hyper-parameter values. Using standard fit-method.')
+            print('! WARNING: No hyper-grid defined for hyper-parameter values. Using standard fit-method.')
             Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=silent)
             return
 
         # in case a custom hyper-grid is defined by the user, check if all attributes are set
         if self.hyperGridValues == [] or self.hyperGridConstant == []:
-            print("! To set a custom hyper-grid, the attributes 'hyperGrid', 'hyperGridValues' and 'hyperGridConstant'"\
-                  "  have to be set manually. Using standard fit-method now.")
+            raise ConfigurationError("To set a custom hyper-grid, the attributes 'hyperGrid', 'hyperGridValues' and "
+                                     "'hyperGridConstant' have to be set manually.")
 
         # determine prior distribution
         # check whether function is provided
@@ -144,8 +145,9 @@ class HyperStudy(Study):
                 if not silent:
                     print('+ Set custom hyper-parameter prior: {}'.format(self.hyperPrior.__name__))
             except:
-                print('! Failed to set hyper-parameter prior. Check number of variables of passed function.')
                 self.hyperPriorValues = None
+                raise ConfigurationError('Failed to set hyper-parameter prior. Check number of variables of passed '
+                                         'function.')
 
         # check whether single random variable is provided
         elif type(self.hyperPrior) is sympy.stats.rv.RandomSymbol:
@@ -157,18 +159,16 @@ class HyperStudy(Study):
             # we use 'len(self.hyperGridValues[0])' because self.hyperGrid is reformatted within changepointStudy, when
             # using break-points.
             if len(self.hyperPrior) != len(self.hyperGridValues[0]):
-                print('! {} hyper-parameters are specified in hyper-grid. Priors are provided for {}.'\
-                    .format(len(self.hyperGridValues[0]), len(self.hyperPrior)))
                 self.hyperPriorValues = None
-                return
+                raise ConfigurationError('{} hyper-parameters are specified in hyper-grid. Priors are provided for {}.'
+                                         .format(len(self.hyperGridValues[0]), len(self.hyperPrior)))
             else:
                 print('+ Setting custom hyper-parameter priors')
                 self.hyperPriorValues = np.ones(len(self.hyperGridValues))
                 for i, rv in enumerate(self.hyperPrior):  # loop over all specified priors
                     if len(list(rv._sorted_args[0].distribution.free_symbols)) > 0:
-                        print('! Prior distribution must not contain free parameters.')
                         self.hyperPriorValues = None
-                        return
+                        raise ConfigurationError('Prior distribution must not contain free parameters.')
 
                     # get symbolic representation of probability density
                     x = abc.x
@@ -203,10 +203,9 @@ class HyperStudy(Study):
         if nJobs > 1:
             try:
                 from pathos.multiprocessing import ProcessPool
-            except:
-                print("! Install 'pathos.multiprocessing' to enable multiprocessing.")
-                print("! Switching back to single process.")
-                nJobs=1
+            except ImportError:
+                raise ImportError('No module named pathos.multiprocessing. This module represents an optional '
+                                  'dependency of bayesloop and is therefore not installed alongside bayesloop.')
 
         # prepare parallel execution if necessary
         if nJobs > 1:
@@ -262,8 +261,8 @@ class HyperStudy(Study):
                                                      self.hyperPriorValues[i]
 
                 if not silent:
-                    print('    + Analysis #{} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'\
-                        .format(i+1, len(self.hyperGridValues), hyperParamValues, self.logEvidence / np.log(10)))
+                    print('    + Analysis #{} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'
+                          .format(i+1, len(self.hyperGridValues), hyperParamValues, self.logEvidence / np.log(10)))
 
         # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
         self.selectedHyperParameters = []
@@ -364,12 +363,10 @@ class HyperStudy(Study):
 
     # optimization methods are inherited from Study class, but cannot be used in this case
     def optimize(self, *args, **kwargs):
-        print("! 'HyperStudy' object has no attribute 'optimize'")
-        return
+        raise NotImplementedError('HyperStudy object has no optimizing method.')
 
     def optimizationStep(self, *args, **kwargs):
-        print("! 'HyperStudy' object has no attribute 'optimizationStep'")
-        return
+        raise NotImplementedError('HyperStudy object has no optimizing method.')
 
     def getHyperParameterDistribution(self, param=0, plot=False, **kwargs):
         """
@@ -396,11 +393,9 @@ class HyperStudy(Study):
 
             # check if match was found
             if paramIndex == -1:
-                print('! Wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames))
-                return
+                raise PostProcessingError('Wrong parameter name. Available options: {0}'.format(hyperParameterNames))
         else:
-            print('! Wrong parameter format. Specify parameter via name or index.')
-            return
+            raise PostProcessingError('Wrong parameter format. Specify parameter via name or index.')
 
         axesToMarginalize = list(range(len(hyperParameterNames)))
         axesToMarginalize.remove(paramIndex)
@@ -461,12 +456,10 @@ class HyperStudy(Study):
         hyperParameterNames = [x[0] for x in self.hyperGrid]
 
         # check if list with two elements is provided
-        if not isinstance(params, (list, tuple)):
-            print('! A list of exactly two hyper-parameters has to be provided.')
-            return
+        if not isinstance(params, Iterable):
+            raise PostProcessingError('A list of exactly two hyper-parameters has to be provided.')
         elif not len(params) == 2:
-            print('! A list of exactly two hyper-parameters has to be provided.')
-            return
+            raise PostProcessingError('A list of exactly two hyper-parameters has to be provided.')
 
         # check for type of parameters (indices or names)
         if all(isinstance(p, int) for p in params):
@@ -480,19 +473,19 @@ class HyperStudy(Study):
 
             # check if match was found
             if paramIndices == []:
-                print('! Wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames))
-                return
+                raise PostProcessingError('Wrong hyper-parameter name. Available options: {0}'
+                                          .format(hyperParameterNames))
         else:
-            print('! Wrong parameter format. Specify parameters either via name or index.')
-            return
+            raise PostProcessingError('Wrong parameter format. Specify parameter via name or index.')
 
         # check if one of the parameter names provided is wrong
         if not len(paramIndices) == 2:
-            print('! Probably one wrong hyper-parameter name. Available options: {0}'.format(hyperParameterNames))
+            raise PostProcessingError('Probably one wrong hyper-parameter name. Available options: {0}'
+                                      .format(hyperParameterNames))
 
         # check if parameter indices are in ascending order (so axes are labeled correctly)
         if not paramIndices[0] < paramIndices[1]:
-            print('! Switching hyper-parameter order for plotting.')
+            print('! WARNING: Switching hyper-parameter order for plotting.')
             paramIndices = paramIndices[::-1]
 
         axesToMarginalize = list(range(len(hyperParameterNames)))

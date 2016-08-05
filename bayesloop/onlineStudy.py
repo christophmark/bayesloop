@@ -7,6 +7,7 @@ parameter distribution, enabling the analysis of on-going data streams.
 from __future__ import division, print_function
 import numpy as np
 from .study import Study
+from .exceptions import *
 from collections import OrderedDict, Iterable
 
 
@@ -63,11 +64,9 @@ class OnlineStudy(Study):
                 S.addTransitionModel(bl.tm.GaussianRandomWalk(sigma=[0, 0.1, 0.2, 0.3], param='lambda'))
         """
         if str(transitionModel) == 'Serial transition model':
-            print('    ! Serial transition models are not supported by OnlineStudy.')
-            return
+            raise NotImplementedError('Serial transition models are not supported by OnlineStudy.')
         if str(transitionModel) == 'Combined transition model':
-            print('    ! Combined transition models are not supported by OnlineStudy.')
-            return
+            raise NotImplementedError('Combined transition models are not supported by OnlineStudy.')
 
         if self.transitionModels is None:
             self.transitionModels = []
@@ -107,8 +106,7 @@ class OnlineStudy(Study):
         """
         # at least one transition model has to be set or added
         if (self.tmCount is None) and (self.transitionModel is None):
-            print('    ! No transition model set or added.')
-            return
+            raise ConfigurationError('No transition model set or added.')
 
         # if one only sets a transition model, but does not use addTransitionModel, we add it here
         if (self.tmCount is None) and (self.transitionModel is not None):
@@ -127,7 +125,7 @@ class OnlineStudy(Study):
 
         # only proceed if at least one data segment can be created
         if len(self.rawData) < self.observationModel.segmentLength:
-            print('    ! Not enough data points to start analysis. Will wait for more data.')
+            print('    + Not enough data points to start analysis. Will wait for more data.')
             return
 
         self.formattedTimestamps.append(self.rawTimestamps[-1])

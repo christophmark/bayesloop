@@ -15,6 +15,7 @@ from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d
 from scipy.ndimage.interpolation import shift
 from collections import OrderedDict
 from inspect import getargspec
+from .exceptions import *
 
 
 class Static:
@@ -192,15 +193,13 @@ class AlphaStableRandomWalk:
                 l1 = gs[0]
                 l2 = gs[1]
             else:
-                print('! Transformation axis must either be 0 or 1.')
-                return
+                raise ConfigurationError('Transformation axis must either be 0 or 1.')
         elif len(gs) == 1:
             l1 = gs[0]
             l2 = 0
             axis = 0
         else:
-            print('! Parameter grid must either be 1- or 2-dimensional.')
-            return
+            raise ConfigurationError('Parameter grid must either be 1- or 2-dimensional.')
 
         kernel_fft = np.exp(-np.abs(c*np.linspace(0, np.pi, int(3*l1/2+1)))**alpha)
         kernel = np.fft.irfft(kernel_fft)
@@ -364,9 +363,9 @@ class Deterministic:
 
         # only keyword arguments are allowed
         if not len(argspec.args) == len(argspec.defaults)+1:
-            print('    ! Function to define deterministic transition model can only contain one non-keyword argument'
-                  '      (time; first argument) and keyword-arguments (hyper-parameters) with default values.')
-            return
+            raise ConfigurationError('Function to define deterministic transition model can only contain one '
+                                     'non-keyword argument (time; first argument) and keyword-arguments '
+                                     '(hyper-parameters) with default values.')
 
         # define hyper-parameters of transition model
         self.hyperParameters = OrderedDict()
@@ -538,11 +537,13 @@ class SerialTransitionModel:
 
         # check: break times have to be passed in monotonically increasing order
         if not all(x < y for x, y in zip(self.hyperParameters['tBreak'], self.hyperParameters['tBreak'][1:])):
-            print('! Time steps for structural breaks have to be passed in monotonically increasing order.')
+            raise ConfigurationError('Time steps for structural breaks have to be passed in monotonically increasing '
+                                     'order.')
 
         # check: n models require n-1 break times
         if not (len(self.models)-1 == len(self.hyperParameters['tBreak'])):
-            print('! Wrong number of structural breaks/models. For n models, n-1 structural breaks are required.')
+            raise ConfigurationError('Wrong number of structural breaks/models. For n models, n-1 structural breaks '
+                                     'are required.')
 
     def __str__(self):
         return 'Serial transition model'

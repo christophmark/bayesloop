@@ -10,6 +10,7 @@ import sympy.abc as abc
 from sympy.stats import density
 from sympy import Symbol, Matrix, simplify, diff, integrate, summation, lambdify
 from sympy import ln, sqrt
+from .exceptions import *
 
 
 def getJeffreysPrior(rv):
@@ -77,21 +78,17 @@ def computeJeffreysPriorAR1(study):
         r, s = study.grid
         s = s*np.sqrt(1 - r**2.)
     else:
-        print('! Jeffreys prior for autoregressive process can only be used with AR1 and ScaledAR1 models.')
-        return
+        raise ConfigurationError('Jeffreys prior for autoregressive process can only be used with AR1 and ScaledAR1 '
+                                 'models.')
 
-    # if abs(rho) >= 1., flat prior is returned
+    # if abs(rho) >= 1., this prior cannot be used
     if np.any(np.abs(r) >= 1.):
-        print('! Jeffreys prior for auto-regressive process is only implemented for stationary processes.')
-        print('  Values abs(r) >= 1 are not allowed for this implementation of the prior.')
-        print('  Will set flat prior instead.')
-        flat = np.ones_like(r)
-        flat /= np.sum(flat)
-        return flat
+        raise ConfigurationError('Jeffreys prior for auto-regressive process is only implemented for stationary '
+                                 'processes. Values abs(r) >= 1 are not allowed for this implementation of the prior.')
 
     if len(study.rawData) == 0:
-        print('! Data must be loaded before computing the Jeffreys prior for the autoregressive process.')
-        return
+        raise ConfigurationError('Data must be loaded before computing the Jeffreys prior for the autoregressive '
+                                 'process.')
 
     d0 = study.rawData[0]  # first observation is accounted for in the prior
     n = len(study.rawData)  # number of data points
