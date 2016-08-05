@@ -742,6 +742,8 @@ class Study(object):
         Returns:
             True if all is well; False if problem with user input is detected.
         """
+        if len(self.rawData) == 0:
+            raise ConfigurationError('No data loaded.')
         if not self.observationModel:
             raise ConfigurationError('No observation model chosen.')
         if not self.transitionModel:
@@ -751,11 +753,16 @@ class Study(object):
             print('! WARNING: No parameter boundaries are set. Trying to estimate appropriate boundaries.')
             try:
                 estimatedBoundaries = self.observationModel.estimateBoundaries(self.rawData)
+                assert np.all(~np.isnan(estimatedBoundaries))  # check if estimation yielded NaN value(s)
+                assert np.all([b[0] != b[1] for b in estimatedBoundaries])  # check if lower boundary != upper boundary
                 self.setBoundaries(estimatedBoundaries)
-                print('  Setting estimated parameter boundaries:', estimatedBoundaries)
-            except:
-                raise ConfigurationError('Parameter boundaries could not be estimated. To set boundaries, call '
-                                         'setBoundaries().')
+                print('  Using estimated boundaries.')
+            except AttributeError:
+                raise NotImplementedError("Observation model does not support the estimation of boundaries, use "
+                                          "'setBoundaries().")
+            except AssertionError:
+                raise ConfigurationError("Estimation of boundaries failed. Check supplied number of data points and "
+                                         "for invalid data or directly use 'setBoundaries()'.")
 
         if not len(self.observationModel.defaultGridSize) == len(self.gridSize):
             raise ConfigurationError('Specified parameter grid expects {0} parameter(s), but observation model has {1} '
