@@ -123,8 +123,7 @@ class HyperStudy(Study):
 
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
 
-        if not self.checkConsistency():
-            return
+        self.checkConsistency()
 
         if not self.hyperGrid:
             print('! WARNING: No hyper-grid defined for hyper-parameter values. Using standard fit-method.')
