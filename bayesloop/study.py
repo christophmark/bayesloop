@@ -679,7 +679,8 @@ class Study(object):
             kwargs: all further keyword-arguments are passed to the plot of the posterior mean values
         """
         if self.posteriorSequence == []:
-            raise PostProcessingError('Cannot plot posterior sequence as it has not yet been computed. Run complete fit.')
+            raise PostProcessingError('Cannot plot posterior sequence as it has not yet been computed. '
+                                      'Run complete fit.')
 
         dt = self.formattedTimestamps[1:] - self.formattedTimestamps[:-1]
         if not np.all(dt == dt[0]):
@@ -705,7 +706,8 @@ class Study(object):
         try:
             axesToMarginalize.remove(paramIndex + 1)
         except ValueError:
-            raise PostProcessingError('Wrong parameter index to plot. Available indices: {}'.format(axesToMarginalize))
+            raise PostProcessingError('Wrong parameter index to plot. Available indices: {}'
+                                      .format(np.array(axesToMarginalize)-1))
         marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize))
 
         # clean up very small probability values, as they may create image artefacts
