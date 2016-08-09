@@ -410,6 +410,7 @@ class AR1(ObservationModel):
         self.segmentLength = 2  # number of measurements in one data segment
         self.parameterNames = ['correlation coefficient', 'noise amplitude']
         self.defaultGridSize = [200, 200]
+        self.prior = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -441,6 +442,7 @@ class ScaledAR1(ObservationModel):
         self.segmentLength = 2  # number of measurements in one data segment
         self.parameterNames = ['correlation coefficient', 'standard deviation']
         self.defaultGridSize = [200, 200]
+        self.prior = None
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -484,18 +486,22 @@ class LinearRegression(ObservationModel):
             self.name = 'Linear regression model (including offset)'
             self.parameterNames = ['slope', 'offset', 'standard deviation']
             self.defaultGridSize = [40, 40, 40]
+            self.prior = None
         elif self.offset and self.fixedError:
             self.name = 'Linear regression model (including offset; fixed error = {})'.format(self.fixedError)
             self.parameterNames = ['slope', 'offset']
             self.defaultGridSize = [200, 200]
+            self.prior = None
         elif not self.offset and not self.fixedError:
             self.name = 'Linear regression model'
             self.parameterNames = ['slope', 'standard deviation']
             self.defaultGridSize = [200, 200]
+            self.prior = None
         elif not self.offset and self.fixedError:
             self.name = 'Linear regression model (fixed error = {})'.format(self.fixedError)
             self.parameterNames = ['slope']
             self.defaultGridSize = [1000]
+            self.prior = None
 
     def pdf(self, grid, dataSegment):
         """
