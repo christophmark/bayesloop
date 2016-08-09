@@ -242,7 +242,7 @@ class OnlineStudy(Study):
         self.posteriorMeanValues = np.array(self.posteriorMeanValues).T
         self.posteriorSequence = np.array(self.posteriorSequence)
 
-        Study.plotParameterEvolution(self, param=0, color='b', gamma=0.5, **kwargs)
+        Study.plotParameterEvolution(self, param=param, color='b', gamma=0.5, **kwargs)
 
         # re-transform arrays to lists, so online study may continue to append values
         self.formattedTimestamps = list(self.formattedTimestamps)
