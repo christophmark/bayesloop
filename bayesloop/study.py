@@ -74,7 +74,7 @@ class Study(object):
         self.rawData = array
         if timestamps is not None:  # load custom timestamps
             if len(timestamps) == len(array):
-                self.rawTimestamps = timestamps
+                self.rawTimestamps = np.array(timestamps)
             else:
                 print('! WARNING: Number of timestamps does not match number of data points. Omitting timestamps.')
         else:  # set default timestamps (integer range)
