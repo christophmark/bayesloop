@@ -138,10 +138,19 @@ class OnlineStudy(Study):
             self.hyperPrior = np.ones(self.tmCount) / self.tmCount
             print('    + Initialized flat hyper-prior.')
 
-        # initialize alpha as flat distribution
+        # initialize alpha with prior distribution
         if self.alpha is None:
-            self.alpha = np.ones(self.gridSize)/np.prod(np.array(self.gridSize))
-            print('    + Initialized flat alpha.')
+            if self.observationModel.prior is not None:
+                if isinstance(self.observationModel.prior, np.ndarray):
+                    self.alpha = self.observationModel.prior
+                else:  # prior is set as a function
+                    self.alpha = self.observationModel.prior(*self.grid)
+            else:
+                self.alpha = np.ones(self.gridSize)  # flat prior
+
+            # normalize prior (necessary in case an improper prior is used)
+            self.alpha /= np.sum(self.alpha)
+            print('    + Initialized prior.')
 
         # initialize normi as an array of ones
         if self.normi is None:
