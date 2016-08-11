@@ -246,5 +246,5 @@ class OnlineStudy(Study):
 
         # re-transform arrays to lists, so online study may continue to append values
         self.formattedTimestamps = list(self.formattedTimestamps)
-        self.posteriorMeanValues = list(self.posteriorMeanValues)
+        self.posteriorMeanValues = list(self.posteriorMeanValues.T)
         self.posteriorSequence = list(self.posteriorSequence)
