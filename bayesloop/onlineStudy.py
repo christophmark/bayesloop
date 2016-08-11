@@ -226,6 +226,53 @@ class OnlineStudy(Study):
             self.posteriorSequence.append(self.marginalizedPosterior.copy())
             self.hyperPosteriorSequence.append(self.hyperPosterior.copy())
 
+    def getMarginalParameterDistribution(self, t, param=0, plot=False, **kwargs):
+        """
+        Compute the marginal parameter distribution at a given time step.
+
+        Args:
+            t: Time step/stamp for which the parameter distribution is evaluated
+            param: Parameter name or index of the parameter to display; default: 0 (first model parameter)
+            plot: If True, a plot of the distribution is created
+            **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
+
+        Returns:
+            Two numpy arrays. The first array contains the parameter values, the second one the corresponding
+            probability (density) values
+        """
+        # plotting function of Study class can only handle arrays, not lists
+        self.formattedTimestamps = np.array(self.formattedTimestamps)
+        self.posteriorSequence = np.array(self.posteriorSequence)
+
+        Study.getMarginalParameterDistribution(self, t, param=param, plot=plot, **kwargs)
+
+        # re-transform arrays to lists, so online study may continue to append values
+        self.formattedTimestamps = list(self.formattedTimestamps)
+        self.posteriorSequence = list(self.posteriorSequence)
+
+    def getMarginalParameterDistributions(self, param=0, plot=False, **kwargs):
+        """
+        Computes the time series of marginal posterior distributions with respect to a given model parameter.
+
+        Args:
+            param: Parameter name or index of the parameter to display; default: 0 (first model parameter)
+            plot: If True, a plot of the series of distributions is created (density map)
+            **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
+
+        Returns:
+            Two numpy arrays. The first array contains the parameter values, the second one the sequence of
+            corresponding posterior distirbutions.
+        """
+        # plotting function of Study class can only handle arrays, not lists
+        self.formattedTimestamps = np.array(self.formattedTimestamps)
+        self.posteriorSequence = np.array(self.posteriorSequence)
+
+        Study.getMarginalParameterDistributions(self, param=param, plot=plot, **kwargs)
+
+        # re-transform arrays to lists, so online study may continue to append values
+        self.formattedTimestamps = list(self.formattedTimestamps)
+        self.posteriorSequence = list(self.posteriorSequence)
+
     def plotParameterEvolution(self, param=0, color='b', gamma=0.5, **kwargs):
         """
         Plots a series of marginal posterior distributions corresponding to a single model parameter, together with the
