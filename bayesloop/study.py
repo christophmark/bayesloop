@@ -667,10 +667,136 @@ class Study(object):
                     raise ConfigurationError('Could not find hyper-parameter {} at index {}.'.format(name, index))
         return 1
 
+    def getMarginalParameterDistribution(self, t, param=0, plot=False, **kwargs):
+        """
+        Compute the marginal parameter distribution at a given time step.
+
+        Args:
+            t: Time step/stamp for which the parameter distribution is evaluated
+            param: Parameter name or index of the parameter to display; default: 0 (first model parameter)
+            plot: If True, a plot of the distribution is created
+            **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
+
+        Returns:
+            Two numpy arrays. The first array contains the parameter values, the second one the corresponding
+            probability (density) values
+        """
+        if self.posteriorSequence == []:
+            raise PostProcessingError('Cannot plot posterior sequence as it has not yet been computed. '
+                                      'Run complete fit.')
+
+        # check if supplied time stamp exists
+        if t not in self.formattedTimestamps:
+            raise PostProcessingError('Supplied time ({}) does not exist in data or is out of range.'.format(t))
+        timeIndex = list(self.formattedTimestamps).index(t)  # to select corresponding posterior distribution
+
+        if isinstance(param, int):
+            paramIndex = param
+        elif isinstance(param, str):
+            paramIndex = -1
+            for i, name in enumerate(self.observationModel.parameterNames):
+                if name == param:
+                    paramIndex = i
+
+            # check if match was found
+            if paramIndex == -1:
+                raise PostProcessingError('Wrong parameter name. Available options: {0}'
+                                          .format(self.observationModel.parameterNames))
+        else:
+            raise PostProcessingError('Wrong parameter format. Specify parameter via name or index.')
+
+        axesToMarginalize = list(range(len(self.observationModel.parameterNames)))
+        try:
+            axesToMarginalize.remove(paramIndex)
+        except ValueError:
+            raise PostProcessingError('Wrong parameter index. Available indices: {}'.format(axesToMarginalize))
+
+        x = self.marginalGrid[paramIndex]
+        marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence[timeIndex],
+                                                             axesToMarginalize))
+
+        if plot:
+            plt.fill_between(x, 0, marginalDistribution, **kwargs)
+
+            plt.xlabel(self.observationModel.parameterNames[paramIndex])
+
+            # in case an integer step size for hyper-parameter values is chosen, probability is displayed
+            # (probability density otherwise)
+            if self.latticeConstant[paramIndex] == 1.:
+                plt.ylabel('probability')
+            else:
+                plt.ylabel('probability density')
+
+        return x, marginalDistribution
+
+    def getMarginalParameterDistributions(self, param=0, plot=False, **kwargs):
+        """
+        Computes the time series of marginal posterior distributions with respect to a given model parameter.
+
+        Args:
+            param: Parameter name or index of the parameter to display; default: 0 (first model parameter)
+            plot: If True, a plot of the series of distributions is created (density map)
+            **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
+
+        Returns:
+            Two numpy arrays. The first array contains the parameter values, the second one the sequence of
+            corresponding posterior distirbutions.
+        """
+        if self.posteriorSequence == []:
+            raise PostProcessingError('Cannot plot posterior sequence as it has not yet been computed. '
+                                      'Run complete fit.')
+
+        dt = self.formattedTimestamps[1:] - self.formattedTimestamps[:-1]
+        if not np.all(dt == dt[0]):
+            print('! WARNING: Time stamps are not equally spaced. This may result in false plotting of parameter '
+                  'distributions.')
+
+        if isinstance(param, int):
+            paramIndex = param
+        elif isinstance(param, str):
+            paramIndex = -1
+            for i, name in enumerate(self.observationModel.parameterNames):
+                if name == param:
+                    paramIndex = i
+
+            # check if match was found
+            if paramIndex == -1:
+                raise PostProcessingError('Wrong parameter name. Available options: {0}'
+                                          .format(self.observationModel.parameterNames))
+        else:
+            raise PostProcessingError('Wrong parameter format. Specify parameter via name or index.')
+
+        axesToMarginalize = list(range(1, len(self.observationModel.parameterNames) + 1))  # axis 0 is time
+        try:
+            axesToMarginalize.remove(paramIndex + 1)
+        except ValueError:
+            raise PostProcessingError('Wrong parameter index. Available indices: {}'
+                                      .format(np.array(axesToMarginalize) - 1))
+
+        x = self.marginalGrid[paramIndex]
+        marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize))
+
+        if plot:
+            if 'c' in kwargs:
+                cmap = createColormap(kwargs['c'])
+            elif 'color' in kwargs:
+                cmap = createColormap(kwargs['color'])
+            else:
+                cmap = createColormap('b')
+
+            plt.imshow(marginalPosteriorSequence.T,
+                       origin=0,
+                       cmap=cmap,
+                       extent=[self.formattedTimestamps[0], self.formattedTimestamps[-1]] + self.boundaries[paramIndex],
+                       aspect='auto')
+
+        return x, marginalPosteriorSequence
+
     def plotParameterEvolution(self, param=0, color='b', gamma=0.5, **kwargs):
         """
-        Plots a series of marginal posterior distributions corresponding to a single model parameter, together with the
-        posterior mean values.
+        Extended plot method to display a series of marginal posterior distributions corresponding to a single model
+        parameter. In constrast to getMarginalParameterDistributions(), this method includes the removal of plotting
+        artefacts, gamma correction as well as an overlay of the posterior mean values.
 
         Args:
             param: parameter name or index of parameter to display; default: 0 (first model parameter)
