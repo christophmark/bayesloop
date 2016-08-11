@@ -13,7 +13,7 @@ import numpy as np
 from scipy.signal import fftconvolve
 from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d
 from scipy.ndimage.interpolation import shift
-from collections import OrderedDict
+from collections import OrderedDict, Iterable
 from inspect import getargspec
 from .exceptions import *
 
@@ -79,12 +79,12 @@ class GaussianRandomWalk:
         """
 
         normedSigma = []
-        if type(self.hyperParameters['sigma']) is not list:
-            for c in self.latticeConstant:
-                normedSigma.append(self.hyperParameters['sigma'] / c)
-        else:
+        if isinstance(self.hyperParameters['sigma'], Iterable):
             for i, c in enumerate(self.latticeConstant):
                 normedSigma.append(self.hyperParameters['sigma'][i] / c)
+        else:
+            for c in self.latticeConstant:
+                normedSigma.append(self.hyperParameters['sigma'] / c)
 
         # check if only one axis is to be transformed
         if self.selectedParameter is not None:
@@ -139,17 +139,17 @@ class AlphaStableRandomWalk:
         # if hyper-parameter values have changed, a new convolution kernel needs to be created
         if not self.kernelParameters == self.hyperParameters:
             normedC = []
-            if type(self.hyperParameters['c']) is not list:
-                for lc in self.latticeConstant:
-                    normedC.append(self.hyperParameters['c'] / lc)
-            else:
+            if isinstance(self.hyperParameters['c'], Iterable):
                 for i, lc in enumerate(self.latticeConstant):
                     normedC.append(self.hyperParameters['c'][i] / lc)
-
-            if type(self.hyperParameters['alpha']) is not list:
-                alpha = [self.hyperParameters['alpha']] * len(normedC)
             else:
+                for lc in self.latticeConstant:
+                    normedC.append(self.hyperParameters['c'] / lc)
+
+            if isinstance(self.hyperParameters['alpha'], Iterable):
                 alpha = self.hyperParameters['alpha']
+            else:
+                alpha = [self.hyperParameters['alpha']] * len(normedC)
 
             # check if only one axis is to be transformed
             if self.selectedParameter is not None:
@@ -390,10 +390,10 @@ class Deterministic:
         # compute normed shift of grid values
         normedHyperParameters = self.hyperParameters.copy()
         for key, value in self.hyperParameters.items():
-            if type(value) is not list:
-                normedHyperParameters[key] = [value / c for c in self.latticeConstant]
-            else:
+            if isinstance(value, Iterable):
                 normedHyperParameters[key] = [v / c for v, c in zip(value, self.latticeConstant)]
+            else:
+                normedHyperParameters[key] = [value / c for c in self.latticeConstant]
 
         d = []
         for i in range(len(self.latticeConstant)):
@@ -423,10 +423,10 @@ class Deterministic:
         # compute normed shift of grid values
         normedHyperParameters = self.hyperParameters.copy()
         for key, value in self.hyperParameters.items():
-            if type(value) is not list:
-                normedHyperParameters[key] = [value / c for c in self.latticeConstant]
-            else:
+            if isinstance(value, Iterable):
                 normedHyperParameters[key] = [v / c for v, c in zip(value, self.latticeConstant)]
+            else:
+                normedHyperParameters[key] = [value / c for c in self.latticeConstant]
 
         d = []
         for i in range(len(self.latticeConstant)):
