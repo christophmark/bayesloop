@@ -470,11 +470,11 @@ class Study(object):
 
         return paramList
 
-    def unpackAllHyperParameters(self):
+    def unpackAllHyperParameters(self, values=True):
         """
         Returns a flattened list of all hyper-parameter values of the current transition model.
         """
-        return list(flatten(self.unpackHyperParameters(self.transitionModel, values=True)))
+        return list(flatten(self.unpackHyperParameters(self.transitionModel, values=values)))
 
     def unpackSelectedHyperParameters(self):
         """
