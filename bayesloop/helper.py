@@ -25,29 +25,24 @@ def assignNestedItem(lst, index, value):
     x[index[-1]] = value
 
 
-def recursiveIndex(lst, target):
+def recursiveIndex(nestedList, query):
     """
     Find index of element (first occurrence) in an arbitrarily nested list.
 
     Args:
-        lst: list object
-        target: target element to find
+        nestedList: list object
+        query: target element to find
 
     Returns:
         Index as list
     """
-    for index, item in enumerate(lst):
-        if item == target:
-            return [index]
-        if isinstance(item, str):
-            return []
-        try:
-            path = recursiveIndex(item, target)
-        except TypeError:
-            pass
-        else:
+    for index, element in enumerate(nestedList):
+        if isinstance(element, (list, tuple)):
+            path = recursiveIndex(element, query)
             if path:
                 return [index] + path
+        if element == query:
+            return [index]
     return []
 
 
@@ -62,7 +57,7 @@ def flatten(lst):
         Generator object for flattened list (simply call list(flatten(lst)) to get the result as a list).
     """
     for i in lst:
-        if isinstance(i, list) or isinstance(i, tuple):
+        if isinstance(i, (list, tuple)):
             for j in flatten(i):
                 yield j
         else:
