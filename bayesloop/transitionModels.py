@@ -15,6 +15,7 @@ from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d
 from scipy.ndimage.interpolation import shift
 from collections import OrderedDict, Iterable
 from inspect import getargspec
+from copy import deepcopy
 from .exceptions import *
 
 
@@ -57,6 +58,9 @@ class GaussianRandomWalk:
         sigma: Float or list of floats defining the standard deviation of the Gaussian random walk for each parameter
     """
     def __init__(self, sigma=None, param=None):
+        if isinstance(sigma, (list, tuple)):  # Online study expects Numpy array of values
+            sigma = np.array(sigma)
+
         self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('sigma', sigma)])
@@ -113,6 +117,11 @@ class AlphaStableRandomWalk:
         alpha: Float or list of floats defining the shape of the distribution (0 < alpha <= 2).
     """
     def __init__(self, c=None, alpha=None, param=None):
+        if isinstance(c, (list, tuple)):
+            c = np.array(c)
+        if isinstance(alpha, (list, tuple)):
+            alpha = np.array(alpha)
+
         self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('c', c), ('alpha', alpha)])
@@ -249,6 +258,9 @@ class ChangePoint:
         tChange: Integer value of the time step of the change point
     """
     def __init__(self, tChange=None):
+        if isinstance(tChange, (list, tuple)):
+            tChange = np.array(tChange)
+
         self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('tChange', tChange)])
@@ -270,8 +282,10 @@ class ChangePoint:
         """
         if t == self.hyperParameters['tChange']:
             # check if custom prior is used by observation model
-            if self.study.observationModel.prior is not None:
+            if hasattr(self.study.observationModel.prior, '__call__'):
                 prior = self.study.observationModel.prior(*self.study.grid)
+            elif isinstance(self.study.observationModel.prior, np.ndarray):
+                prior = deepcopy(self.study.observationModel.prior)
             else:
                 prior = np.ones(self.study.gridSize)  # flat prior
 
@@ -296,6 +310,9 @@ class RegimeSwitch:
         log10pMin: Minimal probability density (log10 value) that is assigned to every parameter value
     """
     def __init__(self, log10pMin=None):
+        if isinstance(log10pMin, (list, tuple)):
+            log10pMin = np.array(log10pMin)
+
         self.study = None
         self.latticeConstant = None
         self.hyperParameters = OrderedDict([('log10pMin', log10pMin)])
@@ -370,6 +387,8 @@ class Deterministic:
         # define hyper-parameters of transition model
         self.hyperParameters = OrderedDict()
         for arg, default in zip(argspec.args[1:], argspec.defaults):
+            if isinstance(default, (list, tuple)):
+                default = np.array(default)
             self.hyperParameters[arg] = default
 
     def __str__(self):
