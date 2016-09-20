@@ -153,7 +153,7 @@ class HyperStudy(Study):
             self.hyperPrior = [self.hyperPrior]
 
         # check if list/tuple is provided
-        elif isinstance(self.hyperPrior, (list, tuple)) and not isinstance(self.hyperPrior, str):
+        elif isinstance(self.hyperPrior, Iterable):
             # check if given prior is correctly formatted to fit length of hyper-grid array.
             # we use 'len(self.hyperGridValues[0])' because self.hyperGrid is reformatted within changepointStudy, when
             # using break-points.
