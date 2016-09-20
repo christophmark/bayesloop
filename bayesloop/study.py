@@ -671,7 +671,7 @@ class Study(object):
                     raise ConfigurationError('Could not find hyper-parameter {} at index {}.'.format(name, index))
         return 1
 
-    def getMarginalParameterDistribution(self, t, param=0, plot=False, **kwargs):
+    def getParameterDistribution(self, t, param=0, plot=False, **kwargs):
         """
         Compute the marginal parameter distribution at a given time step.
 
@@ -733,7 +733,6 @@ class Study(object):
 
         return x, marginalDistribution
 
-    def getMarginalParameterDistributions(self, param=0, plot=False, **kwargs):
         """
         Computes the time series of marginal posterior distributions with respect to a given model parameter.
 
