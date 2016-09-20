@@ -81,7 +81,6 @@ class GaussianRandomWalk:
         Returns:
             Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
         """
-
         normedSigma = []
         if isinstance(self.hyperParameters['sigma'], Iterable):
             for i, c in enumerate(self.latticeConstant):
@@ -299,6 +298,47 @@ class ChangePoint:
         return self.computeForwardPrior(posterior, t - 1)
 
 
+class Independent:
+    """
+    Independent observations model. This transition model restores the prior distribution for the parameters at each
+    time step, effectively assuming independent observations. Mostly used with an instance of OnlineStudy.
+    """
+    def __init__(self):
+        self.study = None
+        self.latticeConstant = None
+        self.hyperParameters = {}
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+
+    def __str__(self):
+        return 'Independent observations model'
+
+    def computeForwardPrior(self, posterior, t):
+        """
+        Compute new prior from old posterior (moving forwards in time).
+
+        Args:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
+
+        Returns:
+            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+        """
+        # check if custom prior is used by observation model
+        if hasattr(self.study.observationModel.prior, '__call__'):
+            prior = self.study.observationModel.prior(*self.study.grid)
+        elif isinstance(self.study.observationModel.prior, np.ndarray):
+            prior = deepcopy(self.study.observationModel.prior)
+        else:
+            prior = np.ones(self.study.gridSize)  # flat prior
+
+        # normalize prior (necessary in case an improper prior is used)
+        prior /= np.sum(prior)
+        return prior
+
+    def computeBackwardPrior(self, posterior, t):
+        return self.computeForwardPrior(posterior, t - 1)
+
+
 class RegimeSwitch:
     """
     Regime-switching model. In case the number of change-points in a given data set is unknown, the regime-switching
@@ -334,6 +374,57 @@ class RegimeSwitch:
         """
         newPrior = posterior.copy()
         limit = (10**self.hyperParameters['log10pMin'])*np.prod(self.latticeConstant)  # convert prob. density to prob.
+        newPrior[newPrior < limit] = limit
+
+        # transformation above violates proper normalization; re-normalization needed
+        newPrior /= np.sum(newPrior)
+
+        return newPrior
+
+    def computeBackwardPrior(self, posterior, t):
+        return self.computeForwardPrior(posterior, t - 1)
+
+
+class NotEqual:
+    """
+    Assumes an "inverse" parameter distribution at each new time step. The new prior is derived by substracting the
+    posterior probability values from their maximal value and subsequently re-normalizing. To assure that no parameter
+    value is set to zero probability, one may specify a minimal probability for all parameter values. This transition
+    model is mostly used in instances of OnlineStudy to detect time step when parameter distributions change
+    significantly.
+
+    Args:
+        log10pMin: Log10-value of the minimal probability that is set to all possible parameter values of the inverted
+            parameter distribution
+    """
+    def __init__(self, log10pMin=None):
+        if isinstance(log10pMin, (list, tuple)):
+            log10pMin = np.array(log10pMin)
+
+        self.study = None
+        self.latticeConstant = None
+        self.hyperParameters = OrderedDict([('log10pMin', log10pMin)])
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+
+    def __str__(self):
+        return 'Not-Equal model'
+
+    def computeForwardPrior(self, posterior, t):
+        """
+        Compute new prior from old posterior (moving forwards in time).
+
+        Parameters:
+            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
+            t: integer time step
+
+        Returns:
+            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+        """
+        newPrior = posterior.copy()
+        limit = (10**self.hyperParameters['log10pMin'])*np.prod(self.latticeConstant)  # convert prob. density to prob.
+
+        newPrior = np.amax(newPrior) - newPrior
+        newPrior /= np.sum(newPrior)
         newPrior[newPrior < limit] = limit
 
         # transformation above violates proper normalization; re-normalization needed
