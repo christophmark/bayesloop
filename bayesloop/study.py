@@ -733,6 +733,7 @@ class Study(object):
 
         return x, marginalDistribution
 
+    def getParameterDistributions(self, param=0, plot=False, **kwargs):
         """
         Computes the time series of marginal posterior distributions with respect to a given model parameter.
 
