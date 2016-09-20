@@ -60,7 +60,7 @@ def getJeffreysPrior(rv):
     return symJeff, lambdify(parameters, symJeff, 'numpy')
 
 
-def computeJeffreysPriorAR1(study):
+def computeJeffreysPriorAR1(study, t=1):
     """
     This function encodes the Jeffreys prior for the AR1 process as derived by Harald Uhlig in the work "On Jeffreys
     prior when using the exact likelihood function." (Econometric Theory 10 (1994): 633-633. Equation 31). Note that
@@ -68,6 +68,8 @@ def computeJeffreysPriorAR1(study):
 
     Args:
         study: Instance of the Study class that this prior is added to
+        t: Time step that this prior is computed for (t=1 means that the data point at index 0 will be used to compute
+            it; )
 
     Returns:
         Array with prior probabilities.
@@ -90,7 +92,7 @@ def computeJeffreysPriorAR1(study):
         raise ConfigurationError('Data must be loaded before computing the Jeffreys prior for the autoregressive '
                                  'process.')
 
-    d0 = study.rawData[0]  # first observation is accounted for in the prior
+    d0 = study.rawData[t-1]  # first observation is accounted for in the prior
     n = len(study.rawData)  # number of data points
 
     prior = (1/s**2.)*np.exp(-d0**2.*(1-r**2.)/(2*s**2.))*(4*(r**2.)/(1-r**2.)+2*(n+1))**.5
