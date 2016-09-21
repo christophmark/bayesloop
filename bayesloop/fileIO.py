@@ -11,7 +11,7 @@ def save(filename, study):
     Save an instance of a bayesloop study class to file.
 
     Args:
-        filename: Path + filename to store bayesloop study
+        filename(str): Path + filename to store bayesloop study
         study: Instance of study class (Study, RasterStudy, etc.)
     """
     try:
@@ -30,7 +30,7 @@ def load(filename):
     Load a instance of a bayesloop study class that was saved using the bayesloop.save() function.
 
     Args:
-        filename: Path + filename to stored bayesloop study
+        filename(str): Path + filename to stored bayesloop study
 
     Returns:
         Study instance

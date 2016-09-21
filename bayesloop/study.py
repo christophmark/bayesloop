@@ -803,9 +803,9 @@ class Study(object):
         artefacts, gamma correction as well as an overlay of the posterior mean values.
 
         Args:
-            param: parameter name or index of parameter to display; default: 0 (first model parameter)
+            param(str, int): parameter name or index of parameter to display; default: 0 (first model parameter)
             color: color from which a light colormap is created
-            gamma: exponent for gamma correction of the displayed marginal distribution; default: 0.5
+            gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5
             kwargs: all further keyword-arguments are passed to the plot of the posterior mean values
         """
         if self.posteriorSequence == []:
@@ -870,7 +870,7 @@ class Study(object):
         model are set correctly.
 
         Returns:
-            True if all is well; False if problem with user input is detected.
+            bool: True if all is well; False if problem with user input is detected.
         """
         if len(self.rawData) == 0:
             raise ConfigurationError('No data loaded.')

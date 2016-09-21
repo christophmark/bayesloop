@@ -21,7 +21,7 @@ def getJeffreysPrior(rv):
         rv: SymPy RandomSymbol, corresponding to a probability distribution
 
     Returns:
-        List, containing Jeffreys prior in symbolic form and corresponding lambda function
+        list: List containing Jeffreys prior in symbolic form and corresponding lambda function
 
     Example:
         rate = Symbol('rate', positive=True)
@@ -68,8 +68,8 @@ def computeJeffreysPriorAR1(study, t=1):
 
     Args:
         study: Instance of the Study class that this prior is added to
-        t: Time step that this prior is computed for (t=1 means that the data point at index 0 will be used to compute
-            it; )
+        t(int): Time step that this prior is computed for (t=1 means that the data point at index 0 will be used to
+            compute it)
 
     Returns:
         Array with prior probabilities.

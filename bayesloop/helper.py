@@ -12,12 +12,9 @@ def assignNestedItem(lst, index, value):
     Assign a value to an item of an arbitrarily nested list. The list is manipulated inplace.
 
     Args:
-        lst: list object
-        index: list of indices
+        lst(list): nested list to assign value to
+        index(list): list of indices defining the position of the item to set
         value: value to assign to list item
-
-    Returns:
-        None
     """
     x = lst
     for i in index[:-1]:
@@ -30,11 +27,11 @@ def recursiveIndex(nestedList, query):
     Find index of element (first occurrence) in an arbitrarily nested list.
 
     Args:
-        nestedList: list object
+        nestedList(list): list object to search in
         query: target element to find
 
     Returns:
-        Index as list
+        list: Position indices
     """
     for index, element in enumerate(nestedList):
         if isinstance(element, (list, tuple)):
@@ -51,7 +48,7 @@ def flatten(lst):
     Flatten arbitrarily nested list. Returns a generator object.
 
     Args:
-        lst: list object
+        lst(list): list to flatten
 
     Returns:
         Generator object for flattened list (simply call list(flatten(lst)) to get the result as a list).
@@ -70,8 +67,8 @@ def createColormap(color, min_factor=1.0, max_factor=0.95):
 
     Args:
         color: Matplotlib-readable color representation. Examples: 'g', '#00FFFF', '0.5', [0.1, 0.5, 0.9]
-        min_factor: Float in the range 0-1, specifying the gray-scale color of the minimal plot value.
-        max_factor: Float in the range 0-1, multiplication factor of 'color' argument for maximal plot value.
+        min_factor(float): Float in the range 0-1, specifying the gray-scale color of the minimal plot value.
+        max_factor(float): Float in the range 0-1, multiplication factor of 'color' argument for maximal plot value.
 
     Returns:
         Colormap object to be used by matplotlib-functions

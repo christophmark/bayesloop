@@ -30,11 +30,11 @@ class ObservationModel:
         processes multidimensional data and missing data and passes it to the pdf-method of the child class.
 
         Args:
-            grid: Discrete parameter grid
-            dataSegment: Data segment from formatted data
+            grid(list): Discrete parameter grid
+            dataSegment(ndarray): Data segment from formatted data
 
         Returns:
-            Discretized pdf as numpy array (with same shape as grid)
+            ndarray: Discretized pdf (with same shape as grid)
         """
         # if self.multipyLikelihoods == True, multi-dimensional data is processed one dimension at a time;
         # likelihoods are then multiplied
@@ -53,6 +53,12 @@ class Custom(ObservationModel):
     This observation model class allows to create new observation models on-the-fly from scipy.stats probability
     distributions or from sympy.stats random variables.
 
+    Args:
+        rv: SymPy random symbol or Scipy random distribution
+        fixedParameters(dict): Dictionary defining the names and values of fixed parameters
+        determineJeffreysPrior(bool): If set to true, Jeffreys prior is analytically derived (only available for SymPy
+            random symbol)
+
     SciPy.stats
     -----------
     Note that scipy.stats does not use the canonical way of naming the parameters of the probability distributions, but
@@ -64,12 +70,12 @@ class Custom(ObservationModel):
     Example::
         M = bl.observationModels.Custom(scipy.stats.norm, fixedParameters={'loc': 4})
 
-    This will result in a model for normally distributed observations with a fixed 'loc' (mean) of 4, leaving the
-    'scale' (standard deviation) as the only free parameter to be inferred.
+        This will result in a model for normally distributed observations with a fixed 'loc' (mean) of 4, leaving the
+        'scale' (standard deviation) as the only free parameter to be inferred.
 
-    Note that while the parameters 'loc' and 'scale' have default values in scipy.stats and do not necessarily need to
-    be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant. Using
-    SciPy.stats distributions, bayesloop uses a flat prior by default.
+        Note that while the parameters 'loc' and 'scale' have default values in scipy.stats and do not necessarily need
+        to be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant.
+        Using SciPy.stats distributions, bayesloop uses a flat prior by default.
 
     SymPy.stats
     -----------
@@ -89,10 +95,10 @@ class Custom(ObservationModel):
 
         M = bl.observationModels.Custom(rv)
 
-    This will result in a model for normally distributed observations with a fixed 'mu' (mean) of 4, leaving 'sigma'
-    (the standard deviation) as the only free parameter to be inferred. Using SymPy random variables to create an
-    observation model, bayesloop tries to determine the corresponding Jeffreys prior. This behavior can be turned off
-    by setting the keyword-argument 'determineJeffreysPrior=False'.
+        This will result in a model for normally distributed observations with a fixed 'mu' (mean) of 4, leaving 'sigma'
+        (the standard deviation) as the only free parameter to be inferred. Using SymPy random variables to create an
+        observation model, bayesloop tries to determine the corresponding Jeffreys prior. This behavior can be turned
+        off by setting the keyword-argument 'determineJeffreysPrior=False'.
     """
 
     def __init__(self, rv, fixedParameters={}, determineJeffreysPrior=True):
@@ -183,11 +189,11 @@ class Custom(ObservationModel):
         Probability density function of custom scipy.stats or sympy.stats models
 
         Args:
-            grid: Parameter grid for discrete rate values
-            dataSegment: Data segment from formatted data
+            grid(list): Parameter grid for discrete rate values
+            dataSegment(ndarray): Data segment from formatted data
 
         Returns:
-            Discretized pdf as numpy array (with same shape as grid)
+            ndarray: Discretized pdf (with same shape as grid)
         """
         # SciPy probability distribution
         if self.module[0] == 'scipy':
@@ -229,11 +235,11 @@ class Bernoulli(ObservationModel):
         Probability density function of the Bernoulli model
 
         Args:
-            grid: Parameter grid for discrete values of the parameter p
-            dataSegment: Data segment from formatted data (in this case a single number of events)
+            grid(list): Parameter grid for discrete values of the parameter p
+            dataSegment(ndarray): Data segment from formatted data (in this case a single number of events)
 
         Returns:
-            Discretized Bernoulli pdf as numpy array (with same shape as grid)
+            ndarray: Discretized Bernoulli pdf (with same shape as grid)
         """
         temp = grid[0][:]  # make copy of parameter grid
         temp[temp > 1.] = 0.  # p < 1
@@ -252,10 +258,10 @@ class Bernoulli(ObservationModel):
         boundaries are defined.
 
         Args:
-            rawData: observed data points that may be used to determine appropriate parameter boundaries
+            rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
 
         Returns:
-            List of parameter boundaries.
+            list: parameter boundaries.
         """
 
         # The parameter of the Bernoulli model is naturally constrained to the [0, 1] interval
@@ -282,11 +288,11 @@ class Poisson(ObservationModel):
         Probability density function of the Poisson model
 
         Args:
-            grid: Parameter grid for discrete rate (lambda) values
-            dataSegment: Data segment from formatted data (in this case a single number of events)
+            grid(list): Parameter grid for discrete rate (lambda) values
+            dataSegment(ndarray): Data segment from formatted data (in this case a single number of events)
 
         Returns:
-            Discretized Poisson pdf as numpy array (with same shape as grid)
+            ndarray: Discretized Poisson pdf (with same shape as grid)
         """
         return (grid[0] ** dataSegment[0]) * (np.exp(-grid[0])) / (np.math.factorial(dataSegment[0]))
 
@@ -296,10 +302,10 @@ class Poisson(ObservationModel):
         boundaries are defined.
 
         Args:
-            rawData: observed data points that may be used to determine appropiate parameter boundaries
+            rawData(ndarray): observed data points that may be used to determine appropiate parameter boundaries
 
         Returns:
-            List of parameter boundaries.
+            list: parameter boundaries.
         """
 
         # lower is boundary is zero by definition, upper boundary is chosen as 1.25*(largest observation)
@@ -325,11 +331,11 @@ class Gaussian(ObservationModel):
         Probability density function of the Gaussian model.
 
         Args:
-            grid: Parameter grid for discrete values of mean and standard deviation
-            dataSegment: Data segment from formatted data (containing a single measurement)
+            grid(list): Parameter grid for discrete values of mean and standard deviation
+            dataSegment(ndarray): Data segment from formatted data (containing a single measurement)
 
         Returns:
-            Discretized Normal pdf as numpy array (with same shape as grid).
+            ndarray: Discretized Normal pdf (with same shape as grid).
         """
         return np.exp(
             -((dataSegment[0] - grid[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(2. * np.pi * grid[1] ** 2.))
@@ -340,10 +346,10 @@ class Gaussian(ObservationModel):
         boundaries are defined.
 
         Args:
-            rawData: observed data points that may be used to determine appropiate parameter boundaries
+            rawData(ndarray): observed data points that may be used to determine appropiate parameter boundaries
 
         Returns:
-            List of parameter boundaries.
+            list: parameter boundaries.
         """
         mean = np.mean(np.ravel(rawData))
         std = np.std(np.ravel(rawData))
@@ -374,11 +380,11 @@ class ZeroMeanGaussian(ObservationModel):
         Probability density function of the white noise process.
 
         Args:
-            grid: Parameter grid for discrete values of noise amplitude
-            dataSegment: Data segment from formatted data (containing a single measurement)
+            grid(list): Parameter grid for discrete values of noise amplitude
+            dataSegment(ndarray): Data segment from formatted data (containing a single measurement)
 
         Returns:
-            Discretized Normal pdf (with zero mean) as numpy array (with same shape as grid).
+            ndarray: Discretized pdf (with same shape as grid).
         """
         return np.exp(-(dataSegment[0] ** 2.) / (2. * grid[0] ** 2.) - .5 * np.log(2. * np.pi * grid[0] ** 2.))
 
@@ -388,10 +394,10 @@ class ZeroMeanGaussian(ObservationModel):
         boundaries are defined.
 
         Args:
-            rawData: observed data points that may be used to determine appropiate parameter boundaries
+            rawData(ndarray): observed data points that may be used to determine appropiate parameter boundaries
 
         Returns:
-            List of parameter boundaries.
+            list: parameter boundaries.
         """
         std = np.std(np.ravel(rawData))
         return [[0, 2*std]]
@@ -418,11 +424,11 @@ class AR1(ObservationModel):
         Probability density function of the Auto-regressive process of first order
 
         Args:
-            grid: Parameter grid for discerete values of the correlation coefficient and noise amplitude
-            dataSegment: Data segment from formatted data (in this case a pair of measurements)
+            grid(list): Parameter grid for discerete values of the correlation coefficient and noise amplitude
+            dataSegment(ndarray): Data segment from formatted data (in this case a pair of measurements)
 
         Returns:
-            Discretized pdf (for data point d_t, given d_(t-1) and parameters) as numpy array (with same shape as grid).
+            ndarray: Discretized pdf (for data point d_t, given d_(t-1) and parameters).
         """
         return np.exp(-((dataSegment[1] - grid[0] * dataSegment[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(
             2. * np.pi * grid[1] ** 2.))
@@ -450,11 +456,11 @@ class ScaledAR1(ObservationModel):
         Probability density function of the Auto-regressive process of first order
 
         Args:
-            grid: Parameter grid for discerete values of the correlation coefficient and standard deviation
-            dataSegment: Data segment from formatted data (in this case a pair of measurements)
+            grid(list): Parameter grid for discerete values of the correlation coefficient and standard deviation
+            dataSegment(ndarray): Data segment from formatted data (in this case a pair of measurements)
 
         Returns:
-            Discretized pdf (for data point d_t, given d_(t-1) and parameters) as numpy array (with same shape as grid).
+            ndarray: Discretized pdf (for data point d_t, given d_(t-1) and parameters).
         """
         r = grid[0]
         s = grid[1]
@@ -472,8 +478,8 @@ class LinearRegression(ObservationModel):
     argument offset is set to False, this parameter is not included in the fitting process.
 
     Args:
-        offset: If true, the constant term of the linear regression model is inferred from data.
-        fixedError: If the error of data_y is known, it can be set using this argument.
+        offset(bool): If true, the constant term of the linear regression model is inferred from data.
+        fixedError(float): If the error of data_y is known, it can be set using this argument.
     """
 
     def __init__(self, offset=True, fixedError=False):
@@ -508,11 +514,11 @@ class LinearRegression(ObservationModel):
         Probability density function of the Auto-regressive process of first order
 
         Args:
-            grid: Parameter grid for discrete parameter values
-            dataSegment: Data segment from formatted data (in this case a pair consisting of a x and y-value)
+            grid(list): Parameter grid for discrete parameter values
+            dataSegment(ndarray): Data segment from formatted data (in this case a pair consisting of a x and y-value)
 
         Returns:
-            Discretized pdf.
+            ndarray: Discretized pdf.
 
         """
         slope = grid[0]

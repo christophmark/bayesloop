@@ -37,11 +37,11 @@ class Static:
         Compute new prior from old posterior (moving forwards in time).
 
         Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
         return posterior
 
@@ -55,7 +55,7 @@ class GaussianRandomWalk:
     deviation can be set individually for each model parameter.
 
     Args:
-        sigma: Float or list of floats defining the standard deviation of the Gaussian random walk for each parameter
+        sigma(float, list): standard deviation of the Gaussian random walk for each parameter
     """
     def __init__(self, sigma=None, param=None):
         if isinstance(sigma, (list, tuple)):  # Online study expects Numpy array of values
@@ -75,11 +75,11 @@ class GaussianRandomWalk:
         Compute new prior from old posterior (moving forwards in time).
 
         Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
         normedSigma = []
         if isinstance(self.hyperParameters['sigma'], Iterable):
@@ -112,8 +112,8 @@ class AlphaStableRandomWalk:
     and the shape (alpha).
 
     Args:
-        c: Float or list of floats defining the width of the distribution (c >= 0).
-        alpha: Float or list of floats defining the shape of the distribution (0 < alpha <= 2).
+        c(float, list): width of the distribution (c >= 0).
+        alpha(float, list): shape of the distribution (0 < alpha <= 2).
     """
     def __init__(self, c=None, alpha=None, param=None):
         if isinstance(c, (list, tuple)):
@@ -137,11 +137,11 @@ class AlphaStableRandomWalk:
         Compute new prior from old posterior (moving forwards in time).
 
         Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
 
         # if hyper-parameter values have changed, a new convolution kernel needs to be created
@@ -185,12 +185,12 @@ class AlphaStableRandomWalk:
         Create alpha-stable distribution on a grid as a kernel for concolution.
 
         Args:
-            c: Scale parameter.
-            alpha: Tail parameter (alpha = 1: Cauchy, alpha = 2: Gauss)
-            axis: Axis along which the distribution is defined, for 2D-Kernels
+            c(float): Scale parameter.
+            alpha(float): Tail parameter (alpha = 1: Cauchy, alpha = 2: Gauss)
+            axis(int): Axis along which the distribution is defined, for 2D-Kernels
 
         Returns:
-            Numpy array containing kernel.
+            ndarray: kernel
         """
         gs = self.study.gridSize
         if len(gs) == 2:
@@ -223,13 +223,13 @@ class AlphaStableRandomWalk:
 
     def convolve(self, distribution):
         """
-        Convolves distribution with alpha-stabel kernel.
+        Convolves distribution with alpha-stable kernel.
 
         Args:
-            distribution: Discrete probability distribution to convolve.
+            distribution(ndarray): Discrete probability distribution to convolve.
 
         Returns:
-            Numpy array containing convolution.
+            ndarray: convolution
         """
         gs = np.array(self.study.gridSize)
         padded_distribution = np.zeros(3*np.array(gs))
@@ -273,11 +273,11 @@ class ChangePoint:
         Compute new prior from old posterior (moving forwards in time).
 
         Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
         if t == self.hyperParameters['tChange']:
             # check if custom prior is used by observation model
@@ -317,11 +317,11 @@ class Independent:
         Compute new prior from old posterior (moving forwards in time).
 
         Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
         # check if custom prior is used by observation model
         if hasattr(self.study.observationModel.prior, '__call__'):
@@ -347,7 +347,7 @@ class RegimeSwitch:
     effectively allowing abrupt parameter changes at every time step.
 
     Args:
-        log10pMin: Minimal probability density (log10 value) that is assigned to every parameter value
+        log10pMin(float): Minimal probability density (log10 value) that is assigned to every parameter value
     """
     def __init__(self, log10pMin=None):
         if isinstance(log10pMin, (list, tuple)):
@@ -366,11 +366,11 @@ class RegimeSwitch:
         Compute new prior from old posterior (moving forwards in time).
 
         Parameters:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
         newPrior = posterior.copy()
         limit = (10**self.hyperParameters['log10pMin'])*np.prod(self.latticeConstant)  # convert prob. density to prob.
@@ -394,8 +394,8 @@ class NotEqual:
     significantly.
 
     Args:
-        log10pMin: Log10-value of the minimal probability that is set to all possible parameter values of the inverted
-            parameter distribution
+        log10pMin(float): Log10-value of the minimal probability that is set to all possible parameter values of the
+            inverted parameter distribution
     """
     def __init__(self, log10pMin=None):
         if isinstance(log10pMin, (list, tuple)):
@@ -414,11 +414,11 @@ class NotEqual:
         Compute new prior from old posterior (moving forwards in time).
 
         Parameters:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
         newPrior = posterior.copy()
         limit = (10**self.hyperParameters['log10pMin'])*np.prod(self.latticeConstant)  # convert prob. density to prob.
@@ -445,9 +445,9 @@ class Deterministic:
     be inferred using a Hyper-study or can be optimized using the 'optimize' method of the Study class.
 
     Args:
-        function: A function that takes the time as its first argument and further takes keyword-arguments that
-            correspond to the hyper-parameters of the transition model which the function defines.
-        param: The observation model parameter that is manipulated according to the function defined above.
+        function(function): A function that takes the time as its first argument and further takes keyword-arguments
+            that correspond to the hyper-parameters of the transition model which the function defines.
+        param(str): The observation model parameter that is manipulated according to the function defined above.
 
     Example:
         def quadratic(t, a=0, b=0):
@@ -490,11 +490,11 @@ class Deterministic:
         Compute new prior from old posterior (moving forwards in time).
 
         Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: time stamp (integer time index by default)
+            posterior(ndarray): Parameter distribution from current time step
+            t(int, float): time stamp (integer time index by default)
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
 
         # compute normed shift of grid values
@@ -586,11 +586,11 @@ class CombinedTransitionModel:
         Compute new prior from old posterior (moving forwards in time).
 
         Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
         newPrior = posterior.copy()
 
@@ -663,11 +663,11 @@ class SerialTransitionModel:
         Compute new prior from old posterior (moving forwards in time).
 
         Args:
-            posterior: Parameter distribution (numpy array shaped according to grid size) from current time step
-            t: integer time step
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
 
         Returns:
-            Prior parameter distribution for subsequent time step (numpy array shaped according to grid size)
+            ndarray: Prior parameter distribution for subsequent time step
         """
         # the index of the model to choose at time t is given by the number of break times <= t
         modelIndex = np.sum(np.array(self.hyperParameters['tBreak']) <= t)

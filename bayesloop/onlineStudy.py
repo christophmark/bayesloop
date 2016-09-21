@@ -23,8 +23,8 @@ class OnlineStudy(Study):
     distribution over all transition models for each new data point, enabling real-time model selection.
 
     Args:
-        storeHistory: If true, posterior distributions and their mean values, as well as hyper-posterior distributions
-            are stored for all time steps.
+        storeHistory(bool): If true, posterior distributions and their mean values, as well as hyper-posterior
+            distributions are stored for all time steps.
     """
     def __init__(self, storeHistory=False):
         super(OnlineStudy, self).__init__()
@@ -242,7 +242,7 @@ class OnlineStudy(Study):
         Update the current parameter distribution by adding a new data point to the data set.
 
         Args:
-            dataPoint: Float, int, or 1D-array of those (for multidimensional data).
+            dataPoint(float, int, ndarray): Float, int, or 1D-array of those (for multidimensional data).
         """
         # at least one transition model has to be set or added
         if (self.tmCount is None) and (self.transitionModel is None):
@@ -399,14 +399,14 @@ class OnlineStudy(Study):
         Compute the marginal parameter distribution at a given time step.
 
         Args:
-            t: Time step/stamp for which the parameter distribution is evaluated
-            param: Parameter name or index of the parameter to display; default: 0 (first model parameter)
-            plot: If True, a plot of the distribution is created
+            t(int, float): Time step/stamp for which the parameter distribution is evaluated
+            param(str, int): Parameter name or index of the parameter to display; default: 0 (first model parameter)
+            plot(bool): If True, a plot of the distribution is created
             **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
 
         Returns:
-            Two numpy arrays. The first array contains the parameter values, the second one the corresponding
-            probability (density) values
+            ndarray, ndarray: The first array contains the parameter values, the second one the corresponding
+                probability (density) values
         """
         # plotting function of Study class can only handle arrays, not lists
         self.formattedTimestamps = np.array(self.formattedTimestamps)
@@ -423,13 +423,13 @@ class OnlineStudy(Study):
         Computes the time series of marginal posterior distributions with respect to a given model parameter.
 
         Args:
-            param: Parameter name or index of the parameter to display; default: 0 (first model parameter)
-            plot: If True, a plot of the series of distributions is created (density map)
+            param(str, int): Parameter name or index of the parameter to display; default: 0 (first model parameter)
+            plot(bool): If True, a plot of the series of distributions is created (density map)
             **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
 
         Returns:
-            Two numpy arrays. The first array contains the parameter values, the second one the sequence of
-            corresponding posterior distirbutions.
+            ndarray, ndarray: The first array contains the parameter values, the second one the sequence of
+                corresponding posterior distirbutions.
         """
         # plotting function of Study class can only handle arrays, not lists
         self.formattedTimestamps = np.array(self.formattedTimestamps)
@@ -447,9 +447,9 @@ class OnlineStudy(Study):
         posterior mean values.
 
         Args:
-            param: parameter name or index of parameter to display; default: 0 (first model parameter)
+            param(str, int): parameter name or index of parameter to display; default: 0 (first model parameter)
             color: color from which a light colormap is created
-            gamma: exponent for gamma correction of the displayed marginal distribution; default: 0.5
+            gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5
             kwargs: all further keyword-arguments are passed to the plot of the posterior mean values
         """
         # plotting function of Study class can only handle arrays, not lists
@@ -476,11 +476,11 @@ class OnlineStudy(Study):
 
         Args:
             transitionModel: transition model instance in which to search
-            param: Name of a hyper-parameter. If the name occurs multiple times, the index of the submodel can be
+            param(str): Name of a hyper-parameter. If the name occurs multiple times, the index of the submodel can be
                 supplied (starting at 1 for the first submodel).
 
         Returns:
-            Integer index of the hyper-parameter
+            int: index of the hyper-parameter
         """
         # extract hyper-parameter index from given string
         l = param.split('_')
@@ -537,12 +537,12 @@ class OnlineStudy(Study):
         step.
 
         Args:
-            t: Time step at which to compute distribution
-            transitionModelIndex: Index of the transition model that contains the hyper-parameter; default: 0 (first
-                transition model)
+            t(int): Time step at which to compute distribution
+            transitionModelIndex(int): Index of the transition model that contains the hyper-parameter; default: 0
+                (first transition model)
 
         Returns:
-            Numpy array containing the mean values of all hyper-parameters of the given transition model
+            ndarray: Array containing the mean values of all hyper-parameters of the given transition model
         """
         try:
             hyperParameterDistribution = self.hyperParameterSequence[t]
@@ -566,11 +566,12 @@ class OnlineStudy(Study):
         all time steps.
 
         Args:
-            transitionModelIndex: Index of the transition model that contains the hyper-parameter; default: 0 (first
-                transition model)
+            transitionModelIndex(int): Index of the transition model that contains the hyper-parameter; default: 0
+                (first transition model)
 
         Returns:
-            Numpy array containing the sequences of mean values for all hyper-parameters of the given transition model
+            ndarray: Array containing the sequences of mean values for all hyper-parameters of the given transition
+                model
         """
         try:
             hyperParameterSequence = np.array(self.hyperParameterSequence)[:, transitionModelIndex][:, :, None]
@@ -588,16 +589,17 @@ class OnlineStudy(Study):
         OnlineStudy fit.
 
         Args:
-            t: Time step at which to compute distribution
-            transitionModelIndex: Index of the transition model that contains the hyper-parameter; default: 0 (first
-                transition model)
-            param: Parameter name or index of hyper-parameter to display; default: 0 (first model hyper-parameter)
-            plot: If True, a bar chart of the distribution is created
+            t(int): Time step at which to compute distribution
+            transitionModelIndex(int): Index of the transition model that contains the hyper-parameter; default: 0
+                (first transition model)
+            param(str, int): Parameter name or index of hyper-parameter to display; default: 0
+                (first model hyper-parameter)
+            plot(bool): If True, a bar chart of the distribution is created
             **kwargs: All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
-            Two numpy arrays. The first array contains the hyper-parameter values, the second one the
-            corresponding probability (density) values
+            ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
+                corresponding probability (density) values
         """
         try:
             hyperParameterDistribution = self.hyperParameterSequence[t]
@@ -659,13 +661,14 @@ class OnlineStudy(Study):
         fit.
 
         Args:
-            transitionModelIndex: Index of the transition model that contains the hyper-parameter; default: 0 (first
-                transition model)
-            param: Parameter name or index of hyper-parameter to display; default: 0 (first model hyper-parameter)
+            transitionModelIndex(int): Index of the transition model that contains the hyper-parameter; default: 0
+                (first transition model)
+            param(str, int): Parameter name or index of hyper-parameter to display; default: 0
+                (first model hyper-parameter)
 
         Returns:
-            Two numpy arrays. The first array contains the hyper-parameter values, the second one the
-            corresponding probability (density) values (first axis is time).
+            ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
+                corresponding probability (density) values (first axis is time).
         """
         try:
             hyperParameterSequence = np.array(self.hyperParameterSequence)[:, transitionModelIndex]
@@ -707,11 +710,11 @@ class OnlineStudy(Study):
         mean values.
 
         Args:
-            transitionModelIndex: Index of the transition model that contains the hyper-parameter; default: 0 (first
-                transition model)
-            param: parameter name or index of parameter to display; default: 0 (first model parameter)
+            transitionModelIndex(int): Index of the transition model that contains the hyper-parameter; default: 0
+                (first transition model)
+            param(str, int): parameter name or index of parameter to display; default: 0 (first model parameter)
             color: color from which a light colormap is created
-            gamma: exponent for gamma correction of the displayed marginal distribution; default: 0.5
+            gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5
             kwargs: all further keyword-arguments are passed to the plot of the posterior mean values
         """
         # get sequence of hyper-parameter distributions

@@ -43,9 +43,9 @@ class HyperStudy(Study):
         Creates a regular grid of hyper-parameter values to be analyzed by the fit-method of the HyperStudy class.
 
         Args:
-            hyperGrid: List of lists with each containing the name of a hyper-parameter together with a lower and upper
-                boundary as well as a number of steps in between, or a list containing the name of a hyper-parameter
-                together with a list of discrete values to fit.
+            hyperGrid(list): List of lists with each containing the name of a hyper-parameter together with a lower and
+                upper boundary as well as a number of steps in between, or a list containing the name of a hyper-
+                parameter together with a list of discrete values to fit.
                 Example: hyperGrid = [['sigma', 0, 1, 20], ['log10pMin', [-7, -4, -1]]
         """
         # in case no hyper-grid is provided, return directly
@@ -88,11 +88,11 @@ class HyperStudy(Study):
         change-point study.
 
         Args:
-            hyperPrior: List of SymPy random variables, each of which represents the prior distribution of one hyper-
-                parameter. The multiplicative probability (density) will be assigned to the individual raster points.
-                Alternatively, a function can be provided that takes exactly as many arguments as there are hyper-
-                parameters in the transition model. The resulting prior distribution is renormalized such that the sum
-                over all points specified by the hyper-grid equals one.
+            hyperPrior(list): List of SymPy random variables, each of which represents the prior distribution of one
+                hyper-parameter. The multiplicative probability (density) will be assigned to the individual raster
+                points. Alternatively, a function can be provided that takes exactly as many arguments as there are
+                hyper-parameters in the transition model. The resulting prior distribution is renormalized such that
+                the sum over all points specified by the hyper-grid equals one.
         """
         # Actual hyper-parameter prior values have to be evaluated inside the fit-method, because hyper-grid values have
         # to be evaluated first. In the case of a custom hyper-grid, it cannot be ensured, that calling setHyperPrior is
@@ -107,14 +107,14 @@ class HyperStudy(Study):
         model of all analyses. Posterior mean values are computed from this average model.
 
         Args:
-            forwardOnly: If set to True, the fitting process is terminated after the forward pass. The resulting
+            forwardOnly(bool): If set to True, the fitting process is terminated after the forward pass. The resulting
                 posterior distributions are so-called "filtering distributions" which - at each time step -
                 only incorporate the information of past data points. This option thus emulates an online
                 analysis.
-            evidenceOnly: If set to True, only forward pass is run and evidence is calculated. In contrast to the
+            evidenceOnly(bool): If set to True, only forward pass is run and evidence is calculated. In contrast to the
                 forwardOnly option, no posterior mean values are computed and no posterior distributions are stored.
-            silent: If set to true, reduced output is created by this method.
-            nJobs: Number of processes to employ. Multiprocessing is based on the 'pathos' module.
+            silent(bool): If set to true, reduced output is created by this method.
+            nJobs(int): Number of processes to employ. Multiprocessing is based on the 'pathos' module.
             referenceLogEvidence: Reference value to increase numerical stability when computing average posterior
                 sequence. Ideally, this value represents the mean value of all log-evidence values. As an approximation,
                 the default behavior sets it to the log-evidence of the first set of hyper-parameter values.
@@ -322,17 +322,17 @@ class HyperStudy(Study):
         to distribute a HyperStudy fit among multiple processes for multiprocessing.
 
         Args:
-            idx: Index from 0 to (nJobs-1), indicating which part of the hyper-grid values are to be analyzed.
-            nJobs: Number of processes to employ. Multiprocessing is based on the 'pathos' module.
-            forwardOnly: If set to True, the fitting process is terminated after the forward pass. The resulting
+            idx(int): Index from 0 to (nJobs-1), indicating which part of the hyper-grid values are to be analyzed.
+            nJobs(int): Number of processes to employ. Multiprocessing is based on the 'pathos' module.
+            forwardOnly(bool): If set to True, the fitting process is terminated after the forward pass. The resulting
                 posterior distributions are so-called "filtering distributions" which - at each time step -
                 only incorporate the information of past data points. This option thus emulates an online
                 analysis.
-            evidenceOnly: If set to True, only forward pass is run and evidence is calculated. In contrast to the
+            evidenceOnly(bool): If set to True, only forward pass is run and evidence is calculated. In contrast to the
                 forwardOnly option, no posterior mean values are computed and no posterior distributions are stored.
-            silent: If set to True, no output is generated by the fitting method.
-            referenceLogEvidence: Reference value to increase numerical stability when computing average posterior
-                sequence. Ideally, this value represents the mean value of all log-evidence values.
+            silent(bool): If set to True, no output is generated by the fitting method.
+            referenceLogEvidence(float): Reference value to increase numerical stability when computing average
+                posterior sequence. Ideally, this value represents the mean value of all log-evidence values.
 
         Returns:
             HyperStudy instance
@@ -372,13 +372,14 @@ class HyperStudy(Study):
         Computes marginal hyper-parameter distribution of a single hyper-parameter in a HyperStudy fit.
 
         Args:
-            param: Parameter name or index of hyper-parameter to display; default: 0 (first model hyper-parameter)
-            plot: If True, a bar chart of the distribution is created
+            param(string, int): Parameter name or index of hyper-parameter to display; default: 0
+                (first model hyper-parameter)
+            plot(bool): If True, a bar chart of the distribution is created
             **kwargs: All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
         Returns:
-            Two numpy arrays. The first array contains the hyper-parameter values, the second one the
-            corresponding probability (density) values
+            ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
+                corresponding probability (density) values
         """
         hyperParameterNames = [x[0] for x in self.hyperGrid]
 
@@ -440,17 +441,17 @@ class HyperStudy(Study):
         specification.
 
         Args:
-            params: List of two parameter names or indices of hyper-parameters to display; default: [0, 1]
+            params(list): List of two parameter names or indices of hyper-parameters to display; default: [0, 1]
                 (first and second model parameter)
-            plot: If True, a 3D-bar chart of the distribution is created
+            plot(bool): If True, a 3D-bar chart of the distribution is created
             figure: In case the plot is supposed to be part of an existing figure, it can be passed to the method. By
                 default, a new figure is created.
             subplot: Characterization of subplot alignment, as in matplotlib. Default: 111
             **kwargs: all further keyword-arguments are passed to the bar3d-plot (see matplotlib documentation)
 
         Returns:
-            Three numpy arrays. The first and second array contains the hyper-parameter values, the
-            third one the corresponding probability (density) values
+            ndarray, ndarray, ndarray: The first and second array contains the hyper-parameter values, the
+                third one the corresponding probability (density) values
         """
         hyperParameterNames = [x[0] for x in self.hyperGrid]
 
