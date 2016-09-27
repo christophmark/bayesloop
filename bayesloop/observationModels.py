@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """
-This file introduces the observation models that can be used by the Study class for data analysis. An observation model
-here refers to a likelihood function, stating the probability of a measurement at a certain time step, given the
-parameter values.
+Observation models refer to likelihood functions, describing the probability (density) of a measurement at a certain
+time step, given the time-varying parameter values and past measurements. Observation models thus represent the lower-
+level model in a bayesloop study, as compared to transition models that represent the higher-level models and specify
+how the time-varying parameter change over time.
 """
 
 from __future__ import division, print_function
@@ -50,8 +51,8 @@ class ObservationModel:
 
 class Custom(ObservationModel):
     """
-    This observation model class allows to create new observation models on-the-fly from scipy.stats probability
-    distributions or from sympy.stats random variables.
+    SciPy/SymPy model. This observation model class allows to create new observation models on-the-fly from scipy.stats
+    probability distributions or from sympy.stats random variables.
 
     Args:
         rv: SymPy random symbol or Scipy random distribution
@@ -59,26 +60,27 @@ class Custom(ObservationModel):
         determineJeffreysPrior(bool): If set to true, Jeffreys prior is analytically derived (only available for SymPy
             random symbol)
 
-    SciPy.stats
-    -----------
+    **SciPy.stats**
+
     Note that scipy.stats does not use the canonical way of naming the parameters of the probability distributions, but
     instead includes the parameter 'loc' (for discrete & continuous distributions) and 'scale' (for continuous only).
 
     See http://docs.scipy.org/doc/scipy/reference/stats.html for further information on the available distributions and
     the parameter notation.
 
-    Example::
+    Example:
+    ::
         M = bl.observationModels.Custom(scipy.stats.norm, fixedParameters={'loc': 4})
 
-        This will result in a model for normally distributed observations with a fixed 'loc' (mean) of 4, leaving the
-        'scale' (standard deviation) as the only free parameter to be inferred.
+    This will result in a model for normally distributed observations with a fixed 'loc' (mean) of 4, leaving the
+    'scale' (standard deviation) as the only free parameter to be inferred.
 
-        Note that while the parameters 'loc' and 'scale' have default values in scipy.stats and do not necessarily need
-        to be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant.
-        Using SciPy.stats distributions, bayesloop uses a flat prior by default.
+    Note that while the parameters 'loc' and 'scale' have default values in scipy.stats and do not necessarily need
+    to be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant.
+    Using SciPy.stats distributions, bayesloop uses a flat prior by default.
 
-    SymPy.stats
-    -----------
+    **SymPy.stats**
+
     Observation models can be defined symbolically using the SymPy module in a convenient way. In contrast to the
     SciPy probability distributions, fixed parameters are directly set and not passed as a dictionary.
 
@@ -86,6 +88,7 @@ class Custom(ObservationModel):
     parameter notation.
 
     Example:
+    ::
         from sympy import Symbol
         from sympy.stats import Normal
 
@@ -95,10 +98,10 @@ class Custom(ObservationModel):
 
         M = bl.observationModels.Custom(rv)
 
-        This will result in a model for normally distributed observations with a fixed 'mu' (mean) of 4, leaving 'sigma'
-        (the standard deviation) as the only free parameter to be inferred. Using SymPy random variables to create an
-        observation model, bayesloop tries to determine the corresponding Jeffreys prior. This behavior can be turned
-        off by setting the keyword-argument 'determineJeffreysPrior=False'.
+    This will result in a model for normally distributed observations with a fixed 'mu' (mean) of 4, leaving 'sigma'
+    (the standard deviation) as the only free parameter to be inferred. Using SymPy random variables to create an
+    observation model, bayesloop tries to determine the corresponding Jeffreys prior. This behavior can be turned
+    off by setting the keyword-argument 'determineJeffreysPrior=False'.
     """
 
     def __init__(self, rv, fixedParameters={}, determineJeffreysPrior=True):

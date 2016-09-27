@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
-This file introduces the transition models that can be used by the Study class for data analysis. A transition model
-here refers to a stochastic or deterministic model that describes how the parameter values of a given time series
-model change from one time step to another. The transition model can thus be compared to the state transition matrix
-of Hidden Markov models. However, instead of explicitly stating transition probabilities for all possible states, a
-transformation is defined that alters the distribution of the model parameters in one time step according to the
-transition model. This altered distribution is subsequently used as a prior distribution in the next time step.
+Transition models refer to stochastic or deterministic models that describe how the time-varying parameter values of a
+given time series model change from one time step to another. The transition model can thus be compared to the state
+transition matrix of Hidden Markov models. However, instead of explicitly stating transition probabilities for all
+possible states, a transformation is defined that alters the distribution of the model parameters in one time step
+according to the transition model. This altered distribution is subsequently used as a prior distribution in the next
+time step.
 """
 
 from __future__ import division, print_function
@@ -301,7 +301,10 @@ class ChangePoint:
 class Independent:
     """
     Independent observations model. This transition model restores the prior distribution for the parameters at each
-    time step, effectively assuming independent observations. Mostly used with an instance of OnlineStudy.
+    time step, effectively assuming independent observations.
+
+    Note:
+        Mostly used with an instance of OnlineStudy.
     """
     def __init__(self):
         self.study = None
@@ -387,15 +390,18 @@ class RegimeSwitch:
 
 class NotEqual:
     """
-    Assumes an "inverse" parameter distribution at each new time step. The new prior is derived by substracting the
-    posterior probability values from their maximal value and subsequently re-normalizing. To assure that no parameter
-    value is set to zero probability, one may specify a minimal probability for all parameter values. This transition
-    model is mostly used in instances of OnlineStudy to detect time step when parameter distributions change
-    significantly.
+    Inverse distribution model. Assumes an "inverse" parameter distribution at each new time step. The new prior is
+    derived by substracting the posterior probability values from their maximal value and subsequently re-normalizing.
+    To assure that no parameter value is set to zero probability, one may specify a minimal probability for all
+    parameter values. This transition model is mostly used in instances of OnlineStudy to detect time step when
+    parameter distributions change significantly.
 
     Args:
         log10pMin(float): Log10-value of the minimal probability that is set to all possible parameter values of the
             inverted parameter distribution
+
+    Note:
+        Mostly used with an instance of OnlineStudy.
     """
     def __init__(self, log10pMin=None):
         if isinstance(log10pMin, (list, tuple)):
@@ -450,6 +456,7 @@ class Deterministic:
         param(str): The observation model parameter that is manipulated according to the function defined above.
 
     Example:
+    ::
         def quadratic(t, a=0, b=0):
             return a*(t**2) + b*t
 
@@ -625,15 +632,16 @@ class SerialTransitionModel:
             (for n models, n-1 time steps have to be provided)
 
     Example:
+    ::
         K = bl.transitionModels.SerialTransitionModel(bl.transitionModels.Static(),
                                                       50,
                                                       bl.transitionModels.RegimeSwitch(log10pMin=-7),
                                                       100,
                                                       bl.transitionModels.GaussianRandomWalk(sigma=0.2))
 
-        In this example, parameters are assumed to be constant until time step 50, followed by a regime-switching-
-        process until time step 100. Finally, we assume Gaussian parameter fluctuations until the last time step. Note
-        that models and time steps do not necessarily have to be passed in an alternating way.
+    In this example, parameters are assumed to be constant until time step 50, followed by a regime-switching-
+    process until time step 100. Finally, we assume Gaussian parameter fluctuations until the last time step. Note
+    that models and time steps do not necessarily have to be passed in an alternating way.
     """
     def __init__(self, *args):
         self.study = None
