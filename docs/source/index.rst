@@ -6,16 +6,16 @@
 Welcome to bayesloop's documentation!
 =====================================
 
-.. include:: rest/summary.rst
+.. include:: summary.rst
 
 Contents:
 
 .. toctree::
    :maxdepth: 3
    
-   rest/tutorials
-   rest/examples
-   rest/api
+   tutorials
+   examples
+   api
 
 
 Indices and tables
