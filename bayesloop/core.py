@@ -31,8 +31,9 @@ from .exceptions import *
 
 class Study(object):
     """
-    This class implements a forward-backward-algorithm for analyzing time series data using hierarchical models. For
-    efficient computation, all parameter distribution are dicretized on a parameter grid.
+    Basic fits of time-varying parameter models. This class implements a forward-backward-algorithm for analyzing time
+    series data using hierarchical models. For efficient computation, all parameter distribution are discretized on a
+    parameter grid.
     """
     def __init__(self):
         self.observationModel = None
@@ -918,9 +919,9 @@ class Study(object):
 
 class HyperStudy(Study):
     """
-    This class serves as an extension to the basic Study class and allows to compute the distribution of hyper-
-    parameters of a given transition model. For further information, see the documentation of the fit-method of this
-    class.
+    Infers hyper-parameter distributions. This class serves as an extension to the basic Study class and allows to
+    compute the distribution of hyper-parameters of a given transition model. For further information, see the
+    documentation of the fit-method of this class.
     """
     def __init__(self):
         super(HyperStudy, self).__init__()
@@ -1454,10 +1455,10 @@ class HyperStudy(Study):
 
 class ChangepointStudy(HyperStudy):
     """
-    This class builds on the HyperStudy-class and the change-point transition model to perform a series of analyses
-    with varying change point times. It subsequently computes the average model from all possible change points and
-    creates a probability distribution of change point times. It supports any number of change-points and arbitarily
-    combined models.
+    Infers change-points and structural breaks. This class builds on the HyperStudy-class and the change-point
+    transition model to perform a series of analyses with varying change point times. It subsequently computes the
+    average model from all possible change points and creates a probability distribution of change point times. It
+    supports any number of change-points and arbitarily combined models.
     """
     def __init__(self):
         super(ChangepointStudy, self).__init__()
@@ -1831,11 +1832,12 @@ class ChangepointStudy(HyperStudy):
 
 class OnlineStudy(Study):
     """
-    This class builds on the Study-class and features a step-method to include new data points in the study as they
-    arrive from a data stream. This online-analysis is performed in an forward-only way, resulting in filtering-
-    distributions only. In contrast to a normal study, however, one can add multiple transition models to account for
-    different types of parameter dynamics (similar to a Hyper study). The Online study then computes the probability
-    distribution over all transition models for each new data point, enabling real-time model selection.
+    Enables model selection for online data streams. This class builds on the Study-class and features a step-method
+    to include new data points in the study as they arrive from a data stream. This online-analysis is performed in an
+    forward-only way, resulting in filtering-distributions only. In contrast to a normal study, however, one can add
+    multiple transition models to account for different types of parameter dynamics (similar to a Hyper study). The
+    Online study then computes the probability distribution over all transition models for each new data point,
+    enabling real-time model selection.
 
     Args:
         storeHistory(bool): If true, posterior distributions and their mean values, as well as hyper-posterior
@@ -2281,6 +2283,12 @@ class OnlineStudy(Study):
 
     def getTransitionModelDistributions(self):
         """
+        The transition model distribution contains posterior probability values for all transition models included in
+        the online study. This distribution is available for all time steps analyzed.
+
+        Returns:
+            ndarray: Array containing the posterior probability values for all transition models included in the online
+                study for all time steps analyzed
         """
         return np.array(self.transitionModelSequence)
 
