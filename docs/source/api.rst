@@ -15,6 +15,15 @@ Study types
     ChangepointStudy
     OnlineStudy
 
+.. note::
+
+    These Study classes are imported directly into the module namespace for convenient access.
+    
+    .. code-block:: python
+
+        import bayesloop as bl
+        S = bl.Study()
+
 .. automodule:: bayesloop.core
     :members:
 
