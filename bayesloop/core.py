@@ -2211,7 +2211,7 @@ class OnlineStudy(Study):
             self.hyperParameterSequence.append(deepcopy(self.hyperParameterDistribution))
             self.transitionModelSequence.append(deepcopy(self.transitionModelDistribution))
 
-    def getMarginalParameterDistribution(self, t, param=0, plot=False, **kwargs):
+    def getParameterDistribution(self, t, param=0, plot=False, **kwargs):
         """
         Compute the marginal parameter distribution at a given time step.
 
@@ -2235,7 +2235,7 @@ class OnlineStudy(Study):
         self.formattedTimestamps = list(self.formattedTimestamps)
         self.posteriorSequence = list(self.posteriorSequence)
 
-    def getMarginalParameterDistributions(self, param=0, plot=False, **kwargs):
+    def getParameterDistributions(self, param=0, plot=False, **kwargs):
         """
         Computes the time series of marginal posterior distributions with respect to a given model parameter.
 
