@@ -88,6 +88,8 @@ language = None
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = ['**.ipynb_checkpoints']
 
+nbsphinx_execute = 'never'
+
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
 #default_role = None
