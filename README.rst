@@ -25,7 +25,7 @@ Getting started
 
 For a comprehensive introduction and overview of the main features that *bayesloop* provides, see the `documentation <http://docs.bayesloop.com>`__.
 
-The following code provides a minimal example of an analysis carried out using *bayesloop*. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this `article <http://www.dima.unige.it/~riccomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf) for further information>`__.
+The following code provides a minimal example of an analysis carried out using *bayesloop*. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this `article <http://www.dima.unige.it/~riccomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf>`__ for further information).
 
 .. code-block:: python
 
