@@ -4,7 +4,7 @@
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="bayesloop : A framework for fitting and comparing time series models with time-varying parameters">
+    <meta name="description" content="bayesloop : Probabilistic programming framework that enables objective model selection for time-varying parameter models.">
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
@@ -19,7 +19,7 @@
           <a id="forkme_banner" href="https://github.com/christophmark/bayesloop">View on GitHub</a>
 
           <h1 id="project_title">bayesloop</h1>
-          <h2 id="project_tagline">A framework for fitting and comparing time series models with time-varying parameters</h2>
+          <h2 id="project_tagline">Probabilistic programming framework that enables objective model selection for time-varying parameter models.</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/christophmark/bayesloop/zipball/master">Download this project as a .zip file</a>
@@ -38,61 +38,60 @@
 <p>The underlying algorithm of <em>bayesloop</em> has been successfully employed in cancer research, studying the migration paths of invasive tumor cells, see this <a href="http://www.nature.com/articles/ncomms8516">article</a>.</p>
 
 <h2>
-<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
 
 <ul>
-<li>fit time series models with time-varying parameters</li>
+<li>infer time-varying parameters from time series data </li>
+<li>compare hypotheses about parameter dynamics (model evidence)</li>
 <li>create custom models based on SymPy and SciPy</li>
-<li>analyze joint parameter distribution instead of point-estimates</li>
-<li>employ objective model selection based on Bayesian model evidence</li>
-<li>test different hypotheses about parameter dynamics</li>
-<li>analyze change-points and structural breaks in time series data</li>
 <li>straight-forward handling of missing data points</li>
-<li>suitable for online analysis as well as retrospective analysis</li>
+<li>predict future parameter values</li>
+<li>detect change-points and structural breaks in time series data</li>
+<li>employ model selection to online data streams</li>
 </ul>
 
 <p>Note that the module is currently in beta state, so features may change in the future.</p>
 
 <h2>
-<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting started</h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting started</h2>
 
-<p>For a comprehensive introduction and overview of the main features that <em>bayesloop</em> provides, see the <a href="http://nbviewer.ipython.org/github/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb">tutorial</a>. While you may read this tutorial directly in your browser, you can also download it and interactively manipulate/execute the code therein (see <a href="https://ipython.org/ipython-doc/3/notebook/notebook.html#starting-the-notebook-server">here</a> for further information).</p>
+<p>For a comprehensive introduction and overview of the main features that <em>bayesloop</em> provides, see the <a href="http://docs.bayesloop.com">documentation</a>.</p>
 
 <p>The following code provides a minimal example of an analysis carried out using <em>bayesloop</em>. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this <a href="http://www.dima.unige.it/%7Ericcomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf">article</a> for further information).</p>
 
 <pre><code>import bayesloop as bl
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 S = bl.Study()  # start new data study
 S.loadExampleData()  # load data array
 
 # observed number of disasters is modeled by Poisson distribution
-M = bl.observationModels.Poisson()
-S.setObservationModel(M)
-
-# set boundaries for annual disaster-rate
-S.setBoundaries([[0, 6]])
+L = bl.observationModels.Poisson()
+S.setObservationModel(L)
 
 # disaster rate itself may change gradually over time
-K = bl.transitionModels.GaussianRandomWalk(sigma=0.2)
-S.setTransitionModel(K)
+T = bl.transitionModels.GaussianRandomWalk(sigma=0.2)
+S.setTransitionModel(T)
 
-S.fit()  # Bayesian inference
+S.fit()  # inference
 
 # plot data together with inferred parameter evolution
-plt.figure(figsize=(10, 5))
-plt.xlim([1850, 1962])
-plt.bar(range(1851, 1962), S.rawData,
+plt.figure(figsize=(6, 3))
+plt.xlim([1852, 1961])
+
+plt.bar(S.rawTimestamps, S.rawData,
         align='center', facecolor='r', alpha=.5)
-S.plotParameterEvolution(xLower=1851, xUpper=1962)
+S.plotParameterEvolution()
 plt.show()
 </code></pre>
 
-<p><img src="https://raw.githubusercontent.com/christophmark/bayesloop/gh-pages/images/disaster_model.png" alt="disaster model result" width="103%" height="103%"><br><br>
-This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the <a href="http://nbviewer.ipython.org/github/christophmark/bayesloop/blob/master/docs/bayesloop_tutorial.ipynb">tutorial</a> for further insights!</p>
+<p><img src="https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/example.png" alt="Analysis plot"></p>
+
+<p>This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the <a href="http://docs.bayesloop.com">documentation</a> for further insights!</p>
 
 <h2>
-<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
 
 <p>To install the latest version of <em>bayesloop</em>, download the <a href="https://github.com/christophmark/bayesloop/zipball/master">zipped version</a> or clone the repository and install <em>bayesloop</em> using <code>python setup.py install</code>.</p>
 
@@ -102,12 +101,12 @@ This analysis indicates a significant improvement of safety conditions between 1
 </code></pre>
 
 <h2>
-<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h2>
+<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dependencies</h2>
 
-<p><em>bayesloop</em> is tested on Python 2.7 and depends on NumPy, SciPy, SymPy, matplotlib and Seaborn.</p>
+<p><em>bayesloop</em> is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy and matplotlib.</p>
 
 <h2>
-<a id="optionaldependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Optional dependencies</h2>
+<a id="optional-dependencies" class="anchor" href="#optional-dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Optional dependencies</h2>
 
 <p><em>bayesloop</em> uses <a href="https://pypi.python.org/pypi/dill">dill</a>, an extension to Python's <a href="https://docs.python.org/2/library/pickle.html">pickle</a> module, to save/load on-going data studies to/from file. It can be installed via pip:</p>
 
@@ -121,13 +120,12 @@ This analysis indicates a significant improvement of safety conditions between 1
 
 <p><strong>Note</strong>: Windows users need to install a C compiler <em>before</em> installing pathos. One possible solution for 64bit systems is to install <a href="http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092">Microsoft Visual C++ 2008 SP1 Redistributable Package (x64)</a> and <a href="http://www.microsoft.com/en-us/download/details.aspx?id=44266">Microsoft Visual C++ Compiler for Python 2.7</a>.</p>
 
-
 <h2>
-<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
 
 <p><a href="https://github.com/christophmark/bayesloop/blob/master/LICENSE">The MIT License (MIT)</a></p>
 
-<p>If you have any further questions, suggestions or comments, do not hesitate to contact me: &#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;</p>
+<p>If you have any further questions, suggestions or comments, do not hesitate to contact me: bayesloop@gmail.com</p>
       </section>
     </div>
 
