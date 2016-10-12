@@ -2093,7 +2093,8 @@ class OnlineStudy(Study):
         # initialize hyper-prior as flat
         if self.hyperPrior is None:
             self.hyperPrior = 'flat hyper-prior'
-            self.hyperPriorValues = [np.ones(tmc) / tmc for tmc in self.tmCounts]
+            self.hyperPriorValues = [np.ones(tmc) / (tmc * np.prod(hgc))
+                                     for tmc, hgc in zip(self.tmCounts, self.hyperGridConstants)]
             print('    + Initialized flat hyper-prior.')
 
         # initialize transition model prior as flat
@@ -2136,11 +2137,12 @@ class OnlineStudy(Study):
         if self.transitionModelDistribution is None:
             self.transitionModelDistribution = np.zeros(len(self.transitionModels))
 
-        # initialize transition model posterior
+        # initialize transition model posterior (needs to be re-initialized each time step)
         self.transitionModelPosterior = np.zeros([len(self.transitionModels)] + self.gridSize)
 
         # initialize marginalized posterior
-        self.marginalizedPosterior = np.zeros(self.gridSize)
+        if self.marginalizedPosterior is None:
+            self.marginalizedPosterior = np.zeros(self.gridSize)
 
         # select data segment
         dataSegment = self.rawData[-self.observationModel.segmentLength:]
@@ -2162,7 +2164,10 @@ class OnlineStudy(Study):
                     self.setAllHyperParameters(x)
 
                 # compute alpha_i
-                alphai = self.transitionModel.computeForwardPrior(self.alpha, len(self.formattedData)-1)*likelihood
+                if np.sum(self.marginalizedPosterior) == 0.:  # first time step, so use predefined prior
+                    alphai = self.alpha*likelihood
+                else:  # in all other time step transform "old" alpha/posterior
+                    alphai = self.transitionModel.computeForwardPrior(self.alpha, len(self.formattedData)-1)*likelihood
                 ni = np.sum(alphai)
 
                 # hyper-post. values are not normalized at this point: hyper-like. * hyper-prior
