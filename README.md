@@ -64,7 +64,7 @@ pip install git+https://github.com/christophmark/bayesloop
 ```
 
 ## Dependencies
-*bayesloop* is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy and matplotlib.
+*bayesloop* is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib and tqdm.
 
 ## Optional dependencies
 *bayesloop* uses [dill](https://pypi.python.org/pypi/dill), an extension to Python's [pickle](https://docs.python.org/2/library/pickle.html) module, to save/load on-going data studies to/from file. It can be installed via pip:

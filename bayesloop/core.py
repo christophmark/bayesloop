@@ -22,6 +22,7 @@ import sympy.stats
 from copy import copy, deepcopy
 from collections import OrderedDict, Iterable
 from inspect import getargspec
+from tqdm import tqdm, tqdm_notebook
 from .helper import *
 from .preprocessing import *
 from .transitionModels import CombinedTransitionModel
@@ -1140,7 +1141,17 @@ class HyperStudy(Study):
                     self.averagePosteriorSequence += S.averagePosteriorSequence
         # single process fit
         else:
-            for i, hyperParamValues in enumerate(self.hyperGridValues):
+            # show progressbar if silent=False
+            if not silent:
+                # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+                try:
+                    enum = tqdm_notebook(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
+                except:
+                    enum = tqdm(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
+            else:
+                enum = enumerate(self.hyperGridValues)
+
+            for i, hyperParamValues in enum:
                 self.setSelectedHyperParameters(hyperParamValues)
 
                 # call fit method from parent class
@@ -1159,9 +1170,9 @@ class HyperStudy(Study):
                                                      np.exp(self.logEvidence - referenceLogEvidence) *\
                                                      self.hyperPriorValues[i]
 
-                if not silent:
-                    print('    + Analysis #{} of {} -- Hyper-parameter values {} -- log10-evidence = {:.5f}'
-                          .format(i+1, len(self.hyperGridValues), hyperParamValues, self.logEvidence / np.log(10)))
+            # remove progressbar correctly
+            if not silent:
+                enum.close()
 
         # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
         self.selectedHyperParameters = []
@@ -1241,7 +1252,17 @@ class HyperStudy(Study):
         S.hyperGridValues = np.array_split(S.hyperGridValues, nJobs)[idx]
         S.hyperPriorValues = np.array_split(S.hyperPriorValues, nJobs)[idx]
 
-        for i, hyperParamValues in enumerate(S.hyperGridValues):
+        # show progressbar for last process if silent=False
+        if not silent and idx == nJobs-1:
+            # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+            try:
+                enum = tqdm_notebook(enumerate(S.hyperGridValues), total=len(S.hyperGridValues))
+            except:
+                enum = tqdm(enumerate(S.hyperGridValues), total=len(S.hyperGridValues))
+        else:
+            enum = enumerate(S.hyperGridValues)
+
+        for i, hyperParamValues in enum:
             S.setSelectedHyperParameters(hyperParamValues)
 
             # call fit method from parent class
@@ -1254,10 +1275,10 @@ class HyperStudy(Study):
                                               np.exp(S.logEvidence - referenceLogEvidence) *\
                                               S.hyperPriorValues[i]
 
-            if not silent:
-                print('    + Process {} -- Analysis #{} of {}'.format(idx, i+1, len(S.hyperGridValues)))
+        # remove progressbar correctly
+        if not silent and idx == nJobs-1:
+            enum.close()
 
-        print('    + Process {} finished.'.format(idx))
         return S
 
     # optimization methods are inherited from Study class, but cannot be used in this case
