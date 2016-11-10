@@ -50,8 +50,6 @@
 <li>employ model selection to online data streams</li>
 </ul>
 
-<p>Note that the module is currently in beta state, so features may change in the future.</p>
-
 <h2>
 <a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting started</h2>
 
@@ -67,11 +65,11 @@ S = bl.Study()  # start new data study
 S.loadExampleData()  # load data array
 
 # observed number of disasters is modeled by Poisson distribution
-L = bl.observationModels.Poisson()
+L = bl.observationModels.Poisson('rate')
 S.setObservationModel(L)
 
 # disaster rate itself may change gradually over time
-T = bl.transitionModels.GaussianRandomWalk(sigma=0.2)
+T = bl.transitionModels.GaussianRandomWalk('sigma', 0.2, target='rate')
 S.setTransitionModel(T)
 
 S.fit()  # inference
@@ -82,7 +80,7 @@ plt.xlim([1852, 1961])
 
 plt.bar(S.rawTimestamps, S.rawData,
         align='center', facecolor='r', alpha=.5)
-S.plotParameterEvolution()
+S.plotParameterEvolution('rate')
 plt.show()
 </code></pre>
 
