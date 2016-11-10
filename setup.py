@@ -4,12 +4,12 @@ from setuptools import setup
 
 setup(
     name='bayesloop',
-    version='0.5',
-    description='Framework for fitting hierarchical time series models based on Bayesian inference.',
-    url='https://bitbucket.org/chrismark/bayesloop',
+    version='1.0',
+    description='Probabilistic programming framework that enables objective model selection for time-varying parameter models.',
+    url='https://github.com/christophmark/bayesloop',
     author='Christoph Mark',
     author_email='christoph.mark@fau.de',
     license='The MIT License (MIT)',
     packages=['bayesloop'],
-    install_requires=['numpy>=1.9.2', 'scipy>=0.15.1', 'sympy>=0.7.6', 'matplotlib>=1.4.3', 'tqdm>=4.7.6']
+    install_requires=['numpy>=1.11.0', 'scipy>=0.17.1', 'sympy>=1.0', 'matplotlib>=1.5.1', 'tqdm>=4.7.6']
     )

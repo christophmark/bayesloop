@@ -4,6 +4,7 @@ This file includes basic helper functions.
 """
 
 from __future__ import division, print_function
+import numpy as np
 import matplotlib.colors as colors
 
 
@@ -84,3 +85,36 @@ def createColormap(color, min_factor=1.0, max_factor=0.95):
                        (1.0, max_factor*rgb[2], max_factor*rgb[2])]}
 
     return colors.LinearSegmentedColormap('custom', cdict)
+
+
+def oint(start, stop, num):
+    """
+    Returns evenly spaced numbers over a specified interval. The interval boundaries are NOT included, i.e. the interval
+    is an open one. Mainly used for parameter values of the low-level (observation) model, to avoid singularities in the
+    likelihood function.
+
+    Args:
+        start(scalar): Starting value of the sequence
+        stop(scalar): End value of the sequence
+        num(int): Number of evenly spaced points within the interval.
+
+    Returns:
+        ndarray: Array of evenly spaced numbers from the specified open interval.
+    """
+    return np.linspace(start, stop, num+2)[1:-1]
+
+
+def cint(start, stop, num):
+    """
+    Returns evenly spaced numbers over a specified interval. The interval boundaries are included, i.e. the interval is
+    a closed one. Mainly used for hyper-parameter values of the high-level (transition) model.
+
+    Args:
+        start(scalar): Starting value of the sequence
+        stop(scalar): End value of the sequence
+        num(int): Number of evenly spaced points within the interval.
+
+    Returns:
+        ndarray: Array of evenly spaced numbers from the specified closed interval.
+    """
+    return np.linspace(start, stop, num)

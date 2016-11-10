@@ -10,6 +10,7 @@ from . import transitionModels
 from . import transitionModels as tm  # short form
 
 # misc
+from helper import cint, oint
 from .jeffreys import *
 from .fileIO import *
 

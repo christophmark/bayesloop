@@ -17,8 +17,6 @@ The underlying algorithm of *bayesloop* has been successfully employed in cancer
 * detect change-points and structural breaks in time series data
 * employ model selection to online data streams
 
-Note that the module is currently in beta state, so features may change in the future.
-
 ## Getting started
 For a comprehensive introduction and overview of the main features that *bayesloop* provides, see the [documentation](http://docs.bayesloop.com).
 
@@ -32,11 +30,11 @@ S = bl.Study()  # start new data study
 S.loadExampleData()  # load data array
 
 # observed number of disasters is modeled by Poisson distribution
-L = bl.observationModels.Poisson()
+L = bl.observationModels.Poisson('rate')
 S.setObservationModel(L)
 
 # disaster rate itself may change gradually over time
-T = bl.transitionModels.GaussianRandomWalk(sigma=0.2)
+T = bl.transitionModels.GaussianRandomWalk('sigma', 0.2, target='rate')
 S.setTransitionModel(T)
 
 S.fit()  # inference
@@ -47,7 +45,7 @@ plt.xlim([1852, 1961])
 
 plt.bar(S.rawTimestamps, S.rawData,
         align='center', facecolor='r', alpha=.5)
-S.plotParameterEvolution()
+S.plotParameterEvolution('rate')
 plt.show()
 ```
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
 Observation models refer to likelihood functions, describing the probability (density) of a measurement at a certain
-time step, given the time-varying parameter values and past measurements. Observation models thus represent the lower-
-level model in a bayesloop study, as compared to transition models that represent the higher-level models and specify
+time step, given the time-varying parameter values and past measurements. Observation models thus represent the low-
+level model in a bayesloop study, as compared to transition models that represent the high-level models and specify
 how the time-varying parameter change over time.
 """
 
@@ -14,6 +14,7 @@ from sympy.stats import density
 from .jeffreys import getJeffreysPrior
 from scipy.misc import factorial
 from .exceptions import *
+from .helper import cint, oint
 
 
 class ObservationModel:
@@ -49,18 +50,16 @@ class ObservationModel:
         return self.pdf(grid, dataSegment)
 
 
-class Custom(ObservationModel):
+class SciPy(ObservationModel):
     """
-    SciPy/SymPy model. This observation model class allows to create new observation models on-the-fly from scipy.stats
-    probability distributions or from sympy.stats random variables.
+    SciPy model. This observation model class allows to create new observation models on-the-fly from scipy.stats
+    probability distributions.
 
     Args:
-        rv: SymPy random symbol or Scipy random distribution
+        rv: SciPy random distribution
         fixedParameters(dict): Dictionary defining the names and values of fixed parameters
-        determineJeffreysPrior(bool): If set to true, Jeffreys prior is analytically derived (only available for SymPy
-            random symbol)
-
-    **SciPy.stats**
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
 
     Note that scipy.stats does not use the canonical way of naming the parameters of the probability distributions, but
     instead includes the parameter 'loc' (for discrete & continuous distributions) and 'scale' (for continuous only).
@@ -70,7 +69,7 @@ class Custom(ObservationModel):
 
     Example:
     ::
-        M = bl.observationModels.Custom(scipy.stats.norm, fixedParameters={'loc': 4})
+        L = bl.observationModels.Custom(scipy.stats.norm, fixedParameters={'loc': 4})
 
     This will result in a model for normally distributed observations with a fixed 'loc' (mean) of 4, leaving the
     'scale' (standard deviation) as the only free parameter to be inferred.
@@ -78,8 +77,85 @@ class Custom(ObservationModel):
     Note that while the parameters 'loc' and 'scale' have default values in scipy.stats and do not necessarily need
     to be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant.
     Using SciPy.stats distributions, bayesloop uses a flat prior by default.
+    """
 
-    **SymPy.stats**
+    def __init__(self, rv, valueDict={}, prior=None, fixedParameters={}):
+        self.rv = rv
+        self.fixedParameterDict = fixedParameters
+        self.prior = prior
+
+        # check if first argument is valid
+        try:
+            self.module = rv.__module__.split('.')
+            assert self.module[0] == 'scipy'
+            assert self.module[1] == 'stats'
+        except:
+            raise ConfigurationError('SciPy observation model must contain SciPy probability distribution')
+
+        # check whether random variable is a continuous variable
+        if "pdf" in dir(self.rv):
+            self.isContinuous = True
+        else:
+            self.isContinuous = False
+
+        # list of all possible parameters is stored in 'shapes'
+        if rv.shapes is None:  # for some distributions, shapes is set to None (e.g. normal distribution)
+            shapes = []
+        else:
+            shapes = rv.shapes.split(', ')
+
+        shapes.append('loc')
+        if self.isContinuous:
+            shapes.append('scale')  # scale parameter is only available for continuous variables
+
+        # list of free parameters
+        self.freeParameters = [param for param in shapes if not (param in self.fixedParameterDict)]
+
+        # set class attributes similar to other observation models
+        self.name = rv.name  # scipy.stats name is used
+        self.segmentLength = 1  # currently only independent observations are supported by Custom class
+        self.parameterNames = self.freeParameters
+        if valueDict:
+            self.parameterValues = [valueDict[key] for key in self.parameterNames]
+        else:
+            self.parameterValues = None
+        self.multiplyLikelihoods = True
+
+    def pdf(self, grid, dataSegment):
+        """
+        Probability density function of custom scipy.stats models
+
+        Args:
+            grid(list): Parameter grid for discrete rate values
+            dataSegment(ndarray): Data segment from formatted data
+
+        Returns:
+            ndarray: Discretized pdf (with same shape as grid)
+        """
+        # create dictionary from list
+        freeParameterDict = {key: value for key, value in zip(self.freeParameters, grid)}
+
+        # merge free/fixed parameter dictionaries
+        parameterDict = freeParameterDict.copy()
+        parameterDict.update(self.fixedParameterDict)
+
+        # scipy.stats differentiates between 'pdf' and 'pmf' for continuous and discrete variables, respectively
+        if self.isContinuous:
+            return self.rv.pdf(dataSegment[0], **parameterDict)
+        else:
+            return self.rv.pmf(dataSegment[0], **parameterDict)
+
+
+class SymPy(ObservationModel):
+    """
+    SymPy model. This observation model class allows to create new observation models on-the-fly from sympy.stats
+    random variables.
+
+    Args:
+        rv: SymPy random symbol
+        determineJeffreysPrior(bool): If set to true, Jeffreys prior is analytically derived
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
 
     Observation models can be defined symbolically using the SymPy module in a convenient way. In contrast to the
     SciPy probability distributions, fixed parameters are directly set and not passed as a dictionary.
@@ -96,7 +172,7 @@ class Custom(ObservationModel):
         sigma = Symbol('sigma', positive=True)
         rv = Normal('normal', mu, sigma)
 
-        M = bl.observationModels.Custom(rv)
+        L = bl.observationModels.Custom(rv)
 
     This will result in a model for normally distributed observations with a fixed 'mu' (mean) of 4, leaving 'sigma'
     (the standard deviation) as the only free parameter to be inferred. Using SymPy random variables to create an
@@ -104,92 +180,52 @@ class Custom(ObservationModel):
     off by setting the keyword-argument 'determineJeffreysPrior=False'.
     """
 
-    def __init__(self, rv, fixedParameters={}, determineJeffreysPrior=True):
+    def __init__(self, rv, valueDict={}, prior=None, determineJeffreysPrior=True):
         self.rv = rv
-        self.fixedParameterDict = fixedParameters
+        self.prior = prior
 
         # check if first argument is valid
         try:
             self.module = rv.__module__.split('.')
-            assert self.module[0] == 'scipy' or self.module[0] == 'sympy'
+            assert self.module[0] == 'sympy'
             assert self.module[1] == 'stats'
         except:
-            raise ConfigurationError('Custom observation models have to be based on probability distributions from '
-                                     'SciPy or random variables from SymPy.')
+            raise ConfigurationError('SymPy observation model must contain SymPy random variable.')
 
-        # SciPy probability distribution
-        if self.module[0] == 'scipy':
-            print('+ Creating custom observation model based on probability distribution from SciPy.')
+        # extract free variables from SymPy random variable
+        parameters = list(self.rv._sorted_args[0].distribution.free_symbols)
 
-            # auto-Jeffreys is only available for SymPy RVs
-            if determineJeffreysPrior:
-                print('  ! WARNING: A flat prior is used.')
-                print('    Automatic determination of Jeffreys priors is only available for SymPy RVs.')
+        self.name = str(rv)  # user-defined name for random variable is used
+        self.segmentLength = 1  # currently only independent observations are supported by Custom class
+        self.parameterNames = [str(p) for p in parameters]
+        if valueDict:
+            self.parameterValues = [valueDict[key] for key in self.parameterNames]
+        else:
+            self.parameterValues = None
+        self.multiplyLikelihoods = True
 
-            # check whether random variable is a continuous variable
-            if "pdf" in dir(self.rv):
-                self.isContinuous = True
-            else:
-                self.isContinuous = False
-
-            # list of all possible parameters is stored in 'shapes'
-            if rv.shapes is None:  # for some distributions, shapes is set to None (e.g. normal distribution)
-                shapes = []
-            else:
-                shapes = rv.shapes.split(', ')
-
-            shapes.append('loc')
-            if self.isContinuous:
-                shapes.append('scale')  # scale parameter is only available for continuous variables
-
-            # list of free parameters
-            self.freeParameters = [param for param in shapes if not (param in self.fixedParameterDict)]
-
-            # set class attributes similar to other observation models
-            self.name = rv.name  # scipy.stats name is used
-            self.segmentLength = 1  # currently only independent observations are supported by Custom class
-            self.parameterNames = self.freeParameters
-            self.defaultGridSize = [1000]*len(self.parameterNames)
-            self.prior = None
-            self.multiplyLikelihoods = True
-
-        # SymPy random variable
-        elif self.module[0] == 'sympy':
-            print('+ Creating custom observation model based on random variable from SymPy.')
-
-            if fixedParameters:
-                raise ConfigurationError('The keyword argument "fixedParameters" can only be used for SciPy '
-                                         'probability distributions')
-
-            # extract free variables from SymPy random variable
-            parameters = list(self.rv._sorted_args[0].distribution.free_symbols)
-
-            self.name = str(rv)  # user-defined name for random variable is used
-            self.segmentLength = 1  # currently only independent observations are supported by Custom class
-            self.parameterNames = [str(p) for p in parameters]
-            self.defaultGridSize = [1000]*len(self.parameterNames)
-            self.multiplyLikelihoods = True
-
-            # determine Jeffreys prior
+        # determine Jeffreys prior
+        if self.prior is None:
             if determineJeffreysPrior:
                 try:
                     print('    + Trying to determine Jeffreys prior. This might take a moment...')
                     symPrior, self.prior = getJeffreysPrior(self.rv)
-                    print('    + Successfully determined Jeffreys prior: {}'.format(symPrior))
+                    print('    + Successfully determined Jeffreys prior: {}. Will use corresponding lambda function.'
+                          .format(symPrior))
                 except:
                     print('    ! WARNING: Failed to determine Jeffreys prior. Will use flat prior instead.')
                     self.prior = None
             else:
                 self.prior = None
 
-            # provide lambda function for probability density
-            x = abc.x
-            symDensity = density(rv)(x)
-            self.density = lambdify([x]+parameters, symDensity, modules=['numpy', {'factorial': factorial}])
+        # provide lambda function for probability density
+        x = abc.x
+        symDensity = density(rv)(x)
+        self.density = lambdify([x]+parameters, symDensity, modules=['numpy', {'factorial': factorial}])
 
     def pdf(self, grid, dataSegment):
         """
-        Probability density function of custom scipy.stats or sympy.stats models
+        Probability density function of custom sympy.stats models
 
         Args:
             grid(list): Parameter grid for discrete rate values
@@ -198,24 +234,7 @@ class Custom(ObservationModel):
         Returns:
             ndarray: Discretized pdf (with same shape as grid)
         """
-        # SciPy probability distribution
-        if self.module[0] == 'scipy':
-            # create dictionary from list
-            freeParameterDict = {key: value for key, value in zip(self.freeParameters, grid)}
-
-            # merge free/fixed parameter dictionaries
-            parameterDict = freeParameterDict.copy()
-            parameterDict.update(self.fixedParameterDict)
-
-            # scipy.stats differentiates between 'pdf' and 'pmf' for continuous and discrete variables, respectively
-            if self.isContinuous:
-                return self.rv.pdf(dataSegment[0], **parameterDict)
-            else:
-                return self.rv.pmf(dataSegment[0], **parameterDict)
-
-        # SymPy random variable
-        elif self.module[0] == 'sympy':
-            return self.density(dataSegment[0], *grid)
+        return self.density(dataSegment[0], *grid)
 
 
 class Bernoulli(ObservationModel):
@@ -223,15 +242,25 @@ class Bernoulli(ObservationModel):
     Bernoulli trial. This distribution models a random variable that takes the value 1 with a probability of p, and
     a value of 0 with the probability of (1-p). Subsequent data points are considered independent. The model has one
     parameter, p, which describes the probability of "success", i.e. to take the value 1.
+
+    Args:
+        name(str): custom name for model parameter p
+        value(list, tuple, ndarray): Regularly spaced parameter values for the model parameter p
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self):
+    def __init__(self, name='p', value=None, prior=None):
         self.name = 'Bernoulli'
         self.segmentLength = 1  # number of measurements in one data segment
-        self.parameterNames = ['p']
-        self.defaultGridSize = [1000]
-        self.prior = lambda p: 1./np.sqrt(p*(1.-p))  # Jeffreys prior
+        self.parameterNames = [name]
+        self.parameterValues = [value]
         self.multiplyLikelihoods = True
+
+        if prior is None:
+            self.prior = self.jeffreys  # default: Jeffreys prior
+        else:
+            self.prior = prior
 
     def pdf(self, grid, dataSegment):
         """
@@ -255,20 +284,31 @@ class Bernoulli(ObservationModel):
 
         return temp
 
-    def estimateBoundaries(self, rawData):
+    def estimateParameterValues(self, name, rawData):
         """
         Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
         boundaries are defined.
 
         Args:
+            name(str): name of a parameter of the observation model
             rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
 
         Returns:
-            list: parameter boundaries.
+            list: Regularly spaced parameter values for the specified parameter.
         """
 
-        # The parameter of the Bernoulli model is naturally constrained to the [0, 1] interval
-        return [[0, 1]]
+        if name == self.parameterNames[0]:
+            # The parameter of the Bernoulli model is naturally constrained to the [0, 1] interval
+            return cint(0, 1, 1000)
+        else:
+            raise ConfigurationError('Bernoulli model does not contain a parameter "".'.format(name))
+
+
+    def jeffreys(self, x):
+        """
+        Jeffreys prior for Bernoulli model.
+        """
+        return 1./np.sqrt(x*(1.-x))
 
 
 class Poisson(ObservationModel):
@@ -276,15 +316,25 @@ class Poisson(ObservationModel):
     Poisson observation model. Subsequent data points are considered independent and distributed according to the
     Poisson distribution. Input data consists of integer values, typically the number of events in a fixed time
     interval. The model has one parameter, often denoted by lambda, which describes the rate of the modeled events.
+
+    Args:
+        name(str): custom name for rate parameter lambda
+        value(list, tuple, ndarray): Regularly spaced parameter values for the model parameter lambda
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self):
+    def __init__(self, name='lambda', value=None, prior=None):
         self.name = 'Poisson'
         self.segmentLength = 1  # number of measurements in one data segment
-        self.parameterNames = ['lambda']
-        self.defaultGridSize = [1000]
-        self.prior = lambda x: np.sqrt(1./x)  # Jeffreys prior
+        self.parameterNames = [name]
+        self.parameterValues = [value]
         self.multiplyLikelihoods = True
+
+        if prior is None:
+            self.prior = self.jeffreys  # default: Jeffreys prior
+        else:
+            self.prior = prior
 
     def pdf(self, grid, dataSegment):
         """
@@ -299,34 +349,51 @@ class Poisson(ObservationModel):
         """
         return (grid[0] ** dataSegment[0]) * (np.exp(-grid[0])) / (np.math.factorial(dataSegment[0]))
 
-    def estimateBoundaries(self, rawData):
+    def estimateParameterValues(self, name, rawData):
         """
         Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
         boundaries are defined.
 
         Args:
-            rawData(ndarray): observed data points that may be used to determine appropiate parameter boundaries
+            name(str): name of a parameter of the observation model
+            rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
 
         Returns:
             list: parameter boundaries.
         """
+        if name == self.parameterNames[0]:
+            # lower is boundary is zero by definition, upper boundary is chosen as 1.25*(largest observation)
+            return oint(0, 1.25*np.nanmax(np.ravel(rawData)), 1000)
+        else:
+            raise ConfigurationError('Poisson model does not contain a parameter "".'.format(name))
 
-        # lower is boundary is zero by definition, upper boundary is chosen as 1.25*(largest observation)
-        return [[0, 1.25*np.nanmax(np.ravel(rawData))]]
+    def jeffreys(self, x):
+        """
+        Jeffreys prior for Poisson model.
+        """
+        return np.sqrt(1./x)
 
 
 class Gaussian(ObservationModel):
     """
     Gaussian observations. All observations are independently drawn from a Gaussian distribution. The model has two
     parameters, mean and standard deviation.
+
+    Args:
+        name1(str): custom name for mean
+        value1(list, tuple, ndarray): Regularly spaced parameter values for the model parameter mean
+        name2(str): custom name for standard deviation
+        value2(list, tuple, ndarray): Regularly spaced parameter values for the model parameter standard deviation
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self):
+    def __init__(self, name1='mean', value1=None, name2='std', value2=None, prior=lambda mu, sigma: 1./sigma**3.):
         self.name = 'Gaussian observations'
         self.segmentLength = 1  # number of measurements in one data segment
-        self.parameterNames = ['mean', 'standard deviation']
-        self.defaultGridSize = [200, 200]
-        self.prior = lambda mu, sigma: 1./sigma**3.  # Jeffreys prior
+        self.parameterNames = [name1, name2]
+        self.parameterValues = [value1, value2]
+        self.prior = prior  # default: Jeffreys prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -343,13 +410,14 @@ class Gaussian(ObservationModel):
         return np.exp(
             -((dataSegment[0] - grid[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(2. * np.pi * grid[1] ** 2.))
 
-    def estimateBoundaries(self, rawData):
+    def estimateParameterValues(self, name, rawData):
         """
         Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
         boundaries are defined.
 
         Args:
-            rawData(ndarray): observed data points that may be used to determine appropiate parameter boundaries
+            name(str): name of a parameter of the observation model
+            rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
 
         Returns:
             list: parameter boundaries.
@@ -357,25 +425,33 @@ class Gaussian(ObservationModel):
         mean = np.mean(np.ravel(rawData))
         std = np.std(np.ravel(rawData))
 
-        mean_boundaries = [mean - 2*std, mean + 2*std]
-        std_boundaries = [0, 2*std]
+        if name == self.parameterNames[0]:
+            return cint(mean-2*std, mean+2*std, 200)
+        elif name == self.parameterNames[1]:
+            return oint(0, 2 * std, 200)
+        else:
+            raise ConfigurationError('Gaussian model does not contain a parameter "".'.format(name))
 
-        return [mean_boundaries, std_boundaries]
 
-
-class ZeroMeanGaussian(ObservationModel):
+class WhiteNoise(ObservationModel):
     """
     White noise process. All observations are independently drawn from a Gaussian distribution with zero mean and
-    a finite standard deviation, the noise amplitude. This process is basically an autoregressive process with zero
+    a finite standard deviation, the noise amplitude. This process is basically an auto-regressive process with zero
     correlation.
+
+    Args:
+        name(str): custom name for standard deviation
+        value(list, tuple, ndarray): Regularly spaced parameter values for the model parameter standard deviation
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self):
-        self.name = 'White noise process (zero mean Gaussian)'
+    def __init__(self, name='std', value=None, prior=lambda sigma: 1./sigma):
+        self.name = 'White noise process (Zero-mean Gaussian)'
         self.segmentLength = 1  # number of measurements in one data segment
-        self.parameterNames = ['standard deviation']
-        self.defaultGridSize = [1000]
-        self.prior = lambda sigma: 1./sigma  # Jeffreys prior
+        self.parameterNames = [name]
+        self.parameterValues = [value]
+        self.prior = prior  # default: Jeffreys prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -391,19 +467,24 @@ class ZeroMeanGaussian(ObservationModel):
         """
         return np.exp(-(dataSegment[0] ** 2.) / (2. * grid[0] ** 2.) - .5 * np.log(2. * np.pi * grid[0] ** 2.))
 
-    def estimateBoundaries(self, rawData):
+    def estimateParameterValues(self, name, rawData):
         """
         Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
         boundaries are defined.
 
         Args:
+            name(str): name of a parameter of the observation model
             rawData(ndarray): observed data points that may be used to determine appropiate parameter boundaries
 
         Returns:
             list: parameter boundaries.
         """
         std = np.std(np.ravel(rawData))
-        return [[0, 2*std]]
+
+        if name == self.parameterNames[0]:
+            return oint(0, 2 * std, 1000)
+        else:
+            raise ConfigurationError('White noise model does not contain a parameter "".'.format(name))
 
 
 class AR1(ObservationModel):
@@ -412,14 +493,22 @@ class AR1(ObservationModel):
     exponential autocorrelation-function. It can be recursively defined as: d_t = r_t * d_(t-1) + s_t * e_t, with d_t
     being the data point at time t, r_t the correlation coefficient of subsequent data points and s_t being the noise
     amplitude of the process. e_t is distributed according to a standard normal distribution.
+
+    Args:
+        name1(str): custom name for correlation coefficient
+        value1(list, tuple, ndarray): Regularly spaced parameter values for the correlation coefficient
+        name2(str): custom name for noise amplitude
+        value2(list, tuple, ndarray): Regularly spaced parameter values for the noise amplitude
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self):
+    def __init__(self, name1='correlation coefficient', value1=None, name2='noise amplitude', value2=None, prior=None):
         self.name = 'Autoregressive process of first order (AR1)'
         self.segmentLength = 2  # number of measurements in one data segment
-        self.parameterNames = ['correlation coefficient', 'noise amplitude']
-        self.defaultGridSize = [200, 200]
-        self.prior = None
+        self.parameterNames = [name1, name2]
+        self.parameterValues = [value1, value2]
+        self.prior = prior  # default: flat prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -436,6 +525,27 @@ class AR1(ObservationModel):
         return np.exp(-((dataSegment[1] - grid[0] * dataSegment[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(
             2. * np.pi * grid[1] ** 2.))
 
+    def estimateParameterValues(self, name, rawData):
+        """
+        Returns estimated boundaries based on the imported data. Is called in case fit method is called and no
+        boundaries are defined.
+
+        Args:
+            name(str): name of a parameter of the observation model
+            rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
+
+        Returns:
+            list: parameter boundaries.
+        """
+        std = np.std(np.ravel(rawData))
+
+        if name == self.parameterNames[0]:
+            return oint(-1, 1, 200)
+        elif name == self.parameterNames[1]:
+            return oint(0, 2 * std, 200)
+        else:
+            raise ConfigurationError('AR1 model does not contain a parameter "".'.format(name))
+
 
 class ScaledAR1(ObservationModel):
     """
@@ -444,14 +554,23 @@ class ScaledAR1(ObservationModel):
     with r_t the correlation coefficient of subsequent data points and s_t being the standard deviation of the
     observations d_t. For the standard AR1 process, s_t defines the noise amplitude of the process. For uncorrelated
     data, the two observation models are equal.
+
+    Args:
+        name1(str): custom name for correlation coefficient
+        value1(list, tuple, ndarray): Regularly spaced parameter values for the correlation coefficient
+        name2(str): custom name for standard deviation
+        value2(list, tuple, ndarray): Regularly spaced parameter values for the standard deviation
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self):
+    def __init__(self, name1='correlation coefficient', value1=None, name2='standard deviation', value2=None,
+                 prior=None):
         self.name = 'Scaled autoregressive process of first order (AR1)'
         self.segmentLength = 2  # number of measurements in one data segment
-        self.parameterNames = ['correlation coefficient', 'standard deviation']
-        self.defaultGridSize = [200, 200]
-        self.prior = None
+        self.parameterNames = [name1, name2]
+        self.parameterValues = [value1, value2]
+        self.prior = prior  # default: flat prior
         self.multiplyLikelihoods = True
 
     def pdf(self, grid, dataSegment):
@@ -471,68 +590,23 @@ class ScaledAR1(ObservationModel):
         return np.exp(-((dataSegment[1] - r * dataSegment[0]) ** 2.) / (2. * sScaled ** 2.) - .5 * np.log(
             2. * np.pi * sScaled ** 2.))
 
-
-class LinearRegression(ObservationModel):
-    """
-    Linear regression model. It consists of three parameters: slope, offset and standard deviation. It assumes that the
-    observed data follows the relation: data_y = slope * data_x + offset + error. Here, each data point consists of a
-    list of two values, data_x and data_y. The error term is assumed to be normally distributed and the corresponding
-    standard deviation can be inferred from data or can be set to a fixed value (e.g. fixedError=1). If the keyword-
-    argument offset is set to False, this parameter is not included in the fitting process.
-
-    Args:
-        offset(bool): If true, the constant term of the linear regression model is inferred from data.
-        fixedError(float): If the error of data_y is known, it can be set using this argument.
-    """
-
-    def __init__(self, offset=True, fixedError=False):
-        self.offset = offset
-        self.fixedError = fixedError
-        self.segmentLength = 1
-        self.multiplyLikelihoods = False  # multivariate input is needed to compute pdf
-
-        if self.offset and not self.fixedError:
-            self.name = 'Linear regression model (including offset)'
-            self.parameterNames = ['slope', 'offset', 'standard deviation']
-            self.defaultGridSize = [40, 40, 40]
-            self.prior = None
-        elif self.offset and self.fixedError:
-            self.name = 'Linear regression model (including offset; fixed error = {})'.format(self.fixedError)
-            self.parameterNames = ['slope', 'offset']
-            self.defaultGridSize = [200, 200]
-            self.prior = None
-        elif not self.offset and not self.fixedError:
-            self.name = 'Linear regression model'
-            self.parameterNames = ['slope', 'standard deviation']
-            self.defaultGridSize = [200, 200]
-            self.prior = None
-        elif not self.offset and self.fixedError:
-            self.name = 'Linear regression model (fixed error = {})'.format(self.fixedError)
-            self.parameterNames = ['slope']
-            self.defaultGridSize = [1000]
-            self.prior = None
-
-    def pdf(self, grid, dataSegment):
+    def estimateParameterValues(self, name, rawData):
         """
-        Probability density function of the Auto-regressive process of first order
+        Returns estimated boundaries based on the imported data. Is called in case fit method is called and no
+        boundaries are defined.
 
         Args:
-            grid(list): Parameter grid for discrete parameter values
-            dataSegment(ndarray): Data segment from formatted data (in this case a pair consisting of a x and y-value)
+            name(str): name of a parameter of the observation model
+            rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
 
         Returns:
-            ndarray: Discretized pdf.
-
+            list: parameter boundaries.
         """
-        slope = grid[0]
-        offset = grid[1] if self.offset else 0.
-        if not self.fixedError:
-            if self.offset:
-                sigma = grid[2]
-            else:
-                sigma = grid[1]
-        else:
-            sigma = self.fixedError
+        std = np.std(np.ravel(rawData))
 
-        return np.exp(-((dataSegment[0, 1] - slope * dataSegment[0, 0] - offset) ** 2.) /
-                      (2. * sigma ** 2.) - .5 * np.log(2. * np.pi * sigma ** 2.))
+        if name == self.parameterNames[0]:
+            return oint(-1, 1, 200)
+        elif name == self.parameterNames[1]:
+            return oint(0, 2 * std, 200)
+        else:
+            raise ConfigurationError('AR1 model does not contain a parameter "".'.format(name))

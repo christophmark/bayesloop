@@ -11,9 +11,9 @@ time step.
 from __future__ import division, print_function
 import numpy as np
 from scipy.signal import fftconvolve
-from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d
+from scipy.ndimage.filters import gaussian_filter1d
 from scipy.ndimage.interpolation import shift
-from collections import OrderedDict, Iterable
+from collections import Iterable
 from inspect import getargspec
 from copy import deepcopy
 from .exceptions import *
@@ -26,7 +26,9 @@ class Static:
     def __init__(self):
         self.study = None
         self.latticeConstant = None
-        self.hyperParameters = {}
+        self.hyperParameterNames = []
+        self.hyperParameterValues = []
+        self.prior = None
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
@@ -55,17 +57,25 @@ class GaussianRandomWalk:
     deviation can be set individually for each model parameter.
 
     Args:
-        sigma(float, list): standard deviation of the Gaussian random walk for each parameter
+        name(str): custom name of the hyper-parameter sigma
+        value(float, list, tuple, ndarray): standard deviation(s) of the Gaussian random walk for target parameter
+        target(str): parameter name of the observation model to apply transition model to
+        prior(): TODO
     """
-    def __init__(self, sigma=None, param=None):
-        if isinstance(sigma, (list, tuple)):  # Online study expects Numpy array of values
-            sigma = np.array(sigma)
+    def __init__(self, name='sigma', value=None, target=None, prior=None):
+        if isinstance(value, (list, tuple)):  # Online study expects Numpy array of values
+            value = np.array(value)
 
         self.study = None
         self.latticeConstant = None
-        self.hyperParameters = OrderedDict([('sigma', sigma)])
-        self.selectedParameter = param
+        self.hyperParameterNames = [name]
+        self.hyperParameterValues = [value]
+        self.prior = prior
+        self.selectedParameter = target
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+
+        if target is None:
+            raise ConfigurationError('No parameter set for transition model "GaussianRandomWalk"')
 
     def __str__(self):
         return 'Gaussian random walk'
@@ -81,24 +91,13 @@ class GaussianRandomWalk:
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        normedSigma = []
-        if isinstance(self.hyperParameters['sigma'], Iterable):
-            for i, c in enumerate(self.latticeConstant):
-                normedSigma.append(self.hyperParameters['sigma'][i] / c)
-        else:
-            for c in self.latticeConstant:
-                normedSigma.append(self.hyperParameters['sigma'] / c)
+        axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+        normedSigma = self.hyperParameterValues[0]/self.latticeConstant[axisToTransform]
 
-        # check if only one axis is to be transformed
-        if self.selectedParameter is not None:
-            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-            selectedSigma = normedSigma[axisToTransform]
-            if selectedSigma < 0.0:  # gaussian_filter1d cannot handle negative st.dev.
-                selectedSigma = 0.0
-            newPrior = gaussian_filter1d(posterior, selectedSigma, axis=axisToTransform)
-        else:
-            newPrior = gaussian_filter(posterior, normedSigma)
+        if normedSigma < 0.0:  # gaussian_filter1d cannot handle negative st.dev.
+            normedSigma = 0.0
 
+        newPrior = gaussian_filter1d(posterior, normedSigma, axis=axisToTransform)
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):
@@ -112,22 +111,31 @@ class AlphaStableRandomWalk:
     and the shape (alpha).
 
     Args:
-        c(float, list): width of the distribution (c >= 0).
-        alpha(float, list): shape of the distribution (0 < alpha <= 2).
+        name1(str): custom name of the hyper-parameter c
+        value1(float, list, tuple, ndarray): width(s) of the distribution (c >= 0).
+        name2(str): custom name of the hyper-parameter alpha
+        value2(float, list, tuple, ndarray): shape(s) of the distribution (0 < alpha <= 2).
+        target(str): parameter name of the observation model to apply transition model to
+        prior(): TODO
     """
-    def __init__(self, c=None, alpha=None, param=None):
-        if isinstance(c, (list, tuple)):
-            c = np.array(c)
-        if isinstance(alpha, (list, tuple)):
-            alpha = np.array(alpha)
+    def __init__(self, name1='c', value1=None, name2='alpha', value2=None, target=None, prior=(None, None)):
+        if isinstance(value1, (list, tuple)):
+            value1 = np.array(value1)
+        if isinstance(value2, (list, tuple)):
+            value2 = np.array(value2)
 
         self.study = None
         self.latticeConstant = None
-        self.hyperParameters = OrderedDict([('c', c), ('alpha', alpha)])
-        self.selectedParameter = param
+        self.hyperParameterNames = [name1, name2]
+        self.hyperParameterValues = [value1, value2]
+        self.prior = prior
+        self.selectedParameter = target
         self.kernel = None
         self.kernelParameters = None
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+
+        if target is None:
+            raise ConfigurationError('No parameter set for transition model "AlphaStableRandomWalk"')
 
     def __str__(self):
         return 'Alpha-stable random walk'
@@ -145,33 +153,23 @@ class AlphaStableRandomWalk:
         """
 
         # if hyper-parameter values have changed, a new convolution kernel needs to be created
-        if not self.kernelParameters == self.hyperParameters:
+        if not self.kernelParameters == self.hyperParameterValues:
             normedC = []
-            if isinstance(self.hyperParameters['c'], Iterable):
-                for i, lc in enumerate(self.latticeConstant):
-                    normedC.append(self.hyperParameters['c'][i] / lc)
-            else:
-                for lc in self.latticeConstant:
-                    normedC.append(self.hyperParameters['c'] / lc)
+            for lc in self.latticeConstant:
+                normedC.append(self.hyperParameters['c'] / lc)
+            alpha = [self.hyperParameters['alpha']] * len(normedC)
 
-            if isinstance(self.hyperParameters['alpha'], Iterable):
-                alpha = self.hyperParameters['alpha']
-            else:
-                alpha = [self.hyperParameters['alpha']] * len(normedC)
-
-            # check if only one axis is to be transformed
-            if self.selectedParameter is not None:
-                axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-                selectedC = normedC[axisToTransform]
-                normedC = [0.]*len(normedC)
-                normedC[axisToTransform] = selectedC
+            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+            selectedC = normedC[axisToTransform]
+            normedC = [0.]*len(normedC)
+            normedC[axisToTransform] = selectedC
 
             self.kernel = self.createKernel(normedC[0], alpha[0], 0)
             for i, (a, c) in enumerate(zip(alpha, normedC)[1:]):
                 self.kernel *= self.createKernel(c, a, i+1)
 
             self.kernel = self.kernel.T
-            self.kernelParameters = self.hyperParameters
+            self.kernelParameters = deepcopy(self.hyperParameterValues)
 
         newPrior = self.convolve(posterior)
         newPrior /= np.sum(newPrior)
@@ -182,7 +180,7 @@ class AlphaStableRandomWalk:
 
     def createKernel(self, c, alpha, axis):
         """
-        Create alpha-stable distribution on a grid as a kernel for concolution.
+        Create alpha-stable distribution on a grid as a kernel for convolution.
 
         Args:
             c(float): Scale parameter.
@@ -254,15 +252,19 @@ class ChangePoint:
     achieve this "reset" of parameter values.
 
     Args:
-        tChange: Integer value of the time step of the change point
+        name(str): custom name of the hyper-parameter tChange
+        value(int, list, tuple, ndarray): Integer value(s) of the time step of the change point
+        prior(): TODO
     """
-    def __init__(self, tChange=None):
-        if isinstance(tChange, (list, tuple)):
-            tChange = np.array(tChange)
+    def __init__(self, name='tChange', value=None, prior=None):
+        if isinstance(value, (list, tuple)):
+            value = np.array(value)
 
         self.study = None
         self.latticeConstant = None
-        self.hyperParameters = OrderedDict([('tChange', tChange)])
+        self.hyperParameterNames = [name]
+        self.hyperParameterValues = [value]
+        self.prior = prior
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
@@ -279,7 +281,7 @@ class ChangePoint:
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        if t == self.hyperParameters['tChange']:
+        if t == self.hyperParameterValues[0]:
             # check if custom prior is used by observation model
             if hasattr(self.study.observationModel.prior, '__call__'):
                 prior = self.study.observationModel.prior(*self.study.grid)
@@ -309,7 +311,9 @@ class Independent:
     def __init__(self):
         self.study = None
         self.latticeConstant = None
-        self.hyperParameters = {}
+        self.hyperParameterNames = []
+        self.hyperParameterValues = []
+        self.prior = None
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
@@ -350,15 +354,20 @@ class RegimeSwitch:
     effectively allowing abrupt parameter changes at every time step.
 
     Args:
-        log10pMin(float): Minimal probability density (log10 value) that is assigned to every parameter value
+        name(str): custom name of the hyper-parameter log10pMin
+        value(float, list, tuple, ndarray): Minimal probability density (log10 value) that is assigned to every
+            parameter value
+        prior(): TODO
     """
-    def __init__(self, log10pMin=None):
-        if isinstance(log10pMin, (list, tuple)):
-            log10pMin = np.array(log10pMin)
+    def __init__(self, name='log10pMin', value=None, prior=None):
+        if isinstance(value, (list, tuple)):
+            value = np.array(value)
 
         self.study = None
         self.latticeConstant = None
-        self.hyperParameters = OrderedDict([('log10pMin', log10pMin)])
+        self.hyperParameterNames = [name]
+        self.hyperParameterValues = [value]
+        self.prior = prior
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
@@ -376,7 +385,7 @@ class RegimeSwitch:
             ndarray: Prior parameter distribution for subsequent time step
         """
         newPrior = posterior.copy()
-        limit = (10**self.hyperParameters['log10pMin'])*np.prod(self.latticeConstant)  # convert prob. density to prob.
+        limit = (10**self.hyperParameterValues[0])*np.prod(self.latticeConstant)  # convert prob. density to prob.
         newPrior[newPrior < limit] = limit
 
         # transformation above violates proper normalization; re-normalization needed
@@ -397,19 +406,22 @@ class NotEqual:
     parameter distributions change significantly.
 
     Args:
-        log10pMin(float): Log10-value of the minimal probability that is set to all possible parameter values of the
-            inverted parameter distribution
+        name(str): custom name of the hyper-parameter log10pMin
+        value(float, list, tuple, ndarray): Log10-value of the minimal probability that is set to all possible
+            parameter values of the inverted parameter distribution
 
     Note:
         Mostly used with an instance of OnlineStudy.
     """
-    def __init__(self, log10pMin=None):
-        if isinstance(log10pMin, (list, tuple)):
-            log10pMin = np.array(log10pMin)
+    def __init__(self, name='log10pMin', value=None, prior=None):
+        if isinstance(value, (list, tuple)):
+            value = np.array(value)
 
         self.study = None
         self.latticeConstant = None
-        self.hyperParameters = OrderedDict([('log10pMin', log10pMin)])
+        self.hyperParameterNames = [name]
+        self.hyperParameterValues = [value]
+        self.prior = prior
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
@@ -453,7 +465,7 @@ class Deterministic:
     Args:
         function(function): A function that takes the time as its first argument and further takes keyword-arguments
             that correspond to the hyper-parameters of the transition model which the function defines.
-        param(str): The observation model parameter that is manipulated according to the function defined above.
+        target(str): The observation model parameter that is manipulated according to the function defined above.
 
     Example:
     ::
@@ -462,18 +474,21 @@ class Deterministic:
 
         S = bl.Study()
         ...
-        S.setObservationModel(bl.om.Gaussian())
-        S.setTransitionModel(bl.tm.Deterministic(quadratic, param='standard deviation'))
+        S.setObservationModel(bl.om.Gaussian('signal'))
+        S.setTransitionModel(bl.tm.Deterministic(quadratic, target='signal'))
     """
-    def __init__(self, function=None, param=None):
+    def __init__(self, function=None, target=None, prior=None):
         self.study = None
         self.latticeConstant = None
         self.function = function
-        self.selectedParameter = param
+        self.prior = prior
+        self.selectedParameter = target
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
+        if target is None:
+            raise ConfigurationError('No parameter set for transition model "Deterministic"')
+
         # create ordered dictionary of hyper-parameters from keyword-arguments of function
-        self.hyperParameters = OrderedDict()
         argspec = getargspec(self.function)
 
         # only keyword arguments are allowed
@@ -483,11 +498,13 @@ class Deterministic:
                                      '(hyper-parameters) with default values.')
 
         # define hyper-parameters of transition model
-        self.hyperParameters = OrderedDict()
+        self.hyperParameterNames = []
+        self.hyperParameterValues = []
         for arg, default in zip(argspec.args[1:], argspec.defaults):
             if isinstance(default, (list, tuple)):
                 default = np.array(default)
-            self.hyperParameters[arg] = default
+            self.hyperParameterNames.append(arg)
+            self.hyperParameterValues.append(default)
 
     def __str__(self):
         return 'Deterministic model ({})'.format(self.function.__name__)
@@ -503,33 +520,22 @@ class Deterministic:
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
+        # normalize hyper-parameter values with respect to lattice constant of parameter grid
+        axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+        normedHyperParameters = [v / self.latticeConstant[axisToTransform] for v in self.hyperParameterValues]
 
-        # compute normed shift of grid values
-        normedHyperParameters = self.hyperParameters.copy()
-        for key, value in self.hyperParameters.items():
-            if isinstance(value, Iterable):
-                normedHyperParameters[key] = [v / c for v, c in zip(value, self.latticeConstant)]
-            else:
-                normedHyperParameters[key] = [value / c for c in self.latticeConstant]
+        # compute offset to shift parameter grid
+        params = {name: value for (name, value) in zip(self.hyperParameterNames, normedHyperParameters)}
+        ftp1 = self.function(t + 1 - self.tOffset, **params)
+        ft = self.function(t-self.tOffset, **params)
+        d = ftp1-ft
 
-        d = []
-        for i in range(len(self.latticeConstant)):
-            params = {key: value[i] for (key, value) in normedHyperParameters.items()}
-            ftp1 = self.function(t + 1 - self.tOffset, **params)
-            ft = self.function(t-self.tOffset, **params)
-            d.append(ftp1-ft)
-
-        # check if only one axis is to be transformed
-        if self.selectedParameter is not None:
-            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-            selectedD = d[axisToTransform]
-
-            # reinitiate coefficient list (setting only the selected axis to a non-zero value)
-            d = [0] * len(d)
-            d[axisToTransform] = selectedD
+        # build list for all axes of parameter grid (setting only the selected axis to a non-zero value)
+        dAll = [0] * len(self.latticeConstant)
+        dAll[axisToTransform] = d
 
         # shift interpolated version of distribution
-        newPrior = shift(posterior, d, order=3, mode='nearest')
+        newPrior = shift(posterior, dAll, order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
@@ -537,32 +543,22 @@ class Deterministic:
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):
-        # compute normed shift of grid values
-        normedHyperParameters = self.hyperParameters.copy()
-        for key, value in self.hyperParameters.items():
-            if isinstance(value, Iterable):
-                normedHyperParameters[key] = [v / c for v, c in zip(value, self.latticeConstant)]
-            else:
-                normedHyperParameters[key] = [value / c for c in self.latticeConstant]
+        # normalize hyper-parameter values with respect to lattice constant of parameter grid
+        axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+        normedHyperParameters = [v / self.latticeConstant[axisToTransform] for v in self.hyperParameterValues]
 
-        d = []
-        for i in range(len(self.latticeConstant)):
-            params = {key: value[i] for (key, value) in normedHyperParameters.items()}
-            ftm1 = self.function(t - 1 - self.tOffset, **params)
-            ft = self.function(t - self.tOffset, **params)
-            d.append(ftm1 - ft)
+        # compute offset to shift parameter grid
+        params = {name: value for (name, value) in zip(self.hyperParameterNames, normedHyperParameters)}
+        ftm1 = self.function(t - 1 - self.tOffset, **params)
+        ft = self.function(t - self.tOffset, **params)
+        d = ftm1 - ft
 
-        # check if only one axis is to be transformed
-        if self.selectedParameter is not None:
-            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-            selectedD = d[axisToTransform]
-
-            # reinitiate coefficient list (setting only the selected axis to a non-zero value)
-            d = [0] * len(d)
-            d[axisToTransform] = selectedD
+        # build list for all axes of parameter grid (setting only the selected axis to a non-zero value)
+        dAll = [0] * len(self.latticeConstant)
+        dAll[axisToTransform] = d
 
         # shift interpolated version of distribution
-        newPrior = shift(posterior, d, order=3, mode='nearest')
+        newPrior = shift(posterior, dAll, order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
         newPrior /= np.sum(newPrior)
@@ -584,6 +580,11 @@ class CombinedTransitionModel:
         self.latticeConstant = None
         self.models = args
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+
+        # check if any sub-model is a break-point and raise error if so
+        if np.any([str(arg) == 'Break-point' for arg in args]):
+            raise ConfigurationError('The "BreakPoint" transition model can only be used with the '
+                                     '"SerialTransitionModel" class.')
 
     def __str__(self):
         return 'Combined transition model'
@@ -633,33 +634,57 @@ class SerialTransitionModel:
 
     Example:
     ::
-        K = bl.transitionModels.SerialTransitionModel(bl.transitionModels.Static(),
-                                                      50,
-                                                      bl.transitionModels.RegimeSwitch(log10pMin=-7),
-                                                      100,
-                                                      bl.transitionModels.GaussianRandomWalk(sigma=0.2))
+        T = bl.transitionModels.SerialTransitionModel(bl.transitionModels.Static(),
+                                                      ['t_1', 50],
+                                                      bl.transitionModels.RegimeSwitch('log10pMin', -7),
+                                                      ['t_2', 100],
+                                                      bl.transitionModels.GaussianRandomWalk('sigma', 0.2, target='x'))
 
-    In this example, parameters are assumed to be constant until time step 50, followed by a regime-switching-
-    process until time step 100. Finally, we assume Gaussian parameter fluctuations until the last time step. Note
-    that models and time steps do not necessarily have to be passed in an alternating way.
+    In this example, parameters are assumed to be constant until 't_1' (time step 50), followed by a regime-switching-
+    process until 't_2' (time step 100). Finally, we assume Gaussian parameter fluctuations for parameter 'x' until the
+    last time step. Note that models and time steps do not necessarily have to be passed in an alternating way.
     """
     def __init__(self, *args):
         self.study = None
         self.latticeConstant = None
 
-        # determine time steps of structural breaks and store them as hyper-parameter 'tBreak'
-        self.hyperParameters = OrderedDict([('tBreak', [t for t in args if isinstance(t, int)])])
-
-        # determine sub-models corresponding to break times
-        self.models = [m for m in args if not isinstance(m, int)]
+        # determine time steps of structural breaks and other sub-models
+        self.hyperParameterNames = []
+        self.hyperParameterValues = []
+        self.prior = []
+        self.models = []
+        for arg in args:
+            if str(arg) == 'Break-point':  # definition of break-point
+                self.hyperParameterNames.append(arg.name)
+                self.prior.append(arg.prior)
+                # exclude 'all' case, conversion to list is needed to avoid future warning about element-wise comparison
+                if arg.value == 'all':  # 'all' is passed without type change
+                    self.hyperParameterValues.append(arg.value)
+                elif isinstance(arg.value, Iterable):  # convert list/tuple in numpy array
+                    self.hyperParameterValues.append(np.array(arg.value))
+                else:  # single values are passed without type change
+                    self.hyperParameterValues.append(arg.value)
+            else:  # sub-model
+                self.models.append(arg)
+        print(self.hyperParameterValues)
 
         # check: break times have to be passed in monotonically increasing order
-        if not all(x < y for x, y in zip(self.hyperParameters['tBreak'], self.hyperParameters['tBreak'][1:])):
+        # since multiple values can be passed for one break-point at init, we check first values only
+        firstValues = []
+        for v in self.hyperParameterValues:
+            if v == 'all':
+                firstValues.append(v)
+            elif isinstance(v, Iterable):
+                firstValues.append(v[0])
+            else:
+                firstValues.append(v)
+
+        if not all(x < y if not (x == 'all' or y == 'all') else True for x, y in zip(firstValues, firstValues[1:])):
             raise ConfigurationError('Time steps for structural breaks have to be passed in monotonically increasing '
                                      'order.')
 
         # check: n models require n-1 break times
-        if not (len(self.models)-1 == len(self.hyperParameters['tBreak'])):
+        if not (len(self.models)-1 == len(self.hyperParameterValues)):
             raise ConfigurationError('Wrong number of structural breaks/models. For n models, n-1 structural breaks '
                                      'are required.')
 
@@ -678,20 +703,41 @@ class SerialTransitionModel:
             ndarray: Prior parameter distribution for subsequent time step
         """
         # the index of the model to choose at time t is given by the number of break times <= t
-        modelIndex = np.sum(np.array(self.hyperParameters['tBreak']) <= t)
+        modelIndex = np.sum(np.array(self.hyperParameterValues) <= t)
 
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
         self.models[modelIndex].study = self.study  # study needs to be propagated
-        self.models[modelIndex].tOffset = self.hyperParameters['tBreak'][modelIndex-1] if modelIndex > 0 else 0
+        self.models[modelIndex].tOffset = self.hyperParameterValues[modelIndex-1] if modelIndex > 0 else 0
         newPrior = self.models[modelIndex].computeForwardPrior(posterior, t)
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):
         # the index of the model to choose at time t is given by the number of break times <= t
-        modelIndex = np.sum(np.array(self.hyperParameters['tBreak']) <= t-1)
+        modelIndex = np.sum(np.array(self.hyperParameterValues) <= t-1)
 
         self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
         self.models[modelIndex].study = self.study  # study needs to be propagated
-        self.models[modelIndex].tOffset = self.hyperParameters['tBreak'][modelIndex-1] if modelIndex > 0 else 0
+        self.models[modelIndex].tOffset = self.hyperParameterValues[modelIndex-1] if modelIndex > 0 else 0
         newPrior = self.models[modelIndex].computeBackwardPrior(posterior, t)
         return newPrior
+
+
+class BreakPoint:
+    """
+    Break-point. This class can only be used to specify break-point within a SerialTransitionModel instance.
+
+    Args:
+        name(str): custom name of the hyper-parameter tBreak
+        value(int, list, tuple, ndarray): Value(s) of the time step(s) of the break point
+        prior(): TODO
+    """
+    def __init__(self, name='tBreak', value=None, prior=None):
+        if isinstance(value, (list, tuple)):
+            value = np.array(value)
+
+        self.name = name
+        self.value = value
+        self.prior = prior
+
+    def __str__(self):
+        return 'Break-point'
