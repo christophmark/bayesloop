@@ -666,7 +666,7 @@ class SerialTransitionModel:
                 self.hyperParameterNames.append(arg.name)
                 self.prior.append(arg.prior)
                 # exclude 'all' case, conversion to list is needed to avoid future warning about element-wise comparison
-                if arg.value == 'all':  # 'all' is passed without type change
+                if isinstance(arg.value, str) and arg.value == 'all':  # 'all' is passed without type change
                     self.hyperParameterValues.append(arg.value)
                 elif isinstance(arg.value, Iterable):  # convert list/tuple in numpy array
                     self.hyperParameterValues.append(np.array(arg.value))
@@ -674,20 +674,20 @@ class SerialTransitionModel:
                     self.hyperParameterValues.append(arg.value)
             else:  # sub-model
                 self.models.append(arg)
-        print(self.hyperParameterValues)
 
         # check: break times have to be passed in monotonically increasing order
         # since multiple values can be passed for one break-point at init, we check first values only
         firstValues = []
         for v in self.hyperParameterValues:
-            if v == 'all':
+            if isinstance(v, str) and v == 'all':
                 firstValues.append(v)
             elif isinstance(v, Iterable):
                 firstValues.append(v[0])
             else:
                 firstValues.append(v)
 
-        if not all(x < y if not (x == 'all' or y == 'all') else True for x, y in zip(firstValues, firstValues[1:])):
+        if not all(x < y if not ((isinstance(x, str) and x == 'all') or (isinstance(y, str) and y == 'all')) else True
+                   for x, y in zip(firstValues, firstValues[1:])):
             raise ConfigurationError('Time steps for structural breaks have to be passed in monotonically increasing '
                                      'order.')
 
