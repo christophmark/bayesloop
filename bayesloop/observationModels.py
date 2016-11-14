@@ -52,11 +52,13 @@ class ObservationModel:
 
 class SciPy(ObservationModel):
     """
-    SciPy model. This observation model class allows to create new observation models on-the-fly from scipy.stats
-    probability distributions.
+    Model based on scipy.stats distribution. This observation model class allows to create new observation models
+    on-the-fly from scipy.stats probability distributions.
 
     Args:
         rv: SciPy random distribution
+        valueDict: dictionary containing names and corresponding parameter values (using bayesloop.cint() or
+            bayesloop.oint())
         fixedParameters(dict): Dictionary defining the names and values of fixed parameters
         prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
@@ -69,10 +71,12 @@ class SciPy(ObservationModel):
 
     Example:
     ::
-        L = bl.observationModels.Custom(scipy.stats.norm, fixedParameters={'loc': 4})
+        import bayesloop as bl
+        import scipy.stats
+        L = bl.om.SciPy(scipy.stats.poisson, {'mu': bl.oint(0, 6, 1000)}, fixedParameters={'loc': 0})
 
-    This will result in a model for normally distributed observations with a fixed 'loc' (mean) of 4, leaving the
-    'scale' (standard deviation) as the only free parameter to be inferred.
+    This will result in a model for poisson-distributed observations with a rate parameter 'mu' between 0 and 6. The
+    distribution is not shifted (loc = 0).
 
     Note that while the parameters 'loc' and 'scale' have default values in scipy.stats and do not necessarily need
     to be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant.
@@ -148,23 +152,26 @@ class SciPy(ObservationModel):
 
 class SymPy(ObservationModel):
     """
-    SymPy model. This observation model class allows to create new observation models on-the-fly from sympy.stats
-    random variables.
+    Model based on sympy.stats random variable. This observation model class allows to create new observation models
+    on-the-fly from sympy.stats random variables.
 
     Args:
         rv: SymPy random symbol
+        valueDict: dictionary containing names and corresponding parameter values (using bayesloop.cint() or
+            bayesloop.oint())
         determineJeffreysPrior(bool): If set to true, Jeffreys prior is analytically derived
         prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
 
     Observation models can be defined symbolically using the SymPy module in a convenient way. In contrast to the
-    SciPy probability distributions, fixed parameters are directly set and not passed as a dictionary.
+    SciPy probability distributions, fixed parameters are directly set and do not have to be passed as a dictionary.
 
     See http://docs.sympy.org/dev/modules/stats.html for further information on the available distributions and the
     parameter notation.
 
     Example:
     ::
+        import bayesloop as bl
         from sympy import Symbol
         from sympy.stats import Normal
 
@@ -172,7 +179,7 @@ class SymPy(ObservationModel):
         sigma = Symbol('sigma', positive=True)
         rv = Normal('normal', mu, sigma)
 
-        L = bl.observationModels.Custom(rv)
+        L = bl.om.SymPy(rv, {'sigma': bl.oint(0, 3, 1000)})
 
     This will result in a model for normally distributed observations with a fixed 'mu' (mean) of 4, leaving 'sigma'
     (the standard deviation) as the only free parameter to be inferred. Using SymPy random variables to create an

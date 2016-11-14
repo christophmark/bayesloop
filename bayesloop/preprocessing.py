@@ -13,7 +13,7 @@ import numpy as np
 
 def movingWindow(rawData, n):
     """
-    Generates an array consisting of overlapping subsequences of raw data.
+    Generates an array consisting of overlapping sub-sequences of raw data.
 
     Args:
         rawData(ndarray): Array containing time series data

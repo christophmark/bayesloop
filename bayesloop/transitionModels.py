@@ -21,7 +21,7 @@ from .exceptions import *
 
 class Static:
     """
-    Static transition model. This trivial model assumes no change of parameter values over time.
+    Constant parameters over time. This trivial model assumes no change of parameter values over time.
     """
     def __init__(self):
         self.study = None
@@ -53,14 +53,15 @@ class Static:
 
 class GaussianRandomWalk:
     """
-    Gaussian random walk model. This model assumes that parameter changes are Gaussian-distributed. The standard
+    Gaussian parameter fluctuations. This model assumes that parameter changes are Gaussian-distributed. The standard
     deviation can be set individually for each model parameter.
 
     Args:
         name(str): custom name of the hyper-parameter sigma
         value(float, list, tuple, ndarray): standard deviation(s) of the Gaussian random walk for target parameter
         target(str): parameter name of the observation model to apply transition model to
-        prior(): TODO
+        prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
+            directly as a Numpy array with probability values for each hyper-parameter value
     """
     def __init__(self, name='sigma', value=None, target=None, prior=None):
         if isinstance(value, (list, tuple)):  # Online study expects Numpy array of values
@@ -106,9 +107,9 @@ class GaussianRandomWalk:
 
 class AlphaStableRandomWalk:
     """
-    Alpha stable random walk model. This model assumes that parameter changes are distributed according to the symmetric
-    alpha-stable distribution. For each parameter, two hyper-parameters can be set: the width of the distribution (c)
-    and the shape (alpha).
+    Parameter changes follow alpha-stable distribution. This model assumes that parameter changes are distributed
+    according to the symmetric alpha-stable distribution. For each parameter, two hyper-parameters can be set: the
+    width of the distribution (c) and the shape (alpha).
 
     Args:
         name1(str): custom name of the hyper-parameter c
@@ -116,7 +117,8 @@ class AlphaStableRandomWalk:
         name2(str): custom name of the hyper-parameter alpha
         value2(float, list, tuple, ndarray): shape(s) of the distribution (0 < alpha <= 2).
         target(str): parameter name of the observation model to apply transition model to
-        prior(): TODO
+        prior: list of two hyper-prior distributions, where each may be passed as a(lambda) function, as a SymPy random
+            variable, or directly as a Numpy array with probability values for each hyper-parameter value
     """
     def __init__(self, name1='c', value1=None, name2='alpha', value2=None, target=None, prior=(None, None)):
         if isinstance(value1, (list, tuple)):
@@ -247,14 +249,15 @@ class AlphaStableRandomWalk:
 
 class ChangePoint:
     """
-    Change-point model. Parameter values are allowed to change only at a single point in time, right after a specified
-    time step (Hyper-parameter tChange). Note that a uniform parameter distribution is used at this time step to
-    achieve this "reset" of parameter values.
+    Abrupt parameter change at a specified time step. Parameter values are allowed to change only at a single point in
+    time, right after a specified time step (Hyper-parameter tChange). Note that a uniform parameter distribution is
+    used at this time step to achieve this "reset" of parameter values.
 
     Args:
         name(str): custom name of the hyper-parameter tChange
         value(int, list, tuple, ndarray): Integer value(s) of the time step of the change point
-        prior(): TODO
+        prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
+            directly as a Numpy array with probability values for each hyper-parameter value
     """
     def __init__(self, name='tChange', value=None, prior=None):
         if isinstance(value, (list, tuple)):
@@ -302,8 +305,8 @@ class ChangePoint:
 
 class Independent:
     """
-    Independent observations model. This transition model restores the prior distribution for the parameters at each
-    time step, effectively assuming independent observations.
+    Observations are treated as independent. This transition model restores the prior distribution for the parameters
+    at each time step, effectively assuming independent observations.
 
     Note:
         Mostly used with an instance of OnlineStudy.
@@ -348,16 +351,17 @@ class Independent:
 
 class RegimeSwitch:
     """
-    Regime-switching model. In case the number of change-points in a given data set is unknown, the regime-switching
-    model may help to identify potential abrupt changes in parameter values. At each time step, all parameter values
-    within the set boundaries are assigned a minimal probability density of being realized in the next time step,
-    effectively allowing abrupt parameter changes at every time step.
+    Small probability for a parameter jump in each time step. In case the number of change-points in a given data set
+    is unknown, the regime-switching model may help to identify potential abrupt changes in parameter values. At each
+    time step, all parameter values within the set boundaries are assigned a minimal probability density of being
+    realized in the next time step, effectively allowing abrupt parameter changes at every time step.
 
     Args:
         name(str): custom name of the hyper-parameter log10pMin
         value(float, list, tuple, ndarray): Minimal probability density (log10 value) that is assigned to every
             parameter value
-        prior(): TODO
+        prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
+            directly as a Numpy array with probability values for each hyper-parameter value
     """
     def __init__(self, name='log10pMin', value=None, prior=None):
         if isinstance(value, (list, tuple)):
@@ -399,16 +403,18 @@ class RegimeSwitch:
 
 class NotEqual:
     """
-    Inverse distribution model. Assumes an "inverse" parameter distribution at each new time step. The new prior is
-    derived by substracting the posterior probability values from their maximal value and subsequently re-normalizing.
-    To assure that no parameter value is set to zero probability, one may specify a minimal probability for all
-    parameter values. This transition model is mostly used in instances of OnlineStudy to detect time step when
-    parameter distributions change significantly.
+    Unlikely parameter values are preferred in the next time step. Assumes an "inverse" parameter distribution at each
+    new time step. The new prior is derived by substracting the posterior probability values from their maximal value
+    and subsequently re-normalizing. To assure that no parameter value is set to zero probability, one may specify a
+    minimal probability for all parameter values. This transition model is mostly used in instances of OnlineStudy to
+    detect time step when parameter distributions change significantly.
 
     Args:
         name(str): custom name of the hyper-parameter log10pMin
         value(float, list, tuple, ndarray): Log10-value of the minimal probability that is set to all possible
             parameter values of the inverted parameter distribution
+        prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
+            directly as a Numpy array with probability values for each hyper-parameter value
 
     Note:
         Mostly used with an instance of OnlineStudy.
@@ -456,8 +462,8 @@ class NotEqual:
 
 class Deterministic:
     """
-    Generic deterministic model. Given a function with time as the first argument and further  keyword-arguments as
-    hyper-parameters, plus the name of a parameter of the observation model that is supposed to follow this function
+    Deterministic parameter variations. Given a function with time as the first argument and further  keyword-arguments
+    as hyper-parameters, plus the name of a parameter of the observation model that is supposed to follow this function
     over time, this transition model shifts the parameter distribution accordingly. Note that these models are entirely
     deterministic, as the hyper-parameter values are entered by the user. However, the hyper-parameter distributions can
     be inferred using a Hyper-study or can be optimized using the 'optimize' method of the Study class.
@@ -466,6 +472,9 @@ class Deterministic:
         function(function): A function that takes the time as its first argument and further takes keyword-arguments
             that correspond to the hyper-parameters of the transition model which the function defines.
         target(str): The observation model parameter that is manipulated according to the function defined above.
+        prior: List of hyper-prior distributions (one for each hyper-parameter), where each may be passed as a(lambda)
+            function, as a SymPy random variable, or directly as a Numpy array with probability values for each
+            hyper-parameter value
 
     Example:
     ::
@@ -474,7 +483,7 @@ class Deterministic:
 
         S = bl.Study()
         ...
-        S.setObservationModel(bl.om.Gaussian('signal'))
+        S.setObservationModel(bl.om.WhiteNoise('std', bl.oint(0, 3, 1000)))
         S.setTransitionModel(bl.tm.Deterministic(quadratic, target='signal'))
     """
     def __init__(self, function=None, target=None, prior=None):
@@ -568,9 +577,9 @@ class Deterministic:
 
 class CombinedTransitionModel:
     """
-    Combined transition model. This class allows to combine different transition models to be able to explore more
-    complex parameter dynamics. All sub-models are passed to this class as arguments on initialization. Note that a
-    different order of the sub-models can result in different parameter dynamics.
+    Different models act at the same time. This class allows to combine different transition models to be
+    able to explore more complex parameter dynamics. All sub-models are passed to this class as arguments on
+    initialization. Note that a different order of the sub-models can result in different parameter dynamics.
 
     Args:
         *args: Sequence of transition models
@@ -624,21 +633,20 @@ class CombinedTransitionModel:
 
 class SerialTransitionModel:
     """
-    Serial transition model. To model fundamental changes in parameter dynamics, different transition models can be
-    serially coupled. Depending on the time step, a corresponding sub-model is chosen to compute the new prior
-    distribution from the posterior distribution.
+    Different models act at different time steps. To model fundamental changes in parameter dynamics, different
+    transition models can be serially coupled. Depending on the time step, a corresponding sub-model is chosen to
+    compute the new prior distribution from the posterior distribution.
 
     Args:
-        *args: Sequence of transition models and integer time steps for structural breaks
-            (for n models, n-1 time steps have to be provided)
+        *args: Sequence of transition models and breakpoints (for n models, n-1 breakpoints have to be provided)
 
     Example:
     ::
-        T = bl.transitionModels.SerialTransitionModel(bl.transitionModels.Static(),
-                                                      ['t_1', 50],
-                                                      bl.transitionModels.RegimeSwitch('log10pMin', -7),
-                                                      ['t_2', 100],
-                                                      bl.transitionModels.GaussianRandomWalk('sigma', 0.2, target='x'))
+        T = bl.tm.SerialTransitionModel(bl.tm.Static(),
+                                        bl.tm.BreakPoint('t_1', 50),
+                                        bl.tm.RegimeSwitch('log10pMin', -7),
+                                        bl.tm.BreakPoint('t_2', 100),
+                                        bl.tm.GaussianRandomWalk('sigma', 0.2, target='x'))
 
     In this example, parameters are assumed to be constant until 't_1' (time step 50), followed by a regime-switching-
     process until 't_2' (time step 100). Finally, we assume Gaussian parameter fluctuations for parameter 'x' until the
@@ -729,7 +737,8 @@ class BreakPoint:
     Args:
         name(str): custom name of the hyper-parameter tBreak
         value(int, list, tuple, ndarray): Value(s) of the time step(s) of the break point
-        prior(): TODO
+        prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
+            directly as a Numpy array with probability values for each hyper-parameter value
     """
     def __init__(self, name='tBreak', value=None, prior=None):
         if isinstance(value, (list, tuple)):

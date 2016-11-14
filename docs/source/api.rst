@@ -33,14 +33,23 @@ Observation models
 .. currentmodule:: bayesloop.observationModels
 .. autosummary::
 
-   Custom
+   SymPy
+   SciPy
    Bernoulli
    Poisson
    Gaussian
-   ZeroMeanGaussian
+   WhiteNoise
    AR1
    ScaledAR1
-   LinearRegression
+
+.. note::
+
+    You can use the short-form `om` to access all observation models:
+    
+    .. code-block:: python
+
+        import bayesloop as bl
+        L = bl.om.SymPy(...)
    
 .. automodule:: bayesloop.observationModels
    :members:
@@ -61,6 +70,15 @@ Transition models
     NotEqual
     CombinedTransitionModel
     SerialTransitionModel
+
+.. note::
+
+    You can use the short-form `tm` to access all transition models:
+    
+    .. code-block:: python
+
+        import bayesloop as bl
+        T = bl.tm.ChangePoint(...)
 
 .. automodule:: bayesloop.transitionModels
     :members:

@@ -13,4 +13,3 @@ from . import transitionModels as tm  # short form
 from helper import cint, oint
 from .jeffreys import *
 from .fileIO import *
-
