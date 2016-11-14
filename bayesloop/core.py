@@ -1166,7 +1166,7 @@ class HyperStudy(Study):
         """
         S = copy(self)
         S.hyperGridValues = np.array_split(S.hyperGridValues, nJobs)[idx]
-        S.hyperPriorValues = np.array_split(S.hyperPriorValues, nJobs)[idx]
+        S.flatHyperPriorValues = np.array_split(S.flatHyperPriorValues, nJobs)[idx]
 
         # show progressbar for last process if silent=False
         if not silent and idx == nJobs-1:
@@ -1188,8 +1188,8 @@ class HyperStudy(Study):
             S.localEvidenceList.append(S.localEvidence)
             if (not evidenceOnly) and np.isfinite(S.logEvidence):
                 S.averagePosteriorSequence += S.posteriorSequence *\
-                                              np.exp(S.logEvidence - referenceLogEvidence) *\
-                                              S.hyperPriorValues[i]
+                                              np.exp(S.logEvidence - referenceLogEvidence) * \
+                                              S.flatHyperPriorValues[i]
 
         # remove progressbar correctly
         if not silent and idx == nJobs-1:
