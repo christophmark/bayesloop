@@ -579,7 +579,7 @@ class Study(object):
 
         # extend hyper-parameter based on current (sub-)model
         if hasattr(transitionModel, 'hyperParameterNames'):
-            if str(transitionModel) == 'Change-point model':
+            if str(transitionModel) == 'Change-point':
                 paramList.extend(transitionModel.hyperParameterNames)
 
         return paramList
