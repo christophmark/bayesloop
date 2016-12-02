@@ -2017,6 +2017,19 @@ class OnlineStudy(HyperStudy):
         """
         return self.transitionModelDistribution
 
+    def getCurrentTransitionModelProbability(self, transitionModel):
+        """
+        Returns the current posterior probability for a specified transition model.
+
+        Args:
+            transitionModel(str): Name of the transition model
+
+        Returns:
+            float: Posterior probability value for the specified transition model
+        """
+        transitionModelIndex = self.transitionModelNames.index(transitionModel)
+        return self.transitionModelDistribution[transitionModelIndex]
+
     def getTransitionModelDistributions(self):
         """
         The transition model distribution contains posterior probability values for all transition models included in
@@ -2032,6 +2045,23 @@ class OnlineStudy(HyperStudy):
                                       'flag "storeHistory=True". Use "getCurrentTransitionModelDistribution" instead.')
 
         return np.array(self.transitionModelSequence)
+
+    def getTransitionModelProbabilities(self, transitionModel):
+        """
+        Returns posterior probability values for a specified transition model. This distribution is available for all
+        time steps analyzed. Only available if Online Study is created with flag 'storeHistory=True'.
+
+        Returns:
+            ndarray: Array containing the posterior probability values for the specified transition model for all time
+                steps analyzed
+            transitionModel(str): Name of the transition model
+        """
+        if not self.storeHistory:
+            raise PostProcessingError('To get past transition model distributions, Online Study must be called with '
+                                      'flag "storeHistory=True". Use "getCurrentTransitionModelDistribution" instead.')
+
+        transitionModelIndex = self.transitionModelNames.index(transitionModel)
+        return np.array(self.transitionModelSequence)[:, transitionModelIndex]
 
     def getCurrentParameterMeanValue(self, name):
         """
