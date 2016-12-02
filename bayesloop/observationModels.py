@@ -308,7 +308,7 @@ class Bernoulli(ObservationModel):
             # The parameter of the Bernoulli model is naturally constrained to the [0, 1] interval
             return cint(0, 1, 1000)
         else:
-            raise ConfigurationError('Bernoulli model does not contain a parameter "".'.format(name))
+            raise ConfigurationError('Bernoulli model does not contain a parameter "{}".'.format(name))
 
 
     def jeffreys(self, x):
@@ -372,7 +372,7 @@ class Poisson(ObservationModel):
             # lower is boundary is zero by definition, upper boundary is chosen as 1.25*(largest observation)
             return oint(0, 1.25*np.nanmax(np.ravel(rawData)), 1000)
         else:
-            raise ConfigurationError('Poisson model does not contain a parameter "".'.format(name))
+            raise ConfigurationError('Poisson model does not contain a parameter "{}".'.format(name))
 
     def jeffreys(self, x):
         """
@@ -395,13 +395,17 @@ class Gaussian(ObservationModel):
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self, name1='mean', value1=None, name2='std', value2=None, prior=lambda mu, sigma: 1./sigma**3.):
+    def __init__(self, name1='mean', value1=None, name2='std', value2=None, prior=None):
         self.name = 'Gaussian observations'
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = [name1, name2]
         self.parameterValues = [value1, value2]
-        self.prior = prior  # default: Jeffreys prior
         self.multiplyLikelihoods = True
+
+        if prior is None:
+            self.prior = self.jeffreys  # default: Jeffreys prior
+        else:
+            self.prior = prior
 
     def pdf(self, grid, dataSegment):
         """
@@ -429,15 +433,86 @@ class Gaussian(ObservationModel):
         Returns:
             list: parameter boundaries.
         """
-        mean = np.mean(np.ravel(rawData))
-        std = np.std(np.ravel(rawData))
+        mean = np.nanmean(np.ravel(rawData))
+        std = np.nanstd(np.ravel(rawData))
 
         if name == self.parameterNames[0]:
             return cint(mean-2*std, mean+2*std, 200)
         elif name == self.parameterNames[1]:
             return oint(0, 2 * std, 200)
         else:
-            raise ConfigurationError('Gaussian model does not contain a parameter "".'.format(name))
+            raise ConfigurationError('Gaussian model does not contain a parameter "{}".'.format(name))
+
+    def jeffreys(self, mu, sigma):
+        """
+        Jeffreys prior for Gaussian model.
+        """
+        return 1./sigma**3.
+
+
+class GaussianMean(ObservationModel):
+    """
+    Observations with given error interval. This observation model represents a Gaussian distribution with given
+    standard deviation, only the mean of the distribution is a free parameter. It can be used if the data at hand
+    contains for example mean values and corresponding error intervals. The data is supplied as an array of tuples,
+    where each tuple contains the observed mean value and the corresponding standard deviation for an individual time
+    step:
+
+    ::
+
+        [["mean (t=1)", "std (t=1)"], ["mean (t=2)", "std (t=2)"], ...]
+
+    Args:
+        name(str): custom name for the mean parameter
+        value(list, tuple, ndarray): Regularly spaced parameter values for the mean parameter
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
+    """
+
+    def __init__(self, name='mean', value=None, prior=None):
+        self.name = 'Gaussian mean model'
+        self.segmentLength = 1
+        self.parameterNames = [name]
+        self.parameterValues = [value]
+        self.multiplyLikelihoods = False
+        self.prior = prior  # default: flat prior
+
+    def pdf(self, grid, dataSegment):
+        """
+        Probability density function of the Gaussian mean model.
+
+        Args:
+            grid(list): Parameter grid for discrete values of the mean
+            dataSegment(ndarray): Data segment from formatted data (containing a tuple of observed mean value and the
+                given standard deviation)
+
+        Returns:
+            ndarray: Discretized Normal pdf (with same shape as grid).
+        """
+        return np.exp(-((dataSegment[0, 0] - grid[0]) ** 2.) / (2. * dataSegment[0, 1] ** 2.) -
+                      .5 * np.log(2. * np.pi * dataSegment[0, 1] ** 2.))
+
+    def estimateParameterValues(self, name, rawData):
+        """
+        Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
+        boundaries are defined.
+
+        Args:
+            name(str): name of a parameter of the observation model
+            rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
+
+        Returns:
+            list: parameter boundaries.
+        """
+        observations = np.array([d[0] for d in rawData])
+        min = np.nanmin(observations)
+        max = np.nanmax(observations)
+        delta = max - min
+
+        if name == self.parameterNames[0]:
+            return oint(min-delta, max+delta, 1000)
+        else:
+            raise ConfigurationError('Gaussian mean model does not contain a parameter "{}".'.format(name))
 
 
 class WhiteNoise(ObservationModel):
@@ -458,8 +533,12 @@ class WhiteNoise(ObservationModel):
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = [name]
         self.parameterValues = [value]
-        self.prior = prior  # default: Jeffreys prior
         self.multiplyLikelihoods = True
+
+        if prior is None:
+            self.prior = self.jeffreys  # default: Jeffreys prior
+        else:
+            self.prior = prior
 
     def pdf(self, grid, dataSegment):
         """
@@ -481,17 +560,23 @@ class WhiteNoise(ObservationModel):
 
         Args:
             name(str): name of a parameter of the observation model
-            rawData(ndarray): observed data points that may be used to determine appropiate parameter boundaries
+            rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
 
         Returns:
             list: parameter boundaries.
         """
-        std = np.std(np.ravel(rawData))
+        std = np.nanstd(np.ravel(rawData))
 
         if name == self.parameterNames[0]:
             return oint(0, 2 * std, 1000)
         else:
-            raise ConfigurationError('White noise model does not contain a parameter "".'.format(name))
+            raise ConfigurationError('White noise model does not contain a parameter "{}".'.format(name))
+
+    def jeffreys(self, sigma):
+        """
+        Jeffreys prior for Gaussian model.
+        """
+        return 1. / sigma
 
 
 class AR1(ObservationModel):
@@ -523,7 +608,7 @@ class AR1(ObservationModel):
         Probability density function of the Auto-regressive process of first order
 
         Args:
-            grid(list): Parameter grid for discerete values of the correlation coefficient and noise amplitude
+            grid(list): Parameter grid for discrete values of the correlation coefficient and noise amplitude
             dataSegment(ndarray): Data segment from formatted data (in this case a pair of measurements)
 
         Returns:
@@ -544,14 +629,14 @@ class AR1(ObservationModel):
         Returns:
             list: parameter boundaries.
         """
-        std = np.std(np.ravel(rawData))
+        std = np.nanstd(np.ravel(rawData))
 
         if name == self.parameterNames[0]:
             return oint(-1, 1, 200)
         elif name == self.parameterNames[1]:
             return oint(0, 2 * std, 200)
         else:
-            raise ConfigurationError('AR1 model does not contain a parameter "".'.format(name))
+            raise ConfigurationError('AR1 model does not contain a parameter "{}".'.format(name))
 
 
 class ScaledAR1(ObservationModel):
@@ -609,11 +694,11 @@ class ScaledAR1(ObservationModel):
         Returns:
             list: parameter boundaries.
         """
-        std = np.std(np.ravel(rawData))
+        std = np.nanstd(np.ravel(rawData))
 
         if name == self.parameterNames[0]:
             return oint(-1, 1, 200)
         elif name == self.parameterNames[1]:
             return oint(0, 2 * std, 200)
         else:
-            raise ConfigurationError('AR1 model does not contain a parameter "".'.format(name))
+            raise ConfigurationError('AR1 model does not contain a parameter "{}".'.format(name))
