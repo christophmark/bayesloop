@@ -10,6 +10,7 @@ Tutorials
     tutorials/hyperparameteroptimization.ipynb
     tutorials/hyperstudy.ipynb
     tutorials/changepointstudy.ipynb
+    tutorials/onlinestudy.ipynb
     tutorials/priordistributions.ipynb
     tutorials/customobservationmodels.ipynb
     tutorials/multiprocessing.ipynb
