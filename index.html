@@ -4,7 +4,7 @@
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="bayesloop : Probabilistic programming framework that enables objective model selection for time-varying parameter models.">
+    <meta name="description" content="bayesloop : Probabilistic programming framework that facilitates objective model selection for time-varying parameter models.">
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
@@ -19,7 +19,7 @@
           <a id="forkme_banner" href="https://github.com/christophmark/bayesloop">View on GitHub</a>
 
           <h1 id="project_title">bayesloop</h1>
-          <h2 id="project_tagline">Probabilistic programming framework that enables objective model selection for time-varying parameter models.</h2>
+          <h2 id="project_tagline">Probabilistic programming framework that facilitates objective model selection for time-varying parameter models.</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/christophmark/bayesloop/zipball/master">Download this project as a .zip file</a>
@@ -78,30 +78,40 @@ S.fit()  # inference
 plt.figure(figsize=(6, 3))
 plt.xlim([1852, 1961])
 
-plt.bar(S.rawTimestamps, S.rawData,
+plt.bar(S.rawTimestamps, S.rawData, 
         align='center', facecolor='r', alpha=.5)
 S.plotParameterEvolution('rate')
 plt.show()
 </code></pre>
 
-<p><img src="https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/example.png" alt="Analysis plot" width="103%"></p>
+<p><img src="https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/example.png" alt="Analysis plot"></p>
 
 <p>This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the <a href="http://docs.bayesloop.com">documentation</a> for further insights!</p>
 
 <h2>
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
 
-<p>To install the latest version of <em>bayesloop</em>, download the <a href="https://github.com/christophmark/bayesloop/zipball/master">zipped version</a> or clone the repository and install <em>bayesloop</em> using <code>python setup.py install</code>.</p>
+<p>The easiest way to install the latest release version of <em>bayesloop</em> is via <code>pip</code>:</p>
 
-<p>Another option is to install <em>bayesloop</em> from the master branch using pip (requires git):</p>
+<pre><code>pip install bayesloop
+</code></pre>
+
+<p>Alternatively, a zipped version can be downloaded <a href="https://github.com/christophmark/bayesloop/releases">here</a>. The module is installed by calling <code>python setup.py install</code>.</p>
+
+<h3>
+<a id="development-version" class="anchor" href="#development-version" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Development version</h3>
+
+<p>The latest development version of <em>bayesloop</em> can be installed from the master branch using pip (requires git):</p>
 
 <pre><code>pip install git+https://github.com/christophmark/bayesloop
 </code></pre>
 
+<p>Alternatively, use this <a href="https://github.com/christophmark/bayesloop/zipball/master">zipped version</a> or clone the repository.</p>
+
 <h2>
 <a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dependencies</h2>
 
-<p><em>bayesloop</em> is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib and tqdm.</p>
+<p><em>bayesloop</em> is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib and tqdm. All except the latter are already included in the <a href="https://www.continuum.io/downloads">Anaconda distribution</a> of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at <a href="http://www.lfd.uci.edu/%7Egohlke/pythonlibs/">Christoph Gohlke's page</a>.</p>
 
 <h2>
 <a id="optional-dependencies" class="anchor" href="#optional-dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Optional dependencies</h2>
@@ -141,7 +151,7 @@ plt.show()
           </script>
           <script type="text/javascript">
             try {
-              var pageTracker = _gat._getTracker("UA-67056038-1");
+              var pageTracker = _gat._getTracker("UA-88435297-1");
             pageTracker._trackPageview();
             } catch(err) {}
           </script>
