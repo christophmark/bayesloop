@@ -8,7 +8,7 @@ setup(
     version='1.1',
     description='Probabilistic programming framework that enables objective model selection for time-varying parameter models.',
     url='http://bayesloop.com',
-    download_url = 'https://github.com/christophmark/bayesloop/tarball/1.1'
+    download_url = 'https://github.com/christophmark/bayesloop/tarball/1.1',
     author='Christoph Mark',
     author_email='christoph.mark@fau.de',
     license='The MIT License (MIT)',
