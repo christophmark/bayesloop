@@ -11,7 +11,7 @@ Welcome to bayesloop's documentation!
 
 .. |logo| image:: https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/logo_75px.png
 
-**Probabilistic programming framework that enables objective model selection for time-varying parameter models.**
+**Probabilistic programming framework that facilitates objective model selection for time-varying parameter models.**
 
 .. seealso::
 
