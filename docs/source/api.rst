@@ -38,6 +38,7 @@ Observation models
    Bernoulli
    Poisson
    Gaussian
+   GaussianMean
    WhiteNoise
    AR1
    ScaledAR1
