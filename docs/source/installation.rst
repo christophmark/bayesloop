@@ -4,18 +4,29 @@
 Installation
 ************
 
-To install the latest version of *bayesloop*, download the `zipped version <https://github.com/christophmark/bayesloop/zipball/master>`__ or clone the repository and install *bayesloop* using ``python setup.py install``.
+The easiest way to install the latest release version of *bayesloop* is via ``pip``:
 
-Another option is to install *bayesloop* from the master branch using pip (requires git):
+::
+
+    pip install bayesloop
+
+Alternatively, a zipped version can be downloaded `here <https://github.com/christophmark/bayesloop/releases>`__. The module is installed by calling ``python setup.py install``.
+
+Development version
+-------------------
+
+The latest development version of *bayesloop* can be installed from the master branch using pip (requires git):
 
 ::
 
     pip install git+https://github.com/christophmark/bayesloop
 
+Alternatively, use this `zipped version <https://github.com/christophmark/bayesloop/zipball/master>`__ or clone the repository.
+
 Dependencies
 ------------
 
-*bayesloop* is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy and matplotlib.
+*bayesloop* is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib and tqdm. All except the latter are already included in the `Anaconda distribution <https://www.continuum.io/downloads>`__ of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`__.
 
 Optional dependencies
 ---------------------

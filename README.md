@@ -43,7 +43,7 @@ S.fit()  # inference
 plt.figure(figsize=(6, 3))
 plt.xlim([1852, 1961])
 
-plt.bar(S.rawTimestamps, S.rawData,
+plt.bar(S.rawTimestamps, S.rawData, 
         align='center', facecolor='r', alpha=.5)
 S.plotParameterEvolution('rate')
 plt.show()
@@ -54,15 +54,21 @@ plt.show()
 This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the [documentation](http://docs.bayesloop.com) for further insights!
 
 ## Installation
-To install the latest version of *bayesloop*, download the [zipped version](https://github.com/christophmark/bayesloop/zipball/master) or clone the repository and install *bayesloop* using `python setup.py install`.
+The easiest way to install the latest release version of *bayesloop* is via `pip`:
+```
+pip install bayesloop
+```
+Alternatively, a zipped version can be downloaded [here](https://github.com/christophmark/bayesloop/releases). The module is installed by calling `python setup.py install`.
 
-Another option is to install *bayesloop* from the master branch using pip (requires git):
+### Development version
+The latest development version of *bayesloop* can be installed from the master branch using pip (requires git):
 ```
 pip install git+https://github.com/christophmark/bayesloop
 ```
+Alternatively, use this [zipped version](https://github.com/christophmark/bayesloop/zipball/master) or clone the repository.
 
 ## Dependencies
-*bayesloop* is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib and tqdm.
+*bayesloop* is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib and tqdm. All except the latter are already included in the [Anaconda distribution](https://www.continuum.io/downloads) of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at [Christoph Gohlke's page](http://www.lfd.uci.edu/~gohlke/pythonlibs/).
 
 ## Optional dependencies
 *bayesloop* uses [dill](https://pypi.python.org/pypi/dill), an extension to Python's [pickle](https://docs.python.org/2/library/pickle.html) module, to save/load on-going data studies to/from file. It can be installed via pip:
