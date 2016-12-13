@@ -255,6 +255,7 @@ class Study(object):
 
         # normalize prior (necessary in case an improper prior is used)
         alpha /= np.sum(alpha)
+        alpha /= np.prod(self.latticeConstant)
 
         # forward pass
         for i in np.arange(0, len(self.formattedData)):
