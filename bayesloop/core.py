@@ -82,7 +82,14 @@ class Study(object):
             array(ndarray): Numpy array containing time series data
             timestamps(ndarray): Array of timestamps (same length as data array)
         """
-        self.rawData = array
+        if isinstance(array, np.ndarray):
+            self.rawData = array
+        elif isinstance(array, list):
+            print('! WARNING: Data supplied as list, not as Numpy array. Converting list to Numpy array (dtype=float).')
+            self.rawData = np.array(array, dtype=np.float)
+        else:
+            raise ConfigurationError('Data type not supported. Please provide data as Numpy array.')
+
         if timestamps is not None:  # load custom timestamps
             if len(timestamps) == len(array):
                 self.rawTimestamps = np.array(timestamps)
