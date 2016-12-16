@@ -1019,17 +1019,18 @@ class HyperStudy(Study):
         if not customHyperGrid:
             self._createHyperGrid()
 
-        self._checkConsistency()
+            # additional consistency check if multiple values are assigned to individual change/break-points
+            for name in list(flatten(self._unpackChangepointNames(self.transitionModel))) + \
+                    list(flatten(self._unpackBreakpointNames(self.transitionModel))):
+                i = self.flatHyperParameterNames.index(name)
+                if isinstance(self.flatHyperParameters[i], Iterable):
+                    raise ConfigurationError(
+                        'Detected multiple hyper-parameter values (list/tuple/array) for "{}". In a '
+                        'HyperStudy, only individual values for change/break-points can be processed. '
+                        'To infer change/break-points, use ChangepointStudy.'
+                        .format(self.flatHyperParameterNames[i]))
 
-        # additional consistency check if multiple values are assigned to individual change/break-points
-        for name in list(flatten(self._unpackChangepointNames(self.transitionModel))) + \
-                list(flatten(self._unpackBreakpointNames(self.transitionModel))):
-            i = self.flatHyperParameterNames.index(name)
-            if isinstance(self.flatHyperParameters[i], Iterable):
-                raise ConfigurationError('Detected multiple hyper-parameter values (list/tuple/array) for "{}". In a '
-                                         'HyperStudy, only individual values for change/break-points can be processed. '
-                                         'To infer change/break-points, use ChangepointStudy.'
-                                         .format(self.flatHyperParameterNames[i]))
+        self._checkConsistency()
 
         if not evidenceOnly:
             self.averagePosteriorSequence = np.zeros([len(self.formattedData)]+self.gridSize)
