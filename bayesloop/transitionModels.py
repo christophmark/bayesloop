@@ -490,7 +490,6 @@ class Deterministic:
         self.study = None
         self.latticeConstant = None
         self.function = function
-        self.prior = prior
         self.selectedParameter = target
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
@@ -514,6 +513,20 @@ class Deterministic:
                 default = np.array(default)
             self.hyperParameterNames.append(arg)
             self.hyperParameterValues.append(default)
+
+        if prior is None:
+            # provide as many "None"-priors as there are hyper-parameters
+            self.prior = [None]*len(argspec.defaults)
+        else:
+            # if list of priors is supplied, check length
+            if isinstance(prior, Iterable):
+                if not len(prior) == len(argspec.defaults):
+                    raise ConfigurationError('{} priors are defined for transition model "{}", but model contains {}'
+                                             'hyper-parameters.'
+                                             .format(len(prior), self.function.__name__, len(argspec.defaults)))
+            # if single prior is defined, pack it in a list
+            else:
+                self.prior = [prior]
 
     def __str__(self):
         return 'Deterministic model ({})'.format(self.function.__name__)
