@@ -529,15 +529,17 @@ class Deterministic:
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        # normalize hyper-parameter values with respect to lattice constant of parameter grid
+        # determine grid axis along which to shift the distribution
         axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-        normedHyperParameters = [v / self.latticeConstant[axisToTransform] for v in self.hyperParameterValues]
 
         # compute offset to shift parameter grid
-        params = {name: value for (name, value) in zip(self.hyperParameterNames, normedHyperParameters)}
+        params = {name: value for (name, value) in zip(self.hyperParameterNames, self.hyperParameterValues)}
         ftp1 = self.function(t + 1 - self.tOffset, **params)
         ft = self.function(t-self.tOffset, **params)
         d = ftp1-ft
+
+        # normalize offset with respect to lattice constant of parameter grid
+        d /= self.latticeConstant[axisToTransform]
 
         # build list for all axes of parameter grid (setting only the selected axis to a non-zero value)
         dAll = [0] * len(self.latticeConstant)
@@ -552,15 +554,17 @@ class Deterministic:
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):
-        # normalize hyper-parameter values with respect to lattice constant of parameter grid
+        # determine grid axis along which to shift the distribution
         axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-        normedHyperParameters = [v / self.latticeConstant[axisToTransform] for v in self.hyperParameterValues]
 
         # compute offset to shift parameter grid
-        params = {name: value for (name, value) in zip(self.hyperParameterNames, normedHyperParameters)}
+        params = {name: value for (name, value) in zip(self.hyperParameterNames, self.hyperParameterValues)}
         ftm1 = self.function(t - 1 - self.tOffset, **params)
         ft = self.function(t - self.tOffset, **params)
         d = ftm1 - ft
+
+        # normalize offset with respect to lattice constant of parameter grid
+        d /= self.latticeConstant[axisToTransform]
 
         # build list for all axes of parameter grid (setting only the selected axis to a non-zero value)
         dAll = [0] * len(self.latticeConstant)
