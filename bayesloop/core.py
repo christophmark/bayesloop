@@ -1011,11 +1011,14 @@ class HyperStudy(Study):
         """
         print('+ Started new fit.')
 
+        # format data/timestamps once, so number of data segments is known and _createGrid() works properly
+        self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
+        self.formattedTimestamps = self.rawTimestamps[self.observationModel.segmentLength - 1:]
+
         # create hyper-parameter grid
         if not customHyperGrid:
             self._createHyperGrid()
 
-        self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
         self._checkConsistency()
 
         if not evidenceOnly:
