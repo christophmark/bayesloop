@@ -265,8 +265,18 @@ class Study(object):
         alpha /= np.sum(alpha)
         alpha /= np.prod(self.latticeConstant)
 
+        # show progressbar if silent=False
+        if not silent:
+            # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+            try:
+                enum = tqdm_notebook(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
+            except:
+                enum = tqdm(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
+        else:
+            enum = np.arange(0, len(self.formattedData))
+
         # forward pass
-        for i in np.arange(0, len(self.formattedData)):
+        for i in enum:
 
             # compute likelihood
             likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])
@@ -301,6 +311,10 @@ class Study(object):
             # compute alpha for next iteration
             alpha = self.transitionModel.computeForwardPrior(alpha, self.formattedTimestamps[i])
 
+        # remove progressbar correctly
+        if not silent:
+            enum.close()
+
         self.logEvidence += np.log(np.prod(self.latticeConstant))  # integration yields evidence, not only sum
         if not silent:
             print('    + Finished forward pass.')
@@ -316,8 +330,18 @@ class Study(object):
             # normalize prior (necessary in case an improper prior is used)
             beta /= np.sum(beta)
 
+            # show progressbar if silent=False
+            if not silent:
+                # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+                try:
+                    enum = tqdm_notebook(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
+                except:
+                    enum = tqdm(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
+            else:
+                enum = np.arange(0, len(self.formattedData))[::-1]
+
             # backward pass
-            for i in np.arange(0, len(self.formattedData))[::-1]:
+            for i in enum:
                 # posterior ~ alpha*beta
                 self.posteriorSequence[i] *= beta  # alpha*beta
 
@@ -352,6 +376,10 @@ class Study(object):
 
                 # normalize beta (for numerical stability)
                 beta /= np.sum(beta)
+
+            # remove progressbar correctly
+            if not silent:
+                enum.close()
 
             if not silent:
                 print('    + Finished backward pass.')
