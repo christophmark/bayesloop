@@ -57,6 +57,7 @@ class Study(object):
         self.localEvidence = []
 
         self.selectedHyperParameters = []
+        self.fitWarningCounter = 0
 
         print('+ Created new study.')
 
@@ -283,8 +284,13 @@ class Study(object):
                 alpha /= norm
             else:
                 # if all probability values are zero, normalization is not possible
-                print('    ! WARNING: Forward pass distribution contains only zeros, check parameter boundaries!')
-                print('      Stopping inference process. Setting model evidence to zero.')
+                if self.fitWarningCounter < 5:
+                    print('    ! WARNING: Forward pass distribution contains only zeros, check parameter boundaries!')
+                    print('      Stopping inference process. Setting model evidence to zero.')
+                elif self.fitWarningCounter == 5:
+                    print('    ! WARNING: Will omit further warnings about parameter boundaries.')
+
+                self.fitWarningCounter += 1
                 self.logEvidence = -np.inf
                 return
 
@@ -321,8 +327,13 @@ class Study(object):
                     self.posteriorSequence[i] /= np.sum(self.posteriorSequence[i])
                 else:
                     # if all posterior probabilities are zero, normalization is not possible
-                    print('    ! WARNING: Posterior distribution contains only zeros, check parameter boundaries!')
-                    print('      Stopping inference process. Setting model evidence to zero.')
+                    if self.fitWarningCounter < 5:
+                        print('    ! WARNING: Posterior distribution contains only zeros, check parameter boundaries!')
+                        print('      Stopping inference process. Setting model evidence to zero.')
+                    elif self.fitWarningCounter == 5:
+                        print('    ! WARNING: Will omit further warnings about parameter boundaries.')
+
+                    self.fitWarningCounter += 1
                     self.logEvidence = -np.inf
                     return
 
@@ -1009,6 +1020,7 @@ class HyperStudy(Study):
             customHyperGrid(bool): If set to true, the method "_createHyperGrid" is not called before starting the fit.
                 This is used by the class "ChangepointStudy", which employs a custom version of "_createHyperGrid".
         """
+        self.fitWarningCounter = 0
         print('+ Started new fit.')
 
         # format data/timestamps once, so number of data segments is known and _createGrid() works properly
