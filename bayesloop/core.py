@@ -291,6 +291,10 @@ class Study(object):
             # compute likelihood
             likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])
 
+            # force dtype float on likelihood (in case it is of dtype object)
+            if likelihood.dtype == np.object:
+                likelihood = likelihood.astype(np.float)
+
             # update alpha based on likelihood
             alpha *= likelihood
 
@@ -373,6 +377,10 @@ class Study(object):
 
                 # re-compute likelihood
                 likelihood = self.observationModel.processedPdf(self.grid, self.formattedData[i])
+
+                # force dtype float on likelihood (in case it is of dtype object)
+                if likelihood.dtype == np.object:
+                    likelihood = likelihood.astype(np.float)
 
                 # compute local evidence
                 try:
