@@ -1037,7 +1037,7 @@ class HyperStudy(Study):
             self.flatHyperPriorValues = np.array([t.ravel() for t in temp]).T
             self.flatHyperPriorValues = np.prod(self.flatHyperPriorValues, axis=1)  # multiply probs for all hyper-parameters
             self.flatHyperPriorValues = self.flatHyperPriorValues/np.sum(self.flatHyperPriorValues)  # renormalization
-            if not silent:
+            if not silent and len(self.hyperGridValues) > 1:
                 print('+ Set hyper-prior(s): {}'.format(priorNamesList))
         else:
             # we need a dummy value for transition models without hyper-parameters
@@ -1067,7 +1067,6 @@ class HyperStudy(Study):
                 This is used by the class "ChangepointStudy", which employs a custom version of "_createHyperGrid".
         """
         self.fitWarningCounter = 0
-        print('+ Started new fit.')
 
         # format data/timestamps once, so number of data segments is known and _createGrid() works properly
         self.formattedData = movingWindow(self.rawData, self.observationModel.segmentLength)
@@ -1077,16 +1076,19 @@ class HyperStudy(Study):
         if not customHyperGrid:
             self._createHyperGrid()
 
-            # additional consistency check if multiple values are assigned to individual change/break-points
-            for name in list(flatten(self._unpackChangepointNames(self.transitionModel))) + \
-                    list(flatten(self._unpackBreakpointNames(self.transitionModel))):
-                i = self.flatHyperParameterNames.index(name)
-                if isinstance(self.flatHyperParameters[i], Iterable):
-                    raise ConfigurationError(
-                        'Detected multiple hyper-parameter values (list/tuple/array) for "{}". In a '
-                        'HyperStudy, only individual values for change/break-points can be processed. '
-                        'To infer change/break-points, use ChangepointStudy.'
-                        .format(self.flatHyperParameterNames[i]))
+            # additional consistency check if multiple change/break-points share identical values.
+            # in this case, a ChangepointStudy should be used!
+            names = list(flatten(self._unpackChangepointNames(self.transitionModel))) + \
+                    list(flatten(self._unpackBreakpointNames(self.transitionModel)))
+            if len(names) > 1:
+                indices = [self.flatHyperParameterNames.index(name) for name in names]
+                values = self.hyperGridValues[:, indices]
+
+                for v in values:
+                    if np.unique(v).size < v.size:
+                        raise ConfigurationError('Detected multiple change-/break-points with identical values and/or '
+                                                 'overlapping value intervals. Use "ChangepointStudy" instead of '
+                                                 '"HyperStudy" for such cases.')
 
         self._checkConsistency()
 
@@ -1096,131 +1098,144 @@ class HyperStudy(Study):
         self.logEvidenceList = []
         self.localEvidenceList = []
 
-        print('    + {} analyses to run.'.format(len(self.hyperGridValues)))
+        # hyper-study fit is only necessary for more than one combination of hyper-parameter values
+        if len(self.hyperGridValues) > 1:
+            print('+ Started new fit.')
+            print('    + {} analyses to run.'.format(len(self.hyperGridValues)))
 
-        # check if multiprocessing is available
-        if nJobs > 1:
-            try:
-                from pathos.multiprocessing import ProcessPool
-            except ImportError:
-                raise ImportError('No module named pathos.multiprocessing. This module represents an optional '
-                                  'dependency of bayesloop and is therefore not installed alongside bayesloop.')
-
-        # prepare parallel execution if necessary
-        if nJobs > 1:
-            # compute reference log-evidence value for numerical stability when computing average posterior sequence
-            if referenceLogEvidence is None:
-                self._setSelectedHyperParameters(self.hyperGridValues[0])
-                Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=True)
-                referenceLogEvidence = self.logEvidence
-
-            print('    + Creating {} processes.'.format(nJobs))
-            pool = ProcessPool(nodes=nJobs)
-
-            # use parallelFit method to create copies of this HyperStudy instance with only partial hyper-grid values
-            subStudies = pool.map(self._parallelFit,
-                                  range(nJobs),
-                                  [nJobs]*nJobs,
-                                  [forwardOnly]*nJobs,
-                                  [evidenceOnly]*nJobs,
-                                  [silent]*nJobs,
-                                  [referenceLogEvidence]*nJobs)
-
-            # prevent memory pile-up in main process
-            pool.close()
-            pool.join()
-            pool.terminate()
-            pool.restart()
-
-            # merge all sub-studies
-            for S in subStudies:
-                self.logEvidenceList += S.logEvidenceList
-                self.localEvidenceList += S.localEvidenceList
-                if not evidenceOnly:
-                    self.averagePosteriorSequence += S.averagePosteriorSequence
-        # single process fit
-        else:
-            # show progressbar if silent=False
-            if not silent:
-                # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+            # check if multiprocessing is available
+            if nJobs > 1:
                 try:
-                    enum = tqdm_notebook(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
-                except:
-                    enum = tqdm(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
-            else:
-                enum = enumerate(self.hyperGridValues)
+                    from pathos.multiprocessing import ProcessPool
+                except ImportError:
+                    raise ImportError('No module named pathos.multiprocessing. This module represents an optional '
+                                      'dependency of bayesloop and is therefore not installed alongside bayesloop.')
 
-            for i, hyperParamValues in enum:
-                self._setSelectedHyperParameters(hyperParamValues)
-
-                # call fit method from parent class
-                Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=True)
-
-                self.logEvidenceList.append(self.logEvidence)
-                self.localEvidenceList.append(self.localEvidence)
-
+            # prepare parallel execution if necessary
+            if nJobs > 1:
                 # compute reference log-evidence value for numerical stability when computing average posterior sequence
-                if i == 0 and referenceLogEvidence is None:
+                if referenceLogEvidence is None:
+                    self._setSelectedHyperParameters(self.hyperGridValues[0])
+                    Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=True)
                     referenceLogEvidence = self.logEvidence
 
-                if (not evidenceOnly) and np.isfinite(self.logEvidence):
-                    # note: averagePosteriorSequence has no proper normalization
-                    self.averagePosteriorSequence += self.posteriorSequence *\
-                                                     np.exp(self.logEvidence - referenceLogEvidence) *\
-                                                     self.flatHyperPriorValues[i]
+                print('    + Creating {} processes.'.format(nJobs))
+                pool = ProcessPool(nodes=nJobs)
 
-            # remove progressbar correctly
+                # use parallelFit method to create copies of this HyperStudy instance with only partial hyper-grid values
+                subStudies = pool.map(self._parallelFit,
+                                      range(nJobs),
+                                      [nJobs]*nJobs,
+                                      [forwardOnly]*nJobs,
+                                      [evidenceOnly]*nJobs,
+                                      [silent]*nJobs,
+                                      [referenceLogEvidence]*nJobs)
+
+                # prevent memory pile-up in main process
+                pool.close()
+                pool.join()
+                pool.terminate()
+                pool.restart()
+
+                # merge all sub-studies
+                for S in subStudies:
+                    self.logEvidenceList += S.logEvidenceList
+                    self.localEvidenceList += S.localEvidenceList
+                    if not evidenceOnly:
+                        self.averagePosteriorSequence += S.averagePosteriorSequence
+            # single process fit
+            else:
+                # show progressbar if silent=False
+                if not silent:
+                    # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+                    try:
+                        enum = tqdm_notebook(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
+                    except:
+                        enum = tqdm(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
+                else:
+                    enum = enumerate(self.hyperGridValues)
+
+                for i, hyperParamValues in enum:
+                    self._setSelectedHyperParameters(hyperParamValues)
+
+                    # call fit method from parent class
+                    Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=True)
+
+                    self.logEvidenceList.append(self.logEvidence)
+                    self.localEvidenceList.append(self.localEvidence)
+
+                    # compute reference log-evidence value for numerical stability when computing average posterior sequence
+                    if i == 0 and referenceLogEvidence is None:
+                        referenceLogEvidence = self.logEvidence
+
+                    if (not evidenceOnly) and np.isfinite(self.logEvidence):
+                        # note: averagePosteriorSequence has no proper normalization
+                        self.averagePosteriorSequence += self.posteriorSequence *\
+                                                         np.exp(self.logEvidence - referenceLogEvidence) *\
+                                                         self.flatHyperPriorValues[i]
+
+                # remove progressbar correctly
+                if not silent:
+                    enum.close()
+
+            if not evidenceOnly:
+                # compute average posterior distribution
+                normalization = np.array([np.sum(posterior) for posterior in self.averagePosteriorSequence])
+                for i in range(len(self.grid)):
+                    normalization = normalization[:, None]  # add axis; needs to match averagePosteriorSequence
+                self.averagePosteriorSequence /= normalization
+
+                # set self.posteriorSequence to average posterior sequence for plotting reasons
+                self.posteriorSequence = self.averagePosteriorSequence
+
+                if not silent:
+                    print('    + Computed average posterior sequence')
+
+            # compute log-evidence of average model
+            self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.flatHyperPriorValues))
+            print('    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10)))
+
+            # compute hyper-parameter distribution
+            logHyperParameterDistribution = self.logEvidenceList + np.log(self.flatHyperPriorValues)
+            # ignore evidence values of -inf when computing mean value for scaling
+            scaledLogHyperParameterDistribution = logHyperParameterDistribution - \
+                                                  np.mean(np.ma.masked_invalid(logHyperParameterDistribution))
+            self.hyperParameterDistribution = np.exp(scaledLogHyperParameterDistribution)
+            self.hyperParameterDistribution /= np.sum(self.hyperParameterDistribution)
+            self.hyperParameterDistribution /= np.prod(self.hyperGridConstant)  # probability density
+
             if not silent:
-                enum.close()
+                print('    + Computed hyper-parameter distribution')
 
-        if not evidenceOnly:
-            # compute average posterior distribution
-            normalization = np.array([np.sum(posterior) for posterior in self.averagePosteriorSequence])
-            for i in range(len(self.grid)):
-                normalization = normalization[:, None]  # add axis; needs to match averagePosteriorSequence
-            self.averagePosteriorSequence /= normalization
-
-            # set self.posteriorSequence to average posterior sequence for plotting reasons
-            self.posteriorSequence = self.averagePosteriorSequence
+            # compute local evidence of average model
+            self.localEvidence = np.sum((np.array(self.localEvidenceList).T*self.flatHyperPriorValues).T, axis=0)
 
             if not silent:
-                print('    + Computed average posterior sequence')
+                print('    + Computed local evidence of average model')
 
-        # compute log-evidence of average model
-        self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.flatHyperPriorValues))
-        print('    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10)))
+            # compute posterior mean values
+            if not evidenceOnly:
+                self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
+                for i in range(len(self.grid)):
+                    self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
 
-        # compute hyper-parameter distribution
-        logHyperParameterDistribution = self.logEvidenceList + np.log(self.flatHyperPriorValues)
-        # ignore evidence values of -inf when computing mean value for scaling
-        scaledLogHyperParameterDistribution = logHyperParameterDistribution - \
-                                              np.mean(np.ma.masked_invalid(logHyperParameterDistribution))
-        self.hyperParameterDistribution = np.exp(scaledLogHyperParameterDistribution)
-        self.hyperParameterDistribution /= np.sum(self.hyperParameterDistribution)
-        self.hyperParameterDistribution /= np.prod(self.hyperGridConstant)  # probability density
+                if not silent:
+                    print('    + Computed mean parameter values.')
 
-        if not silent:
-            print('    + Computed hyper-parameter distribution')
+            # clear localEvidenceList (to keep file size small for stored studies)
+            self.localEvidenceList = []
 
-        # compute local evidence of average model
-        self.localEvidence = np.sum((np.array(self.localEvidenceList).T*self.flatHyperPriorValues).T, axis=0)
+            print('+ Finished fit.')
 
-        if not silent:
-            print('    + Computed local evidence of average model')
-
-        # compute posterior mean values
-        if not evidenceOnly:
-            self.posteriorMeanValues = np.empty([len(self.grid), len(self.posteriorSequence)])
-            for i in range(len(self.grid)):
-                self.posteriorMeanValues[i] = np.array([np.sum(p*self.grid[i]) for p in self.posteriorSequence])
-
+        # only one combination of hyper-parameter values
+        else:
             if not silent:
-                print('    + Computed mean parameter values.')
+                if len(self.hyperGridValues) == 1:
+                    print('+ Only one combination of hyper-parameter values, switching to standard fit method.')
+                if len(self.hyperGridValues) == 0:
+                    print('+ Transition model contains no hyper-parameters, switching to standard fit method.')
 
-        # clear localEvidenceList (to keep file size small for stored studies)
-        self.localEvidenceList = []
-
-        print('+ Finished fit.')
+            Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=silent)
 
     def _parallelFit(self, idx, nJobs, forwardOnly, evidenceOnly, silent, referenceLogEvidence):
         """
@@ -1329,6 +1344,11 @@ class HyperStudy(Study):
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
                 corresponding probability (density) values
         """
+        # check if only a standard fit has been carried out
+        if len(self.hyperGridValues) < 2:
+            raise PostProcessingError('At least two combinations of hyper-parameter values need to be fitted to '
+                                      'evaluate a hyper-parameter distribution. Check transition model.')
+
         paramIndex = self._getHyperParameterIndex(self.transitionModel, name)
 
         axesToMarginalize = list(range(len(self.flatHyperParameterNames)))
@@ -1386,6 +1406,11 @@ class HyperStudy(Study):
             ndarray, ndarray, ndarray: The first and second array contains the hyper-parameter values, the
                 third one the corresponding probability (density) values
         """
+        # check if only a standard fit has been carried out
+        if len(self.hyperGridValues) < 2:
+            raise PostProcessingError('At least two combinations of hyper-parameter values need to be fitted to '
+                                      'evaluate a hyper-parameter distribution. Check transition model.')
+
         # check if list with two elements is provided
         if not isinstance(names, Iterable):
             raise PostProcessingError('A list of exactly two hyper-parameters has to be provided.')
