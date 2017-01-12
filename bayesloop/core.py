@@ -1225,7 +1225,11 @@ class HyperStudy(Study):
             # clear localEvidenceList (to keep file size small for stored studies)
             self.localEvidenceList = []
 
-            print('+ Finished fit.')
+            # restore hyper-parameter values (individual values have been set during fitting)
+            self._setAllHyperParameters(self.flatHyperParameters)
+
+            if not silent:
+                print('+ Finished fit.')
 
         # only one combination of hyper-parameter values
         else:
