@@ -1074,7 +1074,7 @@ class HyperStudy(Study):
 
         # create hyper-parameter grid
         if not customHyperGrid:
-            self._createHyperGrid()
+            self._createHyperGrid(silent=silent)
 
             # additional consistency check if multiple change/break-points share identical values.
             # in this case, a ChangepointStudy should be used!
@@ -1100,8 +1100,9 @@ class HyperStudy(Study):
 
         # hyper-study fit is only necessary for more than one combination of hyper-parameter values
         if len(self.hyperGridValues) > 1:
-            print('+ Started new fit.')
-            print('    + {} analyses to run.'.format(len(self.hyperGridValues)))
+            if not silent:
+                print('+ Started new fit.')
+                print('    + {} analyses to run.'.format(len(self.hyperGridValues)))
 
             # check if multiprocessing is available
             if nJobs > 1:
@@ -1119,7 +1120,8 @@ class HyperStudy(Study):
                     Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=True)
                     referenceLogEvidence = self.logEvidence
 
-                print('    + Creating {} processes.'.format(nJobs))
+                if not silent:
+                    print('    + Creating {} processes.'.format(nJobs))
                 pool = ProcessPool(nodes=nJobs)
 
                 # use parallelFit method to create copies of this HyperStudy instance with only partial hyper-grid values
@@ -1193,7 +1195,8 @@ class HyperStudy(Study):
 
             # compute log-evidence of average model
             self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.flatHyperPriorValues))
-            print('    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10)))
+            if not silent:
+                print('    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10)))
 
             # compute hyper-parameter distribution
             logHyperParameterDistribution = self.logEvidenceList + np.log(self.flatHyperPriorValues)
