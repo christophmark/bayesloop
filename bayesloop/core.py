@@ -1093,7 +1093,10 @@ class HyperStudy(Study):
         self._checkConsistency()
 
         if not evidenceOnly:
-            self.averagePosteriorSequence = np.zeros([len(self.formattedData)]+self.gridSize)
+            # The average posterior distribution is stored in log-space for numerical stability. This way, it can be
+            # updated iteratively without storing all individual posterior distributions (after the iteration over all
+            # hyper-parameter values is done, it is transformed back to linear space)
+            self.averagePosteriorSequence = np.zeros([len(self.formattedData)]+self.gridSize) - np.inf
 
         self.logEvidenceList = []
         self.localEvidenceList = []
@@ -1112,26 +1115,19 @@ class HyperStudy(Study):
                     raise ImportError('No module named pathos.multiprocessing. This module represents an optional '
                                       'dependency of bayesloop and is therefore not installed alongside bayesloop.')
 
-            # prepare parallel execution if necessary
-            if nJobs > 1:
-                # compute reference log-evidence value for numerical stability when computing average posterior sequence
-                if referenceLogEvidence is None:
-                    self._setSelectedHyperParameters(self.hyperGridValues[0])
-                    Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=True)
-                    referenceLogEvidence = self.logEvidence
-
+                # prepare parallel execution
                 if not silent:
                     print('    + Creating {} processes.'.format(nJobs))
                 pool = ProcessPool(nodes=nJobs)
 
-                # use parallelFit method to create copies of this HyperStudy instance with only partial hyper-grid values
+                # use parallelFit method to create copies of this HyperStudy instance with only partial
+                # hyper-grid values
                 subStudies = pool.map(self._parallelFit,
                                       range(nJobs),
                                       [nJobs]*nJobs,
                                       [forwardOnly]*nJobs,
                                       [evidenceOnly]*nJobs,
-                                      [silent]*nJobs,
-                                      [referenceLogEvidence]*nJobs)
+                                      [silent]*nJobs)
 
                 # prevent memory pile-up in main process
                 pool.close()
@@ -1144,12 +1140,14 @@ class HyperStudy(Study):
                     self.logEvidenceList += S.logEvidenceList
                     self.localEvidenceList += S.localEvidenceList
                     if not evidenceOnly:
-                        self.averagePosteriorSequence += S.averagePosteriorSequence
+                        self.averagePosteriorSequence = np.logaddexp(self.averagePosteriorSequence,
+                                                                     S.averagePosteriorSequence)
             # single process fit
             else:
                 # show progressbar if silent=False
                 if not silent:
-                    # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+                    # first assume jupyter notebook and tray to use tqdm-widget,
+                    # if it fails, use normal tqdm-progressbar
                     try:
                         enum = tqdm_notebook(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
                     except:
@@ -1166,21 +1164,26 @@ class HyperStudy(Study):
                     self.logEvidenceList.append(self.logEvidence)
                     self.localEvidenceList.append(self.localEvidence)
 
-                    # compute reference log-evidence value for numerical stability when computing average posterior sequence
-                    if i == 0 and referenceLogEvidence is None:
-                        referenceLogEvidence = self.logEvidence
-
                     if (not evidenceOnly) and np.isfinite(self.logEvidence):
-                        # note: averagePosteriorSequence has no proper normalization
-                        self.averagePosteriorSequence += self.posteriorSequence *\
-                                                         np.exp(self.logEvidence - referenceLogEvidence) *\
-                                                         self.flatHyperPriorValues[i]
+                        # For numerical stability, zeros in posterior distribution are replaced with small constant.
+                        # Note that this is typically only the case for hyper-parameter values with low likelihood. The
+                        # procedure therefore has no (measurable) effect on the average posterior sequence.
+                        self.posteriorSequence[self.posteriorSequence == 0.] = 10.**-300
+                        self.averagePosteriorSequence = np.logaddexp(self.averagePosteriorSequence,
+                                                                     np.log(self.posteriorSequence) +
+                                                                     self.logEvidence +
+                                                                     np.log(self.flatHyperPriorValues[i]))
 
                 # remove progressbar correctly
                 if not silent:
                     enum.close()
 
             if not evidenceOnly:
+                # transform average posterior distribution into linear space
+                # (we prefer underflows rather than overflows)
+                self.averagePosteriorSequence -= np.amax(self.averagePosteriorSequence)
+                self.averagePosteriorSequence = np.exp(self.averagePosteriorSequence)
+
                 # compute average posterior distribution
                 normalization = np.array([np.sum(posterior) for posterior in self.averagePosteriorSequence])
                 for i in range(len(self.grid)):
@@ -1244,7 +1247,7 @@ class HyperStudy(Study):
 
             Study.fit(self, forwardOnly=forwardOnly, evidenceOnly=evidenceOnly, silent=silent)
 
-    def _parallelFit(self, idx, nJobs, forwardOnly, evidenceOnly, silent, referenceLogEvidence):
+    def _parallelFit(self, idx, nJobs, forwardOnly, evidenceOnly, silent):
         """
         This method is called by the fit method of the HyperStudy class. It creates a copy of the current class
         instance and performs a fit based on a subset of the specified hyper-parameter grid. The method thus allows
@@ -1260,8 +1263,6 @@ class HyperStudy(Study):
             evidenceOnly(bool): If set to True, only forward pass is run and evidence is calculated. In contrast to the
                 forwardOnly option, no posterior mean values are computed and no posterior distributions are stored.
             silent(bool): If set to True, no output is generated by the fitting method.
-            referenceLogEvidence(float): Reference value to increase numerical stability when computing average
-                posterior sequence. Ideally, this value represents the mean value of all log-evidence values.
 
         Returns:
             HyperStudy instance
@@ -1289,9 +1290,14 @@ class HyperStudy(Study):
             S.logEvidenceList.append(S.logEvidence)
             S.localEvidenceList.append(S.localEvidence)
             if (not evidenceOnly) and np.isfinite(S.logEvidence):
-                S.averagePosteriorSequence += S.posteriorSequence *\
-                                              np.exp(S.logEvidence - referenceLogEvidence) * \
-                                              S.flatHyperPriorValues[i]
+                # For numerical stability, zeros in posterior distribution are replaced with small constant.
+                # Note that this is typically only the case for hyper-parameter values with low likelihood. The
+                # procedure therefore has no (measurable) effect on the average posterior sequence.
+                S.posteriorSequence[S.posteriorSequence == 0.] = 10. ** -300
+                S.averagePosteriorSequence = np.logaddexp(S.averagePosteriorSequence,
+                                                          np.log(S.posteriorSequence) +
+                                                          S.logEvidence +
+                                                          np.log(S.flatHyperPriorValues[i]))
 
         # remove progressbar correctly
         if not silent and idx == nJobs-1:
