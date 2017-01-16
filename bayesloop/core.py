@@ -300,8 +300,6 @@ class Study(object):
 
             # normalization constant of alpha is used to compute evidence
             norm = np.sum(alpha)
-            self.logEvidence += np.log(norm)
-            self.localEvidence[i] = norm*np.prod(self.latticeConstant)  # integration yields evidence, not only sum
 
             # normalize alpha (for numerical stability)
             if norm > 0.:
@@ -317,6 +315,10 @@ class Study(object):
                 self.fitWarningCounter += 1
                 self.logEvidence = -np.inf
                 return
+
+            # update log-evidence and compute local evidence
+            self.logEvidence += np.log(norm)
+            self.localEvidence[i] = norm * np.prod(self.latticeConstant)  # integration yields evidence, not only sum
 
             # alphas are stored as preliminary posterior distributions
             if not evidenceOnly:
@@ -1168,7 +1170,7 @@ class HyperStudy(Study):
                         # For numerical stability, zeros in posterior distribution are replaced with small constant.
                         # Note that this is typically only the case for hyper-parameter values with low likelihood. The
                         # procedure therefore has no (measurable) effect on the average posterior sequence.
-                        self.posteriorSequence[self.posteriorSequence == 0.] = 10.**-300
+                        self.posteriorSequence[self.posteriorSequence < 10.**-300] = 10.**-300
                         self.averagePosteriorSequence = np.logaddexp(self.averagePosteriorSequence,
                                                                      np.log(self.posteriorSequence) +
                                                                      self.logEvidence +
@@ -1293,7 +1295,7 @@ class HyperStudy(Study):
                 # For numerical stability, zeros in posterior distribution are replaced with small constant.
                 # Note that this is typically only the case for hyper-parameter values with low likelihood. The
                 # procedure therefore has no (measurable) effect on the average posterior sequence.
-                S.posteriorSequence[S.posteriorSequence == 0.] = 10. ** -300
+                S.posteriorSequence[S.posteriorSequence < 10. ** -300] = 10. ** -300
                 S.averagePosteriorSequence = np.logaddexp(S.averagePosteriorSequence,
                                                           np.log(S.posteriorSequence) +
                                                           S.logEvidence +
