@@ -1,4 +1,4 @@
-# [bayesloop](http://bayesloop.com/)
+[![bayesloop](https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/logo_400x100px.png)](http://bayesloop.com)
 
 [![Documentation status](https://readthedocs.org/projects/bayesloop/badge/?version=latest)](http://docs.bayesloop.com) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
