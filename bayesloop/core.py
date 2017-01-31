@@ -158,6 +158,12 @@ class Study(object):
         if not silent:
             print('+ Observation model: {}. Parameter(s): {}'.format(L, L.parameterNames))
 
+    def setOM(self, L, silent=False):
+        """
+        See :meth:`.Study.setObservationModel`.
+        """
+        self.setObservationModel(L, silent=silent)
+
     def _computePrior(self, silent=False):
         """
         Computes discrete prior probabilities (densities) for the parameters of the observation model. The custom prior
@@ -232,6 +238,12 @@ class Study(object):
         if not silent:
             print('+ Transition model: {}. Hyper-Parameter(s): {}'
                   .format(T, self._unpackAllHyperParameters(values=False)))
+
+    def setTM(self, T, silent=False):
+        """
+        See :meth:`.Study.setTransitionModel`.
+        """
+        self.setTransitionModel(T, silent=silent)
 
     def fit(self, forwardOnly=False, evidenceOnly=False, silent=False):
         """
@@ -791,6 +803,12 @@ class Study(object):
 
         return x, marginalDistribution
 
+    def getPD(self, t, name, plot=False, **kwargs):
+        """
+        See :meth:`.Study.getParameterDistribution`.
+        """
+        return self.getParameterDistribution(t, name, plot=plot, **kwargs)
+
     def getParameterDistributions(self, name, plot=False, **kwargs):
         """
         Computes the time series of marginal posterior distributions with respect to a given model parameter.
@@ -849,6 +867,12 @@ class Study(object):
                        aspect='auto')
 
         return x, marginalPosteriorSequence
+
+    def getPDs(self, name, plot=False, **kwargs):
+        """
+        See :meth:`.Study.getParameterDistributions`.
+        """
+        return self.getParameterDistributions(name, plot=plot, **kwargs)
 
     def plotParameterEvolution(self, name, color='b', gamma=0.5, **kwargs):
         """
@@ -1404,6 +1428,12 @@ class HyperStudy(Study):
 
         return x, marginalDistribution
 
+    def getHPD(self, name, plot=False, **kwargs):
+        """
+        See :meth:`.HyperStudy.getHyperParameterDistribution`.
+        """
+        return self.getHyperParameterDistribution(name, plot=plot, **kwargs)
+
     def getJointHyperParameterDistribution(self, names, plot=False, figure=None, subplot=111, **kwargs):
         """
         Computes the joint distribution of two hyper-parameters of a HyperStudy and optionally creates a 3D bar chart.
@@ -1507,6 +1537,12 @@ class HyperStudy(Study):
                 ax.set_zlabel('probability density')
 
         return x, y, marginalDistribution
+
+    def getJHPD(self, names, plot=False, figure=None, subplot=111, **kwargs):
+        """
+        See :meth:`.HyperStudy.getJointHyperParameterDistribution`.
+        """
+        return self.getJointHyperParameterDistribution(self, names, plot=plot, figure=figure, subplot=subplot, **kwargs)
 
 
 class ChangepointStudy(HyperStudy):
@@ -1687,6 +1723,12 @@ class ChangepointStudy(HyperStudy):
 
         return duration, durationDistribution
 
+    def getDD(self, names, plot=False, **kwargs):
+        """
+        See :meth:`.ChangepointStudy.getDurationDistribution`.
+        """
+        return self.getDurationDistribution(names, plot=plot, **kwargs)
+
 
 class OnlineStudy(HyperStudy):
     """
@@ -1694,8 +1736,8 @@ class OnlineStudy(HyperStudy):
     to include new data points in the study as they arrive from a data stream. This online-analysis is performed in an
     forward-only way, resulting in filtering-distributions only. In contrast to a normal study, however, one can add
     multiple transition models to account for different types of parameter dynamics (similar to a Hyper study). The
-    Online study then computes the probability distribution over all transition models for each new data point,
-    enabling real-time model selection.
+    Online study then computes the probability distribution over all transition models for each new data point (or all
+    past data points), enabling real-time model selection.
 
     Args:
         storeHistory(bool): If true, posterior distributions and their mean values, as well as hyper-posterior
@@ -1704,20 +1746,21 @@ class OnlineStudy(HyperStudy):
     def __init__(self, storeHistory=False):
         super(OnlineStudy, self).__init__()
 
-        self.transitionModels = None
-        self.transitionModelNames = None
-        self.tmCount = None
-        self.tmCounts = None
-        self.hyperParameterValues = None
-        self.allFlatHyperParameterValues = None
-        self.hyperParameterNames = None
-        self.hyperGridConstants = None
+        self.firstStep = True
 
-        self.alpha = None
-        self.beta = None
-        self.normi = None
-        self.hyperPrior = None
-        self.hyperPriorValues = None
+        self.transitionModels = []
+        self.transitionModelNames = []
+        self.tmCount = None
+        self.tmCounts = []
+        self.hyperParameterValues = []
+        self.allFlatHyperParameterValues = []
+        self.hyperParameterNames = []
+        self.hyperGridConstants = []
+
+        self.logEvidenceList = None
+        self.hyperLogEvidenceList = None
+        self.hyperPrior = []
+        self.hyperPriorValues = []
         self.transitionModelPrior = None
 
         self.parameterPosterior = None
@@ -1726,16 +1769,15 @@ class OnlineStudy(HyperStudy):
 
         self.hyperParameterDistribution = None
         self.transitionModelDistribution = None
-        self.localHyperEvidence = None
+        self.localTransitionModelDistribution = None
 
         self.storeHistory = storeHistory
         self.posteriorMeanValues = []
         self.posteriorSequence = []
         self.hyperParameterSequence = []
         self.transitionModelSequence = []
+        self.localTransitionModelSequence = []
         print('  --> Online study')
-
-        self.debug = []
 
     def addTransitionModel(self, name, transitionModel):
         """
@@ -1753,16 +1795,6 @@ class OnlineStudy(HyperStudy):
                 S.setObservationModel(bl.om.Poisson('lambda', bl.oint(0, 6, 1000)))
                 S.addTransitionModel(bl.tm.GaussianRandomWalk('sigma', [0, 0.1, 0.2, 0.3], target='lambda'))
         """
-        if self.transitionModels is None:
-            self.transitionModels = []
-            self.transitionModelNames = []
-            self.hyperParameterValues = []
-            self.allFlatHyperParameterValues = []
-            self.hyperParameterNames = []
-            self.hyperGridConstants = []
-            self.hyperPrior = []
-            self.hyperPriorValues = []
-
         # extract hyper-parameter values and names
         self.setTransitionModel(transitionModel, silent=True)
         self._createHyperGrid(silent=True)
@@ -1774,9 +1806,7 @@ class OnlineStudy(HyperStudy):
         self.hyperParameterNames.append(self.flatHyperParameterNames[:])
         self.hyperGridConstants.append(self.hyperGridConstant[:])
         self.hyperPrior.append(self.flatHyperPriors[:])
-
-        # different normalization routine than in hyper-study
-        self.hyperPriorValues.append(self.flatHyperPriorValues[:]/np.prod(self.hyperGridConstant))
+        self.hyperPriorValues.append(self.flatHyperPriorValues[:])
 
         # count individual transition models
         self.tmCounts = []
@@ -1815,22 +1845,6 @@ class OnlineStudy(HyperStudy):
         if not silent:
             print('+ Set custom transition model prior.')
 
-    def adoptHyperParameterDistribution(self):
-        """
-        Will set the current hyper-parameter distribution as the new hyper-parameter prior, if a distribution has
-        already been computed. Is usually called after the 'step' method.
-        """
-        if self.hyperParameterDistribution is not None:
-            self.hyperPriorValues = deepcopy(self.hyperParameterDistribution)
-
-    def adoptTransitionModelDistribution(self):
-        """
-        Will set the current transition model distribution as the new transition model prior, if a distribution has
-        already been computed. Is usually called after the 'step' method.
-        """
-        if self.transitionModelDistribution is not None:
-            self.transitionModelPrior = deepcopy(self.transitionModelDistribution)
-
     def step(self, dataPoint):
         """
         Update the current parameter distribution by adding a new data point to the data set.
@@ -1867,58 +1881,52 @@ class OnlineStudy(HyperStudy):
 
         self.formattedTimestamps.append(self.rawTimestamps[-1])
 
-        # initialize hyper-prior as flat
-        if self.hyperPrior is None:
-            self.hyperPrior = 'flat hyper-prior'
-            self.hyperPriorValues = [np.ones(tmc) / (tmc * np.prod(hgc))
-                                     for tmc, hgc in zip(self.tmCounts, self.hyperGridConstants)]
-            print('    + Initialized flat hyper-prior.')
+        if self.firstStep:
+            # initialize hyper-prior as flat
+            if self.hyperPrior is None:
+                self.hyperPrior = 'flat hyper-prior'
+                self.hyperPriorValues = [np.ones(tmc) / (tmc * np.prod(hgc))
+                                         for tmc, hgc in zip(self.tmCounts, self.hyperGridConstants)]
+                print('    + Initialized flat hyper-prior.')
 
-        # initialize transition model prior as flat
-        if self.transitionModelPrior is None:
-            self.transitionModelPrior = np.ones(len(self.transitionModels))/len(self.transitionModels)
-            print('    + Initialized flat transition mode prior.')
+            # initialize transition model prior as flat
+            if self.transitionModelPrior is None:
+                self.transitionModelPrior = np.ones(len(self.transitionModels))/len(self.transitionModels)
+                print('    + Initialized flat transition mode prior.')
 
-        # initialize alpha with prior distribution
-        if self.alpha is None:
+            # initialize parameter prior distribution
             if self.observationModel.prior is not None:
                 if isinstance(self.observationModel.prior, np.ndarray):
-                    self.alpha = self.observationModel.prior
+                    prior = self.observationModel.prior
                 else:  # prior is set as a function
-                    self.alpha = self.observationModel.prior(*self.grid)
+                    prior = self.observationModel.prior(*self.grid)
             else:
-                self.alpha = np.ones(self.gridSize)  # flat prior
+                prior = np.ones(self.gridSize)  # flat prior
 
             # normalize prior (necessary in case an improper prior is used)
-            self.alpha /= np.sum(self.alpha)
+            prior /= np.sum(prior)
+            prior /= np.prod(self.latticeConstant)
             print('    + Initialized prior.')
 
-        # initialize normi as an array of ones
-        if self.normi is None:
-            self.normi = [np.ones(tmc) for tmc in self.tmCounts]
+            # initialize logEvidenceList as an array of zeros and add log-lattice-constant for proper normalization
+            self.logEvidenceList = [np.zeros(tmc)+np.log(np.prod(self.latticeConstant)) for tmc in self.tmCounts]
+            self.hyperLogEvidenceList = np.array([0. for tmc in self.tmCounts])
             print('    + Initialized normalization factors.')
 
-        # initialize parameter posterior
-        if self.parameterPosterior is None:
+            # initialize parameter posterior
             self.parameterPosterior = [np.zeros([tmc] + self.gridSize) for tmc in self.tmCounts]
 
-        # initialize hyper-posterior
-        if self.hyperParameterDistribution is None:
+            # initialize hyper-parameter distribution
             self.hyperParameterDistribution = [np.zeros(tmc) for tmc in self.tmCounts]
 
-        # initialize transition model evidence
-        if self.localHyperEvidence is None:
-            self.localHyperEvidence = np.zeros(len(self.transitionModels))
-
-        # initialize transition model distribution (normalized version of transition model evidence array)
-        if self.transitionModelDistribution is None:
+            # initialize (local) transition model distribution
             self.transitionModelDistribution = np.zeros(len(self.transitionModels))
+            self.localTransitionModelDistribution = np.zeros(len(self.transitionModels))
 
-        # initialize transition model posterior (needs to be re-initialized each time step)
-        self.transitionModelPosterior = np.zeros([len(self.transitionModels)] + self.gridSize)
+            # initialize transition model posterior
+            self.transitionModelPosterior = np.zeros([len(self.transitionModels)] + self.gridSize)
 
-        # initialize marginalized posterior
-        if self.marginalizedPosterior is None:
+            # initialize marginalized posterior
             self.marginalizedPosterior = np.zeros(self.gridSize)
 
         # select data segment
@@ -1931,6 +1939,7 @@ class OnlineStudy(HyperStudy):
         for i, (tm, hpv) in enumerate(zip(self.transitionModels, self.hyperParameterValues)):
             self.setTransitionModel(tm, silent=True)  # set current transition model
 
+            # account for transition models with no hyper-parameters
             if len(hpv) == 0:
                 hpv = [None]
 
@@ -1941,29 +1950,35 @@ class OnlineStudy(HyperStudy):
                     self._setAllHyperParameters(x)
 
                 # compute alpha_i
-                if np.sum(self.marginalizedPosterior) == 0.:  # first time step, so use predefined prior
-                    alphai = self.alpha*likelihood
+                if self.firstStep:  # first time step, so use predefined prior
+                    alphai = prior*likelihood
                 else:  # in all other time step transform "old" alpha/posterior
-                    alphai = self.transitionModel.computeForwardPrior(self.alpha, len(self.formattedData)-1)*likelihood
+                    alphai = self.transitionModel.computeForwardPrior(self.parameterPosterior[i][j],
+                                                                      len(self.formattedData)-1)*likelihood
                 ni = np.sum(alphai)
 
-                # hyper-post. values are not normalized at this point: hyper-like. * hyper-prior
-                self.hyperParameterDistribution[i][j] = (ni/self.normi[i][j])*self.hyperPriorValues[i][j]
+                # update log-evidence list
+                self.logEvidenceList[i][j] += np.log(ni)
+                self.hyperParameterDistribution[i][j] = self.logEvidenceList[i][j] + np.log(self.hyperPriorValues[i][j])
 
                 # store parameter posterior
                 self.parameterPosterior[i][j] = alphai/ni
 
-                # update normalization constant
-                self.normi[i][j] = ni
-
-            # compute hyper-evidence to properly normalize hyper-parameter distribution
-            self.localHyperEvidence[i] = np.sum(self.hyperParameterDistribution[i] *
-                                                np.prod(self.hyperGridConstants[i]))
+            # marginalize model evidence wrt hyper-parameters, for all past data points and only for the current one
+            oldHyperEvidence = self.hyperLogEvidenceList[i]
+            self.hyperLogEvidenceList[i] = logsumexp(self.logEvidenceList[i] + np.log(self.hyperPriorValues[i]))
+            self.transitionModelDistribution[i] = self.hyperLogEvidenceList[i]
+            self.localTransitionModelDistribution[i] = self.hyperLogEvidenceList[i] - oldHyperEvidence + \
+                                                       np.log(self.transitionModelPrior[i])
 
             # normalize hyper-parameter distribution of current transition model
-            self.hyperParameterDistribution[i] /= self.localHyperEvidence[i]
+            self.hyperParameterDistribution[i] -= np.amax(self.hyperParameterDistribution[i])
+            self.hyperParameterDistribution[i] = np.exp(self.hyperParameterDistribution[i])
+            self.hyperParameterDistribution[i] /= np.sum(self.hyperParameterDistribution[i])
+            if len(self.hyperGridConstants[i]) > 0:
+                self.hyperParameterDistribution[i] /= np.prod(self.hyperGridConstants[i])
 
-            # compute parameter posterior, marginalized over current hyper-parameter values of current transition model
+            # compute parameter posterior, marginalized wrt the hyper-parameters of the current transition model
             hpd = deepcopy(self.hyperParameterDistribution[i])
             while len(self.parameterPosterior[i].shape) > len(hpd.shape):
                 hpd = np.expand_dims(hpd, axis=-1)
@@ -1971,20 +1986,23 @@ class OnlineStudy(HyperStudy):
                                                       hpd *
                                                       np.prod(self.hyperGridConstants[i]), axis=0)
 
-        # compute distribution of transition models; normalizing constant of this distribution represents the local
-        # evidence of current data point, marginalizing over all transition models
-        self.transitionModelDistribution = self.localHyperEvidence * self.transitionModelPrior
-        self.localEvidence = np.sum(self.transitionModelDistribution)
-        self.transitionModelDistribution /= self.localEvidence
+        # normalize (local) transition model distribution (and transform to linear space)
+        self.transitionModelDistribution -= np.amax(self.transitionModelDistribution)
+        self.transitionModelDistribution = np.exp(self.transitionModelDistribution)
+        self.transitionModelDistribution /= np.sum(self.transitionModelDistribution)
 
-        # normalize marginalized posterior
+        self.localTransitionModelDistribution -= np.amax(self.localTransitionModelDistribution)
+        self.localTransitionModelDistribution = np.exp(self.localTransitionModelDistribution)
+        self.localTransitionModelDistribution /= np.sum(self.localTransitionModelDistribution)
+
+        # normalize marginalized parameter posterior
         tmd = deepcopy(self.transitionModelDistribution)
         while len(self.transitionModelPosterior.shape) > len(tmd.shape):
             tmd = np.expand_dims(tmd, axis=-1)
         self.marginalizedPosterior = np.sum(self.transitionModelPosterior * tmd, axis=0)
 
-        # compute new alpha
-        self.alpha = self.marginalizedPosterior
+        # compute log-evidence value marginalized over different transition models
+        self.logEvidence = logsumexp(self.hyperLogEvidenceList + np.log(self.transitionModelPrior))
 
         # store results for future plotting
         if self.storeHistory:
@@ -1992,8 +2010,10 @@ class OnlineStudy(HyperStudy):
             self.posteriorSequence.append(self.marginalizedPosterior.copy())
             self.hyperParameterSequence.append(deepcopy(self.hyperParameterDistribution))
             self.transitionModelSequence.append(deepcopy(self.transitionModelDistribution))
+            self.localTransitionModelSequence.append(deepcopy(self.localTransitionModelDistribution))
 
-            # optimization methods are inherited from Study class, but cannot be used in this case
+        if self.firstStep:
+            self.firstStep = False
 
     def fit(self, *args, **kwargs):
         raise NotImplementedError('OnlineStudy object has no "fit" method. Use "step" instead.')
@@ -2021,11 +2041,18 @@ class OnlineStudy(HyperStudy):
         self.formattedTimestamps = np.array(self.formattedTimestamps)
         self.posteriorSequence = np.array(self.posteriorSequence)
 
-        Study.getParameterDistribution(self, t, name, plot=plot, **kwargs)
+        x, p = Study.getParameterDistribution(self, t, name, plot=plot, **kwargs)
 
         # re-transform arrays to lists, so online study may continue to append values
         self.formattedTimestamps = list(self.formattedTimestamps)
         self.posteriorSequence = list(self.posteriorSequence)
+        return x, p
+
+    def getPD(self, t, name, plot=False, **kwargs):
+        """
+        See :meth:`.OnlineStudy.getParameterDistribution`.
+        """
+        return self.getParameterDistribution(t, name, plot=plot, **kwargs)
 
     def getCurrentParameterDistribution(self, name, plot=False, **kwargs):
         """
@@ -2074,6 +2101,12 @@ class OnlineStudy(HyperStudy):
 
         return x, marginalDistribution
 
+    def getCPD(self, name, plot=False, **kwargs):
+        """
+        See :meth:`.OnlineStudy.getCurrentParameterDistribution`.
+        """
+        return self.getCurrentParameterDistribution(name, plot=plot, **kwargs)
+
     def getParameterDistributions(self, name, plot=False, **kwargs):
         """
         Computes the time series of marginal posterior distributions with respect to a given model parameter. Only
@@ -2096,11 +2129,18 @@ class OnlineStudy(HyperStudy):
         self.formattedTimestamps = np.array(self.formattedTimestamps)
         self.posteriorSequence = np.array(self.posteriorSequence)
 
-        Study.getParameterDistributions(self, name, plot=plot, **kwargs)
+        x, p = Study.getParameterDistributions(self, name, plot=plot, **kwargs)
 
         # re-transform arrays to lists, so online study may continue to append values
         self.formattedTimestamps = list(self.formattedTimestamps)
         self.posteriorSequence = list(self.posteriorSequence)
+        return x, p
+
+    def getPDs(self, name, plot=False, **kwargs):
+        """
+        See :meth:`.OnlineStudy.getParameterDistributions`.
+        """
+        return self.getParameterDistributions(name, plot=plot, **kwargs)
 
     def plotParameterEvolution(self, name, color='b', gamma=0.5, **kwargs):
         """
@@ -2129,48 +2169,81 @@ class OnlineStudy(HyperStudy):
         self.posteriorMeanValues = list(self.posteriorMeanValues.T)
         self.posteriorSequence = list(self.posteriorSequence)
 
-    def getCurrentTransitionModelDistribution(self):
+    def getCurrentTransitionModelDistribution(self, local=False):
         """
         Returns the current probabilities for each transition model defined in the Online Study.
 
-        Returns:
-            ndarray: Normalized array of transition model probabilities.
-        """
-        return self.transitionModelDistribution
+        Args:
+            local(bool): If true, transition model distribution taking into account only the last data point is returned.
 
-    def getCurrentTransitionModelProbability(self, transitionModel):
+        Returns:
+            ndarray, ndarray: Arrays of transition model names and normalized probabilities.
+        """
+        if local:
+            return np.array(self.transitionModelNames), self.localTransitionModelDistribution
+        else:
+            return np.array(self.transitionModelNames), self.transitionModelDistribution
+
+    def getCTMD(self, local=False):
+        """
+        See :meth:`.OnlineStudy.getCurrentTransitionModelDistribution`.
+        """
+        return self.getCurrentTransitionModelDistribution(local=local)
+
+    def getCurrentTransitionModelProbability(self, transitionModel, local=False):
         """
         Returns the current posterior probability for a specified transition model.
 
         Args:
             transitionModel(str): Name of the transition model
+            local(bool): If true, transition model probability taking into account only the last data point is returned.
 
         Returns:
             float: Posterior probability value for the specified transition model
         """
         transitionModelIndex = self.transitionModelNames.index(transitionModel)
-        return self.transitionModelDistribution[transitionModelIndex]
+        if local:
+            return self.localTransitionModelDistribution[transitionModelIndex]
+        else:
+            return self.transitionModelDistribution[transitionModelIndex]
 
-    def getTransitionModelDistributions(self):
+    def getCTMP(self, transitionModel, local=False):
+        """
+        See :meth:`.OnlineStudy.getCurrentTransitionModelProbability.
+        """
+        return self.getCurrentTransitionModelProbability(transitionModel, local=local)
+
+    def getTransitionModelDistributions(self, local=False):
         """
         The transition model distribution contains posterior probability values for all transition models included in
         the online study. This distribution is available for all time steps analyzed. Only available if Online Study
         is created with flag 'storeHistory=True'.
 
+        Args:
+            local(bool): If true, transition model distributions taking into account only the data point at the
+                corresponding time step is returned.
+
         Returns:
-            ndarray: Array containing the posterior probability values for all transition models included in the online
-                study for all time steps analyzed
+            ndarray, ndarray: Arrays containing the names and posterior probability values for all transition models
+                included in the online study for all time steps analyzed
         """
         if not self.storeHistory:
             raise PostProcessingError('To get past transition model distributions, Online Study must be called with '
                                       'flag "storeHistory=True". Use "getCurrentTransitionModelDistribution" instead.')
+        if local:
+            return np.array(self.transitionModelNames), np.array(self.localTransitionModelSequence)
+        else:
+            return np.array(self.transitionModelNames), np.array(self.transitionModelSequence)
 
-        return np.array(self.transitionModelSequence)
-
-    def getTransitionModelProbabilities(self, transitionModel):
+    def getTransitionModelProbabilities(self, transitionModel, local=False):
         """
         Returns posterior probability values for a specified transition model. This distribution is available for all
         time steps analyzed. Only available if Online Study is created with flag 'storeHistory=True'.
+
+        Args:
+            transitionModel(str): Name of the transition model
+            local(bool): If true, transition model probabilities taking into account only the data point at the
+                corresponding time step is returned.
 
         Returns:
             ndarray: Array containing the posterior probability values for the specified transition model for all time
@@ -2182,7 +2255,17 @@ class OnlineStudy(HyperStudy):
                                       'flag "storeHistory=True". Use "getCurrentTransitionModelDistribution" instead.')
 
         transitionModelIndex = self.transitionModelNames.index(transitionModel)
-        return np.array(self.transitionModelSequence)[:, transitionModelIndex]
+
+        if local:
+            return np.array(self.localTransitionModelSequence)[:, transitionModelIndex]
+        else:
+            return np.array(self.transitionModelSequence)[:, transitionModelIndex]
+
+    def getTMPs(self, transitionModel, local=False):
+        """
+        See :meth:`.OnlineStudy.getTransitionModelProbabilities.
+        """
+        return self.getTransitionModelProbabilities(transitionModel, local=local)
 
     def getCurrentParameterMeanValue(self, name):
         """
@@ -2365,6 +2448,12 @@ class OnlineStudy(HyperStudy):
 
         return x, marginalDistribution
 
+    def getHPD(self, t, name, transitionModel=0, plot=False, **kwargs):
+        """
+        See :meth:`.OnlineStudy.getHyperParameterDistribution.
+        """
+        return self.getHyperParameterDistribution(t, name, transitionModel=transitionModel, plot=plot, **kwargs)
+
     def getCurrentHyperParameterDistribution(self, name, transitionModel=0, plot=False, **kwargs):
         """
         Computes marginal hyper-parameter distribution of a single hyper-parameter at a specific time step in an
@@ -2431,6 +2520,12 @@ class OnlineStudy(HyperStudy):
 
         return x, marginalDistribution
 
+    def getCHPD(self, name, transitionModel=0, plot=False, **kwargs):
+        """
+        See :meth:`.OnlineStudy.getCurrentHyperParameterDistribution.
+        """
+        return self.getCurrentHyperParameterDistribution(name, transitionModel=transitionModel, plot=plot, **kwargs)
+
     def getHyperParameterDistributions(self, name, transitionModel=0):
         """
         Computes marginal hyper-parameter distributions of a single hyper-parameter for all time steps in an OnlineStudy
@@ -2482,6 +2577,12 @@ class OnlineStudy(HyperStudy):
         marginalDistribution *= np.prod(temp)
 
         return uniqueValues, marginalDistribution
+
+    def getHPDs(self, name, transitionModel=0, plot=False, **kwargs):
+        """
+        See :meth:`.OnlineStudy.getHyperParameterDistributions.
+        """
+        return self.getHyperParameterDistributions(name, transitionModel=transitionModel, plot=plot, **kwargs)
 
     def plotHyperParameterEvolution(self, name, transitionModel=0, color='b', gamma=0.5, **kwargs):
         """
