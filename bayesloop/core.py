@@ -161,7 +161,7 @@ class Study(object):
     def _computePrior(self, silent=False):
         """
         Computes discrete prior probabilities (densities) for the parameters of the observation model. The custom prior
-        distribution may be passed as a Numpy array that has tha same shape as the parameter grid, as a(lambda)
+        distribution may be passed as a Numpy array that has the same shape as the parameter grid, as a (lambda)
         function or as a (list of) SymPy random variable(s).
 
         Args:
@@ -277,7 +277,7 @@ class Study(object):
 
         # show progressbar if silent=False
         if not silent:
-            # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+            # first assume jupyter notebook and try to use tqdm-widget; if it fails, use normal tqdm-progressbar
             try:
                 enum = tqdm_notebook(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
             except:
@@ -348,7 +348,7 @@ class Study(object):
 
             # show progressbar if silent=False
             if not silent:
-                # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
+                # first assume jupyter notebook and try to use tqdm-widget; if it fails, use normal tqdm-progressbar
                 try:
                     enum = tqdm_notebook(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
                 except:
@@ -697,7 +697,8 @@ class Study(object):
 
     def getHyperParameterValue(self, name):
         """
-        Returns the currently set value of a hyper-parameter.
+        Returns the currently set value of a hyper-parameter. Note: The returned value is NOT an inferred value, but
+        simply the last value used by the fitting method.
 
         Args:
             name(str): Hyper-parameter name.
