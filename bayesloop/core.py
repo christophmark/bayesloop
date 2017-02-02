@@ -178,20 +178,44 @@ class Study(object):
         """
         prior = self.observationModel.prior
 
+        # check if no prior is specified
+        if prior is None:
+            prior = np.ones(self.gridSize)  # flat (improper) prior
+            prior /= np.sum(prior)  # re-normalize (now equal to uniform prior)
+            prior /= np.prod(self.latticeConstant)  # convert to prob. density
+            if not silent:
+                print('    + Set uniform prior with parameter boundaries.')
+            return prior
+
         # check whether correctly shaped numpy array is provided
         if isinstance(prior, np.ndarray):
             if np.all(prior.shape == self.grid[0].shape):
-                if not silent:
-                    print('    + Set prior (numpy array).')
-                    return prior
+                norm = np.sum(prior)
+                if norm != 1.:
+                    prior /= norm
+                    prior /= np.prod(self.latticeConstant)
+                    if not silent:
+                        print('    + Set prior (numpy array). Values have been re-normalized.')
+                else:
+                    if not silent:
+                        print('    + Set prior (numpy array).')
+                return prior
             else:
                 raise ConfigurationError('Prior array does not match parameter grid size.')
 
         # check whether function is provided
         if hasattr(prior, '__call__'):
-            if not silent:
-                print('    + Set prior (function): {}'.format(prior.__name__))
-            return prior(*self.grid)
+            values = prior(*self.grid)*np.ones(self.gridSize)  # last factor for cases like lambda x: 1.
+            norm = np.sum(values)
+            if norm != 1.:
+                values /= norm
+                values /= np.prod(self.latticeConstant)
+                if not silent:
+                    print('    + Set prior (function): {}. Values have been re-normalized.'.format(prior.__name__))
+            else:
+                if not silent:
+                    print('    + Set prior (function): {}'.format(prior.__name__))
+            return values
 
         # check whether single random variable is provided
         if type(prior) is sympy.stats.rv.RandomSymbol:
@@ -278,14 +302,7 @@ class Study(object):
         self.localEvidence = np.empty(len(self.formattedData))
 
         # set prior distribution for forward-pass
-        if self.observationModel.prior is not None:
-            alpha = self._computePrior(silent=silent)
-        else:
-            alpha = np.ones(self.gridSize)  # flat prior
-
-        # normalize prior (necessary in case an improper prior is used)
-        alpha /= np.sum(alpha)
-        alpha /= np.prod(self.latticeConstant)
+        alpha = self._computePrior(silent=silent)
 
         # show progressbar if silent=False
         if not silent:
@@ -355,7 +372,7 @@ class Study(object):
             else:
                 beta = np.ones(self.gridSize)  # flat prior
 
-            # normalize prior (necessary in case an improper prior is used)
+            # normalize beta (for numerical stability only)
             beta /= np.sum(beta)
 
             # show progressbar if silent=False
@@ -409,11 +426,8 @@ class Study(object):
                 # normalize beta (for numerical stability)
                 beta /= np.sum(beta)
 
-            # remove progressbar correctly
             if not silent:
-                enum.close()
-
-            if not silent:
+                enum.close()  # remove progressbar correctly
                 print('    + Finished backward pass.')
 
         # posterior mean values do not need to be computed for evidence
@@ -1026,21 +1040,38 @@ class HyperStudy(Study):
         priorNamesList = []
         for prior, values, gridConst, name in zip(self.flatHyperPriors, self.flatHyperParameters,
                                                   self.hyperGridConstant, self.flatHyperParameterNames):
-            if prior is None:
-                priorValues = np.ones_like(values)
-                priorNamesList.append('flat')
-            elif hasattr(prior, '__call__'):
+            if prior is None:  # no prior specified
+                priorValues = np.ones_like(values, dtype=np.float)
+                priorValues /= np.sum(priorValues)
+                priorValues /= gridConst
+                priorNamesList.append('uniform')
+
+            elif hasattr(prior, '__call__'):  # prior specified by function
                 try:
-                    priorValues = [prior(value) for value in values]
+                    priorValues = np.array([prior(value) for value in values])
+                    norm = np.sum(priorValues)
+                    priorValues /= norm
+                    priorValues /= gridConst
                 except:
                     raise ConfigurationError('Failed to set hyper-prior for "{}" from function "{}".'
                                              .format(name, prior.__name__))
-                priorNamesList.append(prior.__name__)
-            elif isinstance(prior, Iterable):
+                if norm != 1.:
+                    priorNamesList.append(prior.__name__ + ' (re-normalized)')
+                else:
+                    priorNamesList.append(prior.__name__)
+
+            elif isinstance(prior, Iterable):  # prior specified by list/array
                 if len(prior) != len(values):
                     raise ConfigurationError('Failed to set hyper-prior for "{}" from list/array.'.format(name))
                 priorValues = prior
-                priorNamesList.append('list/array')
+                norm = np.sum(priorValues)
+                priorValues /= norm
+                priorValues /= gridConst
+                if norm != 1.:
+                    priorNamesList.append('list/array (re-normalized)')
+                else:
+                    priorNamesList.append('list/array')
+
             else:  # SymPy RV
                 if len(list(prior._sorted_args[0].distribution.free_symbols)) > 0:
                     raise ConfigurationError('Hyper-prior for "{}" must not contain free parameters.'.format(name))
@@ -1062,8 +1093,7 @@ class HyperStudy(Study):
         if len(self.flatHyperParameterNames) > 0:
             temp = np.meshgrid(*priorValuesList, indexing='ij')
             self.flatHyperPriorValues = np.array([t.ravel() for t in temp]).T
-            self.flatHyperPriorValues = np.prod(self.flatHyperPriorValues, axis=1)  # multiply probs for all hyper-parameters
-            self.flatHyperPriorValues = self.flatHyperPriorValues/np.sum(self.flatHyperPriorValues)  # renormalization
+            self.flatHyperPriorValues = np.prod(self.flatHyperPriorValues, axis=1)  # joint prob. density
             if not silent and len(self.hyperGridValues) > 1:
                 print('+ Set hyper-prior(s): {}'.format(priorNamesList))
         else:
@@ -1223,22 +1253,24 @@ class HyperStudy(Study):
                 if not silent:
                     print('    + Computed average posterior sequence')
 
-            # compute log-evidence of average model
-            self.logEvidence = logsumexp(np.array(self.logEvidenceList) + np.log(self.flatHyperPriorValues))
-            if not silent:
-                print('    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10)))
-
             # compute hyper-parameter distribution
-            logHyperParameterDistribution = self.logEvidenceList + np.log(self.flatHyperPriorValues)
-            # ignore evidence values of -inf when computing mean value for scaling
-            scaledLogHyperParameterDistribution = logHyperParameterDistribution - \
-                                                  np.mean(np.ma.masked_invalid(logHyperParameterDistribution))
+            logHyperParameterDistribution = self.logEvidenceList + np.log(self.flatHyperPriorValues) + \
+                                            np.sum(np.log(self.hyperGridConstant))
+
+            # transform hyper-parameter distribution into linear space
+            # (we prefer underflows rather than overflows)
+            scaledLogHyperParameterDistribution = logHyperParameterDistribution - np.amax(logHyperParameterDistribution)
             self.hyperParameterDistribution = np.exp(scaledLogHyperParameterDistribution)
             self.hyperParameterDistribution /= np.sum(self.hyperParameterDistribution)
             self.hyperParameterDistribution /= np.prod(self.hyperGridConstant)  # probability density
 
             if not silent:
                 print('    + Computed hyper-parameter distribution')
+
+            # compute log-evidence of average model
+            self.logEvidence = logsumexp(logHyperParameterDistribution)
+            if not silent:
+                print('    + Log10-evidence of average model: {:.5f}'.format(self.logEvidence / np.log(10)))
 
             # compute local evidence of average model
             self.localEvidence = np.sum((np.array(self.localEvidenceList).T*self.flatHyperPriorValues).T, axis=0)
@@ -1864,7 +1896,12 @@ class OnlineStudy(HyperStudy):
             dataPoint = [dataPoint]
 
         if len(self.rawData) == 0:
-            # to check the model consistency the first time that 'step' is called
+            # consistency check to detect duplicate hyper-parameter names in different transition models
+            allNames = list(flatten(self.hyperParameterNames))
+            if len(allNames) != len(np.unique(allNames)):
+                raise ConfigurationError('Detected duplicate hyper-parameter names. Choose unique identifiers.')
+
+            # check the model consistency the first time that 'step' is called
             self.rawData = np.array(dataPoint)
             Study._checkConsistency(self)
 
@@ -1882,36 +1919,24 @@ class OnlineStudy(HyperStudy):
         self.formattedTimestamps.append(self.rawTimestamps[-1])
 
         if self.firstStep:
+            # initialize parameter prior distribution
+            prior = self._computePrior(silent=False)
+
             # initialize hyper-prior as flat
             if self.hyperPrior is None:
                 self.hyperPrior = 'flat hyper-prior'
                 self.hyperPriorValues = [np.ones(tmc) / (tmc * np.prod(hgc))
                                          for tmc, hgc in zip(self.tmCounts, self.hyperGridConstants)]
-                print('    + Initialized flat hyper-prior.')
+                print('    + Set flat hyper-prior.')
 
             # initialize transition model prior as flat
             if self.transitionModelPrior is None:
                 self.transitionModelPrior = np.ones(len(self.transitionModels))/len(self.transitionModels)
-                print('    + Initialized flat transition mode prior.')
-
-            # initialize parameter prior distribution
-            if self.observationModel.prior is not None:
-                if isinstance(self.observationModel.prior, np.ndarray):
-                    prior = self.observationModel.prior
-                else:  # prior is set as a function
-                    prior = self.observationModel.prior(*self.grid)
-            else:
-                prior = np.ones(self.gridSize)  # flat prior
-
-            # normalize prior (necessary in case an improper prior is used)
-            prior /= np.sum(prior)
-            prior /= np.prod(self.latticeConstant)
-            print('    + Initialized prior.')
+                print('    + Set flat transition mode prior.')
 
             # initialize logEvidenceList as an array of zeros and add log-lattice-constant for proper normalization
             self.logEvidenceList = [np.zeros(tmc)+np.log(np.prod(self.latticeConstant)) for tmc in self.tmCounts]
             self.hyperLogEvidenceList = np.array([0. for tmc in self.tmCounts])
-            print('    + Initialized normalization factors.')
 
             # initialize parameter posterior
             self.parameterPosterior = [np.zeros([tmc] + self.gridSize) for tmc in self.tmCounts]

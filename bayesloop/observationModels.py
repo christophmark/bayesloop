@@ -257,14 +257,14 @@ class Bernoulli(ObservationModel):
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self, name='p', value=None, prior=None):
+    def __init__(self, name='p', value=None, prior='Jeffreys'):
         self.name = 'Bernoulli'
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = [name]
         self.parameterValues = [value]
         self.multiplyLikelihoods = True
 
-        if prior is None:
+        if prior == 'Jeffreys':
             self.prior = self.jeffreys  # default: Jeffreys prior
         else:
             self.prior = prior
@@ -310,7 +310,6 @@ class Bernoulli(ObservationModel):
         else:
             raise ConfigurationError('Bernoulli model does not contain a parameter "{}".'.format(name))
 
-
     def jeffreys(self, x):
         """
         Jeffreys prior for Bernoulli model.
@@ -330,15 +329,14 @@ class Poisson(ObservationModel):
         prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
-
-    def __init__(self, name='lambda', value=None, prior=None):
+    def __init__(self, name='lambda', value=None, prior='Jeffreys'):
         self.name = 'Poisson'
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = [name]
         self.parameterValues = [value]
         self.multiplyLikelihoods = True
 
-        if prior is None:
+        if prior == 'Jeffreys':
             self.prior = self.jeffreys  # default: Jeffreys prior
         else:
             self.prior = prior
@@ -378,7 +376,7 @@ class Poisson(ObservationModel):
         """
         Jeffreys prior for Poisson model.
         """
-        return np.sqrt(1./x)
+        return np.sqrt(1. / x)
 
 
 class Gaussian(ObservationModel):
@@ -395,14 +393,14 @@ class Gaussian(ObservationModel):
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self, name1='mean', value1=None, name2='std', value2=None, prior=None):
+    def __init__(self, name1='mean', value1=None, name2='std', value2=None, prior='Jeffreys'):
         self.name = 'Gaussian observations'
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = [name1, name2]
         self.parameterValues = [value1, value2]
         self.multiplyLikelihoods = True
 
-        if prior is None:
+        if prior == 'Jeffreys':
             self.prior = self.jeffreys  # default: Jeffreys prior
         else:
             self.prior = prior
@@ -528,14 +526,14 @@ class WhiteNoise(ObservationModel):
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
     """
 
-    def __init__(self, name='std', value=None, prior=lambda sigma: 1./sigma):
+    def __init__(self, name='std', value=None, prior='Jeffreys'):
         self.name = 'White noise process (Zero-mean Gaussian)'
         self.segmentLength = 1  # number of measurements in one data segment
         self.parameterNames = [name]
         self.parameterValues = [value]
         self.multiplyLikelihoods = True
 
-        if prior is None:
+        if prior == 'Jeffreys':
             self.prior = self.jeffreys  # default: Jeffreys prior
         else:
             self.prior = prior
