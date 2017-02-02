@@ -805,15 +805,8 @@ class Study(object):
 
         if plot:
             plt.fill_between(x, 0, marginalDistribution, **kwargs)
-
             plt.xlabel(self.observationModel.parameterNames[paramIndex])
-
-            # in case an integer step size for hyper-parameter values is chosen, probability is displayed
-            # (probability density otherwise)
-            if self.latticeConstant[paramIndex] == 1.:
-                plt.ylabel('probability')
-            else:
-                plt.ylabel('probability density')
+            plt.ylabel('probability')
 
         return x, marginalDistribution
 
