@@ -2288,27 +2288,28 @@ class OnlineStudy(HyperStudy):
         mean = np.sum(self.marginalizedPosterior*self.grid[paramIndex])
         return mean
 
-    def getHyperParameterMeanValue(self, t, name, transitionModel=0):
+    def getHyperParameterMeanValue(self, t, name):
         """
-        Computes the mean value of the joint hyper-parameter distribution for a given hyper-parameter and transition
-        model at a given time step. Only available if Online Study is created with flag 'storeHistory=True'.
+        Computes the mean value of the joint hyper-parameter distribution for a given hyper-parameter at a
+        given time step. Only available if Online Study is created with flag 'storeHistory=True'.
 
         Args:
             t(int): Time step at which to compute distribution
             name(str): name of hyper-parameter
-            transitionModel(int, str): Index or name of the transition model that contains the hyper-parameter;
-                default: 0 (first transition model)
 
         Returns:
             ndarray: Array containing the mean values of all hyper-parameters of the given transition model
         """
-        # find index of transition model
-        if isinstance(transitionModel, str):
-            transitionModelIndex = self.transitionModelNames.index(transitionModel)
-        elif isinstance(transitionModel, int):
-            transitionModelIndex = transitionModel
-        else:
-            raise PostProcessingError('Transition model must be specified by either index (int) or name (str).')
+        # determine indices of transition model and hyper-parameter
+        hpIndex = -1
+        for i, tm in enumerate(self.transitionModels):
+            try:
+                hpIndex = self._getHyperParameterIndex(tm, name)
+                tmIndex = i
+            except PostProcessingError:
+                pass
+        if hpIndex == -1:
+            raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
         # access hyper-parameter distribution
         try:
@@ -2317,61 +2318,46 @@ class OnlineStudy(HyperStudy):
             raise PostProcessingError('No hyper-parameter distribution found for t={}. Choose 0 <= t <= {}.'
                                       .format(t, len(self.formattedTimestamps) - 1))
 
-        try:
-            hyperParameterDistribution = hyperParameterDistribution[transitionModelIndex][:, None]
-            hyperParameterValues = self.hyperParameterValues[transitionModelIndex]
-            hyperGridConstants = self.hyperGridConstants[transitionModelIndex]
-        except IndexError:
-            raise PostProcessingError('Transition model with index {} does not exist. Options: 0-{}.'
-                                      .format(transitionModelIndex, len(self.transitionModels) - 1))
-
-        # determine index of hyper-parameter
-        hpIndex = self._getHyperParameterIndex(self.transitionModels[transitionModelIndex], name)
+        hyperParameterDistribution = hyperParameterDistribution[tmIndex][:, None]
+        hyperParameterValues = self.hyperParameterValues[tmIndex]
+        hyperGridConstants = self.hyperGridConstants[tmIndex]
 
         # compute mean value
         mean = np.sum(hyperParameterValues*hyperParameterDistribution*np.prod(hyperGridConstants), axis=0)
         return mean[hpIndex]
 
-    def getHyperParameterMeanValues(self, name, transitionModel=0):
+    def getHyperParameterMeanValues(self, name):
         """
-        Computes the sequence of mean value of the joint hyper-parameter distribution for a given transition model for
+        Computes the sequence of mean value of the joint hyper-parameter distribution for a given hyper-parameter for
         all time steps.
 
         Args:
-            name(str, None): name of hyper-parameter (if name=None, mean values of ALL hyper-parameters are returned)
-            transitionModel(int, str): Index or name of the transition model that contains the hyper-parameter;
-                default: 0 (first transition model)
+            name(str): name of hyper-parameter
 
         Returns:
-            ndarray: Array containing the sequences of mean values of the given transition model
+            ndarray: Array containing the sequences of mean values of the given hyper-parameter
         """
-        # find index of transition model
-        if isinstance(transitionModel, str):
-            transitionModelIndex = self.transitionModelNames.index(transitionModel)
-        elif isinstance(transitionModel, int):
-            transitionModelIndex = transitionModel
-        else:
-            raise PostProcessingError('Transition model must be specified by either index (int) or name (str).')
+        # determine indices of transition model and hyper-parameter
+        hpIndex = -1
+        for i, tm in enumerate(self.transitionModels):
+            try:
+                hpIndex = self._getHyperParameterIndex(tm, name)
+                tmIndex = i
+            except PostProcessingError:
+                pass
+        if hpIndex == -1:
+            raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
-        # access hyper-parameter distributions
-        try:
-            hyperParameterSequence = np.array([hp[transitionModelIndex].tolist()
-                                               for hp in self.hyperParameterSequence])[:, :, None]
-            hyperParameterValues = self.hyperParameterValues[transitionModelIndex]
-            hyperGridConstants = self.hyperGridConstants[transitionModelIndex]
-        except IndexError:
-            raise PostProcessingError('Transition model with index {} does not exist. Options: 0-{}.'
-                                      .format(transitionModelIndex, len(self.transitionModels) - 1))
+        hyperParameterSequence = np.array([hp[tmIndex].tolist()
+                                           for hp in self.hyperParameterSequence])[:, :, None]
+        hyperParameterValues = self.hyperParameterValues[tmIndex]
+        hyperGridConstants = self.hyperGridConstants[tmIndex]
+
         # compute mean value
         mean = np.sum(hyperParameterSequence * hyperParameterValues * np.prod(hyperGridConstants), axis=1).T
-        if name is not None:
-            # determine index of hyper-parameter
-            hpIndex = self._getHyperParameterIndex(self.transitionModels[transitionModelIndex], name)
-            return mean[hpIndex]
-        else:
-            return mean
+        return mean[hpIndex]
 
-    def getHyperParameterDistribution(self, t, name, transitionModel=0, plot=False, **kwargs):
+    def getHyperParameterDistribution(self, t, name, plot=False, **kwargs):
         """
         Computes marginal hyper-parameter distribution of a single hyper-parameter at a specific time step in an
         OnlineStudy fit.
@@ -2379,8 +2365,6 @@ class OnlineStudy(HyperStudy):
         Args:
             t(int): Time step at which to compute distribution
             name(str): hyper-parameter name
-            transitionModel(int, str): Index or name of the transition model that contains the hyper-parameter;
-                default: 0 (first transition model)
             plot(bool): If True, a bar chart of the distribution is created
             **kwargs: All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
@@ -2388,13 +2372,16 @@ class OnlineStudy(HyperStudy):
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
                 corresponding probability values
         """
-        # find index of transition model
-        if isinstance(transitionModel, str):
-            transitionModelIndex = self.transitionModelNames.index(transitionModel)
-        elif isinstance(transitionModel, int):
-            transitionModelIndex = transitionModel
-        else:
-            raise PostProcessingError('Transition model must be specified by either index (int) or name (str).')
+        # determine indices of transition model and hyper-parameter
+        hpIndex = -1
+        for i, tm in enumerate(self.transitionModels):
+            try:
+                hpIndex = self._getHyperParameterIndex(tm, name)
+                tmIndex = i
+            except PostProcessingError:
+                pass
+        if hpIndex == -1:
+            raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
         # access hyper-parameter distribution
         try:
@@ -2403,24 +2390,16 @@ class OnlineStudy(HyperStudy):
             raise PostProcessingError('No hyper-parameter distribution found for t={}. Choose 0 <= t <= {}.'
                                       .format(t, len(self.formattedTimestamps)-1))
 
-        try:
-            hyperParameterDistribution = hyperParameterDistribution[transitionModelIndex]
-        except IndexError:
-            raise PostProcessingError('Transition model with index {} does not exist. Options: 0-{}.'
-                                      .format(transitionModelIndex, len(self.transitionModels)-1))
-
-        # get hyper-parameter index
-        paramIndex = self._getHyperParameterIndex(self.transitionModels[transitionModelIndex], name)
-
-        axesToMarginalize = list(range(len(self.hyperParameterNames[transitionModelIndex])))
-        axesToMarginalize.remove(paramIndex)
+        hyperParameterDistribution = hyperParameterDistribution[tmIndex]
+        axesToMarginalize = list(range(len(self.hyperParameterNames[tmIndex])))
+        axesToMarginalize.remove(hpIndex)
 
         # reshape hyper-parameter grid for easy marginalization
-        hyperGridSteps = [len(x) for x in self.allFlatHyperParameterValues[transitionModelIndex]]
+        hyperGridSteps = [len(x) for x in self.allFlatHyperParameterValues[tmIndex]]
         distribution = hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
-        x = self.allFlatHyperParameterValues[transitionModelIndex][paramIndex]
+        x = self.allFlatHyperParameterValues[tmIndex][hpIndex]
         if plot:
             # check if categorical
             if np.any(np.abs(np.diff(np.diff(x))) > 10 ** -10):
@@ -2430,29 +2409,27 @@ class OnlineStudy(HyperStudy):
             # regular spacing
             else:
                 plt.bar(x, marginalDistribution, align='center',
-                        width=self.hyperGridConstants[transitionModelIndex][paramIndex],
+                        width=self.hyperGridConstants[tmIndex][hpIndex],
                         **kwargs)
                 plt.ylabel('probability')
 
-            plt.xlabel(self.hyperParameterNames[transitionModelIndex][paramIndex])
+            plt.xlabel(self.hyperParameterNames[tmIndex][hpIndex])
 
         return x, marginalDistribution
 
-    def getHPD(self, t, name, transitionModel=0, plot=False, **kwargs):
+    def getHPD(self, t, name, plot=False, **kwargs):
         """
         See :meth:`.OnlineStudy.getHyperParameterDistribution.
         """
-        return self.getHyperParameterDistribution(t, name, transitionModel=transitionModel, plot=plot, **kwargs)
+        return self.getHyperParameterDistribution(t, name, plot=plot, **kwargs)
 
-    def getCurrentHyperParameterDistribution(self, name, transitionModel=0, plot=False, **kwargs):
+    def getCurrentHyperParameterDistribution(self, name, plot=False, **kwargs):
         """
         Computes marginal hyper-parameter distribution of a single hyper-parameter at a specific time step in an
         OnlineStudy fit.
 
         Args:
             name(str): hyper-parameter name
-            transitionModel(int, str): Index or name of the transition model that contains the hyper-parameter;
-                default: 0 (first transition model)
             plot(bool): If True, a bar chart of the distribution is created
             **kwargs: All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
 
@@ -2460,33 +2437,28 @@ class OnlineStudy(HyperStudy):
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
                 corresponding probability values
         """
-        # find index of transition model
-        if isinstance(transitionModel, str):
-            transitionModelIndex = self.transitionModelNames.index(transitionModel)
-        elif isinstance(transitionModel, int):
-            transitionModelIndex = transitionModel
-        else:
-            raise PostProcessingError('Transition model must be specified by either index (int) or name (str).')
+        # determine indices of transition model and hyper-parameter
+        hpIndex = -1
+        for i, tm in enumerate(self.transitionModels):
+            try:
+                hpIndex = self._getHyperParameterIndex(tm, name)
+                tmIndex = i
+            except PostProcessingError:
+                pass
+        if hpIndex == -1:
+            raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
-        try:
-            hyperParameterDistribution = self.hyperParameterDistribution[transitionModelIndex]
-        except IndexError:
-            raise PostProcessingError('Transition model with index {} does not exist. Options: 0-{}.'
-                                      .format(transitionModelIndex, len(self.transitionModels) - 1))
-
-        # get hyper-parameter index
-        paramIndex = self._getHyperParameterIndex(self.transitionModels[transitionModelIndex], name)
-
-        axesToMarginalize = list(range(len(self.hyperParameterNames[transitionModelIndex])))
-        axesToMarginalize.remove(paramIndex)
+        hyperParameterDistribution = self.hyperParameterDistribution[tmIndex]
+        axesToMarginalize = list(range(len(self.hyperParameterNames[tmIndex])))
+        axesToMarginalize.remove(hpIndex)
 
         # reshape hyper-parameter grid for easy marginalization
-        hyperGridSteps = [len(x) for x in self.allFlatHyperParameterValues[transitionModelIndex]]
+        hyperGridSteps = [len(x) for x in self.allFlatHyperParameterValues[tmIndex]]
         distribution = hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
-        marginalDistribution *= np.prod(self.hyperGridConstants[transitionModelIndex])
+        marginalDistribution *= np.prod(self.hyperGridConstants[tmIndex])
 
-        x = self.allFlatHyperParameterValues[transitionModelIndex][paramIndex]
+        x = self.allFlatHyperParameterValues[tmIndex][hpIndex]
         if plot:
             # check if categorical
             if np.any(np.abs(np.diff(np.diff(x))) > 10 ** -10):
@@ -2496,54 +2468,48 @@ class OnlineStudy(HyperStudy):
             # regular spacing
             else:
                 plt.bar(x, marginalDistribution, align='center',
-                        width=self.hyperGridConstants[transitionModelIndex][paramIndex],
+                        width=self.hyperGridConstants[tmIndex][hpIndex],
                         **kwargs)
                 plt.ylabel('probability')
 
-            plt.xlabel(self.hyperParameterNames[transitionModelIndex][paramIndex])
+            plt.xlabel(self.hyperParameterNames[tmIndex][hpIndex])
 
         return x, marginalDistribution
 
-    def getCHPD(self, name, transitionModel=0, plot=False, **kwargs):
+    def getCHPD(self, name, plot=False, **kwargs):
         """
         See :meth:`.OnlineStudy.getCurrentHyperParameterDistribution.
         """
-        return self.getCurrentHyperParameterDistribution(name, transitionModel=transitionModel, plot=plot, **kwargs)
+        return self.getCurrentHyperParameterDistribution(name, plot=plot, **kwargs)
 
-    def getHyperParameterDistributions(self, name, transitionModel=0):
+    def getHyperParameterDistributions(self, name):
         """
         Computes marginal hyper-parameter distributions of a single hyper-parameter for all time steps in an OnlineStudy
         fit.
 
         Args:
             name(str): hyper-parameter name
-            transitionModel(int, str): Index or name of the transition model that contains the hyper-parameter;
-                default: 0 (first transition model)
 
         Returns:
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
                 corresponding probability values (first axis is time).
         """
-        # find index of transition model
-        if isinstance(transitionModel, str):
-            transitionModelIndex = self.transitionModelNames.index(transitionModel)
-        elif isinstance(transitionModel, int):
-            transitionModelIndex = transitionModel
-        else:
-            raise PostProcessingError('Transition model must be specified by either index (int) or name (str).')
+        # determine indices of transition model and hyper-parameter
+        hpIndex = -1
+        for i, tm in enumerate(self.transitionModels):
+            try:
+                hpIndex = self._getHyperParameterIndex(tm, name)
+                tmIndex = i
+            except PostProcessingError:
+                pass
+        if hpIndex == -1:
+            raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
-        # access hyper-parameter distributions
-        try:
-            hyperParameterSequence = np.array(self.hyperParameterSequence)[:, transitionModelIndex]
-        except IndexError:
-            raise PostProcessingError('Transition model with index {} does not exist. Options: 0-{}.'
-                                      .format(transitionModelIndex, len(self.transitionModels) - 1))
-
-        paramIndex = self._getHyperParameterIndex(self.transitionModels[transitionModelIndex], name)
+        hyperParameterSequence = np.array(self.hyperParameterSequence)[:, tmIndex]
 
         # marginalize the hyper-posterior probabilities
-        hpv = np.array(self.hyperParameterValues[transitionModelIndex])
-        paramHpv = hpv[:, paramIndex]
+        hpv = np.array(self.hyperParameterValues[tmIndex])
+        paramHpv = hpv[:, hpIndex]
         uniqueValues = np.sort(np.unique(paramHpv))
 
         marginalDistribution = []
@@ -2560,13 +2526,13 @@ class OnlineStudy(HyperStudy):
 
         return uniqueValues, marginalDistribution
 
-    def getHPDs(self, name, transitionModel=0, plot=False, **kwargs):
+    def getHPDs(self, name):
         """
         See :meth:`.OnlineStudy.getHyperParameterDistributions.
         """
-        return self.getHyperParameterDistributions(name, transitionModel=transitionModel, plot=plot, **kwargs)
+        return self.getHyperParameterDistributions(name)
 
-    def plotHyperParameterEvolution(self, name, transitionModel=0, color='b', gamma=0.5, **kwargs):
+    def plotHyperParameterEvolution(self, name, color='b', gamma=0.5, **kwargs):
         """
         Plot method to display a series of marginal posterior distributions corresponding to a single model parameter.
         This method includes the removal of plotting artefacts, gamma correction as well as an overlay of the posterior
@@ -2574,26 +2540,26 @@ class OnlineStudy(HyperStudy):
 
         Args:
             name(str): hyper-parameter name
-            transitionModel(int, str): Index or name of the transition model that contains the hyper-parameter;
-                default: 0 (first transition model)
             color: color from which a light colormap is created
             gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5
             kwargs: all further keyword-arguments are passed to the plot of the posterior mean values
         """
-        # find index of transition model
-        if isinstance(transitionModel, str):
-            transitionModelIndex = self.transitionModelNames.index(transitionModel)
-        elif isinstance(transitionModel, int):
-            transitionModelIndex = transitionModel
-        else:
-            raise PostProcessingError('Transition model must be specified by either index (int) or name (str).')
+        # determine indices of transition model and hyper-parameter
+        hpIndex = -1
+        for i, tm in enumerate(self.transitionModels):
+            try:
+                hpIndex = self._getHyperParameterIndex(tm, name)
+                tmIndex = i
+            except PostProcessingError:
+                pass
+        if hpIndex == -1:
+            raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
         # get sequence of hyper-parameter distributions
-        uniqueValues, marginalDistribution = self.getHyperParameterDistributions(name, transitionModelIndex)
-        paramIndex = self._getHyperParameterIndex(self.transitionModels[transitionModelIndex], name)
+        uniqueValues, marginalDistribution = self.getHyperParameterDistributions(name)
 
         # compute hyper-posterior mean values
-        meanValues = self.getHyperParameterMeanValues(None, transitionModelIndex)[paramIndex]
+        meanValues = self.getHyperParameterMeanValues(name)
 
         # clean up very small probability values, as they may create image artefacts
         pmax = np.amax(marginalDistribution)
@@ -2602,7 +2568,8 @@ class OnlineStudy(HyperStudy):
         plt.imshow(marginalDistribution.T ** gamma,
                    origin=0,
                    cmap=createColormap(color),
-                   extent=[self.formattedTimestamps[0], self.formattedTimestamps[-1]] + [uniqueValues[0], uniqueValues[-1]],
+                   extent=[self.formattedTimestamps[0], self.formattedTimestamps[-1]] +
+                          [uniqueValues[0], uniqueValues[-1]],
                    aspect='auto')
 
         # set default color of plot to black
@@ -2616,5 +2583,5 @@ class OnlineStudy(HyperStudy):
         plt.plot(self.formattedTimestamps, meanValues, **kwargs)
 
         plt.ylim(uniqueValues[0], uniqueValues[-1])
-        plt.ylabel(self.hyperParameterNames[transitionModelIndex][paramIndex])
+        plt.ylabel(self.hyperParameterNames[tmIndex][hpIndex])
         plt.xlabel('time step')
