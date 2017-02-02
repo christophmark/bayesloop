@@ -4,6 +4,7 @@ This file includes functions for saving and loading instances of Study objects u
 """
 
 from __future__ import division, print_function
+import dill
 
 
 def save(filename, study):
@@ -14,12 +15,6 @@ def save(filename, study):
         filename(str): Path + filename to store bayesloop study
         study: Instance of study class (Study, RasterStudy, etc.)
     """
-    try:
-        import dill
-    except ImportError:
-        raise ImportError('No module named dill. This module represents an optional dependency of bayesloop and is '
-                          'therefore not installed alongside bayesloop.')
-
     with open(filename, 'wb') as f:
         dill.dump(study, f, protocol=dill.HIGHEST_PROTOCOL)
     print('+ Successfully saved current study.')
@@ -35,12 +30,6 @@ def load(filename):
     Returns:
         Study instance
     """
-    try:
-        import dill
-    except ImportError:
-        raise ImportError('No module named dill. This module represents an optional dependency of bayesloop and is '
-                          'therefore not installed alongside bayesloop.')
-
     with open(filename, 'rb') as f:
         S = dill.load(f)
     print('+ Successfully loaded study.')
