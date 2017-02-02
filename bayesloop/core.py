@@ -771,7 +771,7 @@ class Study(object):
 
         Returns:
             ndarray, ndarray: The first array contains the parameter values, the second one the corresponding
-                probability (density) values
+                probability values
         """
         if self.posteriorSequence == []:
             raise PostProcessingError('Cannot plot posterior sequence as it has not yet been computed. '
@@ -1414,7 +1414,7 @@ class HyperStudy(Study):
 
         Returns:
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
-                corresponding probability (density) values
+                corresponding probability values
         """
         # check if only a standard fit has been carried out
         if len(self.hyperGridValues) < 2:
@@ -1436,10 +1436,7 @@ class HyperStudy(Study):
 
         distribution = self.hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
-
-        # marginal distribution is not created by sum, but by the integral
-        integrationFactor = np.prod([self.hyperGridConstant[axis] for axis in axesToMarginalize])
-        marginalDistribution *= integrationFactor
+        marginalDistribution *= np.prod(self.hyperGridConstant)  # convert to probability (from density)
 
         x = self.flatHyperParameters[paramIndex]
         if plot:
@@ -1451,10 +1448,7 @@ class HyperStudy(Study):
             # regular spacing
             else:
                 plt.bar(x, marginalDistribution, align='center', width=self.hyperGridConstant[paramIndex], **kwargs)
-                if self.hyperGridConstant[paramIndex] == 1.:
-                    plt.ylabel('probability')
-                else:
-                    plt.ylabel('probability density')
+                plt.ylabel('probability')
 
             plt.xlabel(self.flatHyperParameterNames[paramIndex])
 
@@ -1482,7 +1476,7 @@ class HyperStudy(Study):
 
         Returns:
             ndarray, ndarray, ndarray: The first and second array contains the hyper-parameter values, the
-                third one the corresponding probability (density) values
+                third one the corresponding probability values
         """
         # check if only a standard fit has been carried out
         if len(self.hyperGridValues) < 2:
@@ -1516,10 +1510,7 @@ class HyperStudy(Study):
 
         distribution = self.hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
-
-        # marginal distribution is not created by sum, but by the integral
-        integrationFactor = np.prod([self.hyperGridConstant[axis] for axis in axesToMarginalize])
-        marginalDistribution *= integrationFactor
+        marginalDistribution *= np.prod(self.hyperGridConstant)  # convert to probability (from density)
 
         x, y = [self.flatHyperParameters[i] for i in paramIndices]
         if np.any(np.abs(np.diff(np.diff(x))) > 10 ** -10):
@@ -1561,12 +1552,7 @@ class HyperStudy(Study):
             ax.set_xlabel(self.flatHyperParameterNames[paramIndices[0]])
             ax.set_ylabel(self.flatHyperParameterNames[paramIndices[1]])
 
-            # in case an integer step size for hyper-parameter values is chosen, probability is displayed
-            # (probability density otherwise)
-            if self.hyperGridConstant[paramIndices[0]]*self.hyperGridConstant[paramIndices[1]] == 1.:
-                ax.set_zlabel('probability')
-            else:
-                ax.set_zlabel('probability density')
+            ax.set_zlabel('probability')
 
         return x, y, marginalDistribution
 
@@ -2056,7 +2042,7 @@ class OnlineStudy(HyperStudy):
 
         Returns:
             ndarray, ndarray: The first array contains the parameter values, the second one the corresponding
-                probability (density) values
+                probability values
         """
         if not self.storeHistory:
             raise PostProcessingError('To get past parameter distributions, Online Study must be called with flag'
@@ -2090,7 +2076,7 @@ class OnlineStudy(HyperStudy):
 
         Returns:
             ndarray, ndarray: The first array contains the parameter values, the second one the corresponding
-                probability (density) values
+                probability values
         """
         # get parameter index
         paramIndex = -1
@@ -2114,15 +2100,8 @@ class OnlineStudy(HyperStudy):
 
         if plot:
             plt.fill_between(x, 0, marginalDistribution, **kwargs)
-
             plt.xlabel(self.observationModel.parameterNames[paramIndex])
-
-            # in case an integer step size for hyper-parameter values is chosen, probability is displayed
-            # (probability density otherwise)
-            if self.latticeConstant[paramIndex] == 1.:
-                plt.ylabel('probability')
-            else:
-                plt.ylabel('probability density')
+            plt.ylabel('probability')
 
         return x, marginalDistribution
 
@@ -2414,7 +2393,7 @@ class OnlineStudy(HyperStudy):
 
         Returns:
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
-                corresponding probability (density) values
+                corresponding probability values
         """
         # find index of transition model
         if isinstance(transitionModel, str):
@@ -2448,10 +2427,6 @@ class OnlineStudy(HyperStudy):
         distribution = hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
 
-        # marginal distribution is not created by sum, but by the integral
-        integrationFactor = np.prod([self.hyperGridConstants[transitionModelIndex][axis] for axis in axesToMarginalize])
-        marginalDistribution *= integrationFactor
-
         x = self.allFlatHyperParameterValues[transitionModelIndex][paramIndex]
         if plot:
             # check if categorical
@@ -2464,10 +2439,7 @@ class OnlineStudy(HyperStudy):
                 plt.bar(x, marginalDistribution, align='center',
                         width=self.hyperGridConstants[transitionModelIndex][paramIndex],
                         **kwargs)
-                if self.hyperGridConstants[transitionModelIndex][paramIndex] == 1.:
-                    plt.ylabel('probability')
-                else:
-                    plt.ylabel('probability density')
+                plt.ylabel('probability')
 
             plt.xlabel(self.hyperParameterNames[transitionModelIndex][paramIndex])
 
@@ -2493,7 +2465,7 @@ class OnlineStudy(HyperStudy):
 
         Returns:
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
-                corresponding probability (density) values
+                corresponding probability values
         """
         # find index of transition model
         if isinstance(transitionModel, str):
@@ -2519,10 +2491,7 @@ class OnlineStudy(HyperStudy):
         hyperGridSteps = [len(x) for x in self.allFlatHyperParameterValues[transitionModelIndex]]
         distribution = hyperParameterDistribution.reshape(hyperGridSteps, order='C')
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, distribution, axesToMarginalize))
-
-        # marginal distribution is not created by sum, but by the integral
-        integrationFactor = np.prod([self.hyperGridConstants[transitionModelIndex][axis] for axis in axesToMarginalize])
-        marginalDistribution *= integrationFactor
+        marginalDistribution *= np.prod(self.hyperGridConstants[transitionModelIndex])
 
         x = self.allFlatHyperParameterValues[transitionModelIndex][paramIndex]
         if plot:
@@ -2536,10 +2505,7 @@ class OnlineStudy(HyperStudy):
                 plt.bar(x, marginalDistribution, align='center',
                         width=self.hyperGridConstants[transitionModelIndex][paramIndex],
                         **kwargs)
-                if self.hyperGridConstants[transitionModelIndex][paramIndex] == 1.:
-                    plt.ylabel('probability')
-                else:
-                    plt.ylabel('probability density')
+                plt.ylabel('probability')
 
             plt.xlabel(self.hyperParameterNames[transitionModelIndex][paramIndex])
 
@@ -2563,7 +2529,7 @@ class OnlineStudy(HyperStudy):
 
         Returns:
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
-                corresponding probability (density) values (first axis is time).
+                corresponding probability values (first axis is time).
         """
         # find index of transition model
         if isinstance(transitionModel, str):
@@ -2596,10 +2562,8 @@ class OnlineStudy(HyperStudy):
                 marginalDistribution[-1].append(np.sum(probabilities))
         marginalDistribution = np.array(marginalDistribution).T
 
-        # renormalize marginal probability density
-        temp = list(self.hyperGridConstants[transitionModelIndex])
-        del temp[paramIndex]
-        marginalDistribution *= np.prod(temp)
+        # renormalize marginal probability distribution
+        marginalDistribution /= np.sum(marginalDistribution, axis=1)[:, None]
 
         return uniqueValues, marginalDistribution
 
