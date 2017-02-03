@@ -264,7 +264,7 @@ class Bernoulli(ObservationModel):
         self.parameterValues = [value]
         self.multiplyLikelihoods = True
 
-        if prior == 'Jeffreys':
+        if isinstance(prior, str) and prior == 'Jeffreys':
             self.prior = self.jeffreys  # default: Jeffreys prior
         else:
             self.prior = prior
@@ -336,7 +336,7 @@ class Poisson(ObservationModel):
         self.parameterValues = [value]
         self.multiplyLikelihoods = True
 
-        if prior == 'Jeffreys':
+        if isinstance(prior, str) and prior == 'Jeffreys':
             self.prior = self.jeffreys  # default: Jeffreys prior
         else:
             self.prior = prior
@@ -400,7 +400,7 @@ class Gaussian(ObservationModel):
         self.parameterValues = [value1, value2]
         self.multiplyLikelihoods = True
 
-        if prior == 'Jeffreys':
+        if isinstance(prior, str) and prior == 'Jeffreys':
             self.prior = self.jeffreys  # default: Jeffreys prior
         else:
             self.prior = prior
@@ -533,7 +533,7 @@ class WhiteNoise(ObservationModel):
         self.parameterValues = [value]
         self.multiplyLikelihoods = True
 
-        if prior == 'Jeffreys':
+        if isinstance(prior, str) and prior == 'Jeffreys':
             self.prior = self.jeffreys  # default: Jeffreys prior
         else:
             self.prior = prior
