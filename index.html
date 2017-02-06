@@ -106,17 +106,12 @@ plt.show()
 <h2>
 <a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dependencies</h2>
 
-<p><em>bayesloop</em> is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib and tqdm. All except the latter are already included in the <a href="https://www.continuum.io/downloads">Anaconda distribution</a> of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at <a href="http://www.lfd.uci.edu/%7Egohlke/pythonlibs/">Christoph Gohlke's page</a>.</p>
+<p><em>bayesloop</em> is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and dill. All except the last two are already included in the <a href="https://www.continuum.io/downloads">Anaconda distribution</a> of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at <a href="http://www.lfd.uci.edu/%7Egohlke/pythonlibs/">Christoph Gohlke's page</a>.</p>
 
 <h2>
 <a id="optional-dependencies" class="anchor" href="#optional-dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Optional dependencies</h2>
 
-<p><em>bayesloop</em> uses <a href="https://pypi.python.org/pypi/dill">dill</a>, an extension to Python's <a href="https://docs.python.org/2/library/pickle.html">pickle</a> module, to save/load on-going data studies to/from file. It can be installed via pip:</p>
-
-<pre><code>pip install dill
-</code></pre>
-
-<p><em>bayesloop</em> further supports multiprocessing for computationally expensive analyses, based on the <a href="https://github.com/uqfoundation/pathos">pathos</a> module. The latest version can be obtained directly from GitHub using pip (requires git):</p>
+<p><em>bayesloop</em> supports multiprocessing for computationally expensive analyses, based on the <a href="https://github.com/uqfoundation/pathos">pathos</a> module. The latest version can be obtained directly from GitHub using pip (requires git):</p>
 
 <pre><code>pip install git+https://github.com/uqfoundation/pathos
 </code></pre>
