@@ -13,7 +13,7 @@ from sympy import lambdify
 from sympy.stats import density
 from .jeffreys import getJeffreysPrior
 from scipy.misc import factorial
-from .exceptions import *
+from .exceptions import ConfigurationError, PostProcessingError
 from .helper import cint, oint
 
 

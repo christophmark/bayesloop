@@ -23,11 +23,11 @@ from copy import copy, deepcopy
 from collections import OrderedDict, Iterable
 from inspect import getargspec
 from tqdm import tqdm, tqdm_notebook
-from .helper import *
-from .preprocessing import *
+from .helper import assignNestedItem, recursiveIndex, flatten, createColormap, oint, cint
+from .preprocessing import movingWindow
 from .transitionModels import CombinedTransitionModel
 from .transitionModels import SerialTransitionModel
-from .exceptions import *
+from .exceptions import ConfigurationError, PostProcessingError
 
 
 class Study(object):

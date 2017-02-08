@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # import study types
-from .core import *
+from .core import Study, HyperStudy, ChangepointStudy, OnlineStudy
 
 # observation models and transition models need to be distinguishable
 from . import observationModels
@@ -10,6 +10,6 @@ from . import transitionModels
 from . import transitionModels as tm  # short form
 
 # misc
-from helper import cint, oint
-from .jeffreys import *
-from .fileIO import *
+from .helper import cint, oint
+from .jeffreys import getJeffreysPrior, computeJeffreysPriorAR1
+from .fileIO import save, load

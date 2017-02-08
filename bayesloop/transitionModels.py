@@ -16,7 +16,7 @@ from scipy.ndimage.interpolation import shift
 from collections import Iterable
 from inspect import getargspec
 from copy import deepcopy
-from .exceptions import *
+from .exceptions import ConfigurationError, PostProcessingError
 
 
 class Static:

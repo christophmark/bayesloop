@@ -10,7 +10,7 @@ import sympy.abc as abc
 from sympy.stats import density
 from sympy import Symbol, Matrix, simplify, diff, integrate, summation, lambdify
 from sympy import ln, sqrt
-from .exceptions import *
+from .exceptions import ConfigurationError, PostProcessingError
 
 
 def getJeffreysPrior(rv):
