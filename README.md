@@ -68,7 +68,7 @@ pip install git+https://github.com/christophmark/bayesloop
 Alternatively, use this [zipped version](https://github.com/christophmark/bayesloop/zipball/master) or clone the repository.
 
 ## Dependencies
-*bayesloop* is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and dill. All except the last two are already included in the [Anaconda distribution](https://www.continuum.io/downloads) of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at [Christoph Gohlke's page](http://www.lfd.uci.edu/~gohlke/pythonlibs/).
+*bayesloop* is tested on both Python 2.7 and Python 3.6. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and dill. All except the last two are already included in the [Anaconda distribution](https://www.continuum.io/downloads) of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at [Christoph Gohlke's page](http://www.lfd.uci.edu/~gohlke/pythonlibs/).
 
 ## Optional dependencies
 *bayesloop* supports multiprocessing for computationally expensive analyses, based on the [pathos](https://github.com/uqfoundation/pathos) module. The latest version can be obtained directly from GitHub using pip (requires git):
