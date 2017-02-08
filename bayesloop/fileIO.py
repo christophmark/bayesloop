@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-This file includes functions for saving and loading instances of Study objects using dill.
+The following functions save or load instances of all `Study` types using the Python package `dill`.
 """
 
 from __future__ import division, print_function
@@ -13,7 +13,7 @@ def save(filename, study):
 
     Args:
         filename(str): Path + filename to store bayesloop study
-        study: Instance of study class (Study, RasterStudy, etc.)
+        study: Instance of study class (Study, HyperStudy, etc.)
     """
     with open(filename, 'wb') as f:
         dill.dump(study, f, protocol=dill.HIGHEST_PROTOCOL)
@@ -22,7 +22,7 @@ def save(filename, study):
 
 def load(filename):
     """
-    Load a instance of a bayesloop study class that was saved using the bayesloop.save() function.
+    Load an instance of a bayesloop study class that was saved using the bayesloop.save() function.
 
     Args:
         filename(str): Path + filename to stored bayesloop study

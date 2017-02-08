@@ -83,3 +83,22 @@ Transition models
 
 .. automodule:: bayesloop.transitionModels
     :members:
+
+File I/O
+--------
+
+.. automodule:: bayesloop.fileIO
+    :members:
+
+.. note::
+
+    Both file I/O functions are imported directly into the module namespace for convenient access.
+    
+    .. code-block:: python
+
+        import bayesloop as bl
+        S = bl.Study()
+        ...
+        bl.save('test.bl', S)
+        ...
+        S = bl.load('test.bl')
