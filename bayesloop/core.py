@@ -1642,7 +1642,10 @@ class ChangepointStudy(HyperStudy):
             [all(x[i] < x[i + 1] for i in range(len(points) - 1)) for x in maskedHyperGridValues],
             dtype=bool)
         self.hyperGridValues = self.allHyperGridValues[self.mask]
-        self.flatHyperPriorValues = self.allHyperPriorValues[self.mask]/np.sum(self.allHyperPriorValues[self.mask])
+        self.flatHyperPriorValues = self.allHyperPriorValues[self.mask]
+
+        # correct prior values to ensure correct normalization after sorting out combinations
+        self.flatHyperPriorValues *= np.sum(self.allHyperPriorValues)/np.sum(self.allHyperPriorValues[self.mask])
 
         # call fit method of hyper-study
         HyperStudy.fit(self,
