@@ -13,6 +13,7 @@ from sympy import lambdify
 from sympy.stats import density
 from .jeffreys import getJeffreysPrior
 from scipy.misc import factorial
+from scipy.special import iv
 from .exceptions import ConfigurationError, PostProcessingError
 from .helper import cint, oint
 
@@ -228,7 +229,8 @@ class SymPy(ObservationModel):
         # provide lambda function for probability density
         x = abc.x
         symDensity = density(rv)(x)
-        self.density = lambdify([x]+parameters, symDensity, modules=['numpy', {'factorial': factorial}])
+        self.density = lambdify([x]+parameters, symDensity, modules=['numpy', {'factorial': factorial,
+                                                                               'besseli': iv}])
 
     def pdf(self, grid, dataSegment):
         """
