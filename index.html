@@ -54,9 +54,10 @@
 
 <pre><code>import bayesloop as bl
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import seaborn as sns
 
-S = bl.Study()  # start new data study
+S = bl.HyperStudy()  # start new data study
 S.loadExampleData()  # load data array
 
 # observed number of disasters is modeled by Poisson distribution
@@ -64,18 +65,28 @@ L = bl.observationModels.Poisson('rate')
 S.setObservationModel(L)
 
 # disaster rate itself may change gradually over time
-T = bl.transitionModels.GaussianRandomWalk('sigma', 0.2, target='rate')
+T = bl.transitionModels.GaussianRandomWalk('sigma',
+                        bl.cint(0, 1.0, 20), target='rate')
 S.setTransitionModel(T)
 
 S.fit()  # inference
 
 # plot data together with inferred parameter evolution
-plt.figure(figsize=(6, 3))
-plt.xlim([1852, 1961])
+plt.figure(figsize=(8, 3))
+gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1])
 
-plt.bar(S.rawTimestamps, S.rawData, 
+plt.subplot(gs[0])
+plt.xlim([1852, 1961])
+plt.bar(S.rawTimestamps, S.rawData,
         align='center', facecolor='r', alpha=.5)
 S.plotParameterEvolution('rate')
+
+# plot hyper-parameter distribution
+plt.subplot(gs[1])
+plt.xlim([0, 1])
+S.getHyperParameterDistribution('sigma', plot=True,
+                                facecolor='g', alpha=0.7)
+plt.tight_layout()
 plt.show()
 </code></pre>
 
