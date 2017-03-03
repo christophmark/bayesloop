@@ -1484,9 +1484,11 @@ class HyperStudy(Study):
 
         paramIndices = [self._getHyperParameterIndex(self.transitionModel, n) for n in names]
 
-        # check if parameter indices are in ascending order (so axes are labeled correctly)
+        # put parameter indices in ascending order for marginalization and plotting
+        # original order is restored for returned values
+        switch = False
         if not paramIndices[0] < paramIndices[1]:
-            print('! WARNING: Switching hyper-parameter order for plotting.')
+            switch = True
             paramIndices = paramIndices[::-1]
 
         axesToMarginalize = list(range(len(self.flatHyperParameterNames)))
@@ -1546,6 +1548,11 @@ class HyperStudy(Study):
             ax.set_ylabel(self.flatHyperParameterNames[paramIndices[1]])
 
             ax.set_zlabel('probability')
+
+        # restore original order of parameters before returning values
+        if switch:
+            x, y = y, x
+            marginalDistribution = marginalDistribution.T
 
         return x, y, marginalDistribution
 
