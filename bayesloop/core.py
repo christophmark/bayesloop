@@ -1717,7 +1717,7 @@ class ChangepointStudy(HyperStudy):
 
         # check if parameter indices are in ascending order (so axes are labeled correctly)
         if not paramIndices[0] < paramIndices[1]:
-            print('! WARNING: Switching hyper-parameter order for plotting.')
+            print('! WARNING: Switching order of change-/breakpoints to obtain positive values for duration.')
             paramIndices = paramIndices[::-1]
 
         values = self.hyperGridValues[:, paramIndices].T
