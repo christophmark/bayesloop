@@ -1560,7 +1560,7 @@ class HyperStudy(Study):
         """
         See :meth:`.HyperStudy.getJointHyperParameterDistribution`.
         """
-        return self.getJointHyperParameterDistribution(self, names, plot=plot, figure=figure, subplot=subplot, **kwargs)
+        return self.getJointHyperParameterDistribution(names, plot=plot, figure=figure, subplot=subplot, **kwargs)
 
 
 class ChangepointStudy(HyperStudy):
