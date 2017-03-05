@@ -1844,6 +1844,12 @@ class OnlineStudy(HyperStudy):
         else:
             print('+ Added transition model: {} (no hyper-parameters)'.format(name))
 
+    def addTM(self, name, transitionModel):
+        """
+        See :meth:`.OnlineStudy.addTransitionModel`.
+        """
+        self.addTransitionModel(name, transitionModel)
+
     def setTransitionModelPrior(self, transitionModelPrior, silent=False):
         """
         Sets prior probabilities for transition models added to the online study instance.
@@ -1885,6 +1891,8 @@ class OnlineStudy(HyperStudy):
             dataPoint = [dataPoint]
 
         if len(self.rawData) == 0:
+            print('+ Start model fit')
+
             # consistency check to detect duplicate hyper-parameter names in different transition models
             allNames = list(flatten(self.hyperParameterNames))
             if len(allNames) != len(np.unique(allNames)):
@@ -1902,7 +1910,7 @@ class OnlineStudy(HyperStudy):
 
         # only proceed if at least one data segment can be created
         if len(self.rawData) < self.observationModel.segmentLength:
-            print('    + Not enough data points to start analysis. Will wait for more data.')
+            print('+ Not enough data points to start analysis. Will wait for more data.')
             return
 
         self.formattedTimestamps.append(self.rawTimestamps[-1])
@@ -1921,7 +1929,8 @@ class OnlineStudy(HyperStudy):
             # initialize transition model prior as flat
             if self.transitionModelPrior is None:
                 self.transitionModelPrior = np.ones(len(self.transitionModels))/len(self.transitionModels)
-                print('    + Set flat transition mode prior.')
+                if len(self.transitionModels) > 1:
+                    print('    + Set flat transition model prior.')
 
             # initialize logEvidenceList as an array of zeros and add log-lattice-constant for proper normalization
             self.logEvidenceList = [np.zeros(tmc)+np.log(np.prod(self.latticeConstant)) for tmc in self.tmCounts]
@@ -1966,7 +1975,7 @@ class OnlineStudy(HyperStudy):
                 # compute alpha_i
                 if self.firstStep:  # first time step, so use predefined prior
                     alphai = prior*likelihood
-                else:  # in all other time step transform "old" alpha/posterior
+                else:  # in all other time steps transform "old" alpha/posterior
                     alphai = self.transitionModel.computeForwardPrior(self.parameterPosterior[i][j],
                                                                       len(self.formattedData)-1)*likelihood
                 ni = np.sum(alphai)
@@ -2298,6 +2307,72 @@ class OnlineStudy(HyperStudy):
         mean = np.sum(self.marginalizedPosterior*self.grid[paramIndex])
         return mean
 
+    def getParameterMeanValue(self, t, name):
+        """
+        Returns the posterior mean value for a given parameter of the observation model at a specified time step. Only
+        available if Online Study is created with flag 'storeHistory=True'.
+
+        Args:
+            t(int): Time step at which to compute parameter mean value
+            name(str): Name of the parameter
+
+        Returns:
+            float: posterior mean value
+        """
+        if not self.storeHistory:
+            raise PostProcessingError('To get past parameter mean values, Online Study must be called with '
+                                      'flag "storeHistory=True". Use "getCurrentParameterMeanValue" instead.')
+
+        # get parameter index
+        paramIndex = -1
+        for i, n in enumerate(self.observationModel.parameterNames):
+            if n == name:
+                paramIndex = i
+
+        # check if match was found
+        if paramIndex == -1:
+            raise PostProcessingError('Wrong parameter name. Available options: {0}'
+                                      .format(self.observationModel.parameterNames))
+
+        # access parameter distribution
+        try:
+            parameterDistribution = self.posteriorSequence[t]
+        except IndexError:
+            raise PostProcessingError('No parameter distribution found for t={}. Choose 0 <= t <= {}.'
+                                      .format(t, len(self.formattedTimestamps) - 1))
+
+        mean = np.sum(parameterDistribution[t] * self.grid[paramIndex])
+        return mean
+
+    def getParameterMeanValues(self, name):
+        """
+        Returns the posterior mean value for a given parameter of the observation model for all time steps. Only
+        available if Online Study is created with flag 'storeHistory=True'.
+
+        Args:
+            name(str): Name of the parameter
+
+        Returns:
+            ndarray: posterior mean values
+        """
+        if not self.storeHistory:
+            raise PostProcessingError('To get past parameter mean values, Online Study must be called with '
+                                      'flag "storeHistory=True". Use "getCurrentParameterMeanValue" instead.')
+
+        # get parameter index
+        paramIndex = -1
+        for i, n in enumerate(self.observationModel.parameterNames):
+            if n == name:
+                paramIndex = i
+
+        # check if match was found
+        if paramIndex == -1:
+            raise PostProcessingError('Wrong parameter name. Available options: {0}'
+                                      .format(self.observationModel.parameterNames))
+
+        mean = np.array(self.posteriorMeanValues).T[paramIndex]
+        return mean
+
     def getHyperParameterMeanValue(self, t, name):
         """
         Computes the mean value of the joint hyper-parameter distribution for a given hyper-parameter at a
@@ -2310,6 +2385,10 @@ class OnlineStudy(HyperStudy):
         Returns:
             ndarray: Array containing the mean values of all hyper-parameters of the given transition model
         """
+        if not self.storeHistory:
+            raise PostProcessingError('To get past hyper-parameter mean values, Online Study must be called with '
+                                      'flag "storeHistory=True". Use "getCurrentHyperParameterMeanValue" instead.')
+
         # determine indices of transition model and hyper-parameter
         hpIndex = -1
         for i, tm in enumerate(self.transitionModels):
@@ -2339,7 +2418,7 @@ class OnlineStudy(HyperStudy):
     def getHyperParameterMeanValues(self, name):
         """
         Computes the sequence of mean value of the joint hyper-parameter distribution for a given hyper-parameter for
-        all time steps.
+        all time steps. Only available if Online Study is created with flag 'storeHistory=True'.
 
         Args:
             name(str): name of hyper-parameter
@@ -2347,6 +2426,10 @@ class OnlineStudy(HyperStudy):
         Returns:
             ndarray: Array containing the sequences of mean values of the given hyper-parameter
         """
+        if not self.storeHistory:
+            raise PostProcessingError('To get past hyper-parameter mean values, Online Study must be called with '
+                                      'flag "storeHistory=True". Use "getCurrentHyperParameterMeanValue" instead.')
+
         # determine indices of transition model and hyper-parameter
         hpIndex = -1
         for i, tm in enumerate(self.transitionModels):
@@ -2370,7 +2453,7 @@ class OnlineStudy(HyperStudy):
     def getHyperParameterDistribution(self, t, name, plot=False, **kwargs):
         """
         Computes marginal hyper-parameter distribution of a single hyper-parameter at a specific time step in an
-        OnlineStudy fit.
+        OnlineStudy fit. Only available if Online Study is created with flag 'storeHistory=True'.
 
         Args:
             t(int): Time step at which to compute distribution
@@ -2382,6 +2465,10 @@ class OnlineStudy(HyperStudy):
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
                 corresponding probability values
         """
+        if not self.storeHistory:
+            raise PostProcessingError('To get past hyper-parameter distributions, Online Study must be called with '
+                                      'flag "storeHistory=True". Use "getCurrentHyperParameterDistribution" instead.')
+
         # determine indices of transition model and hyper-parameter
         hpIndex = -1
         for i, tm in enumerate(self.transitionModels):
@@ -2435,7 +2522,7 @@ class OnlineStudy(HyperStudy):
 
     def getCurrentHyperParameterDistribution(self, name, plot=False, **kwargs):
         """
-        Computes marginal hyper-parameter distribution of a single hyper-parameter at a specific time step in an
+        Computes marginal hyper-parameter distribution of a single hyper-parameter at the current time step in an
         OnlineStudy fit.
 
         Args:
@@ -2494,8 +2581,8 @@ class OnlineStudy(HyperStudy):
 
     def getHyperParameterDistributions(self, name):
         """
-        Computes marginal hyper-parameter distributions of a single hyper-parameter for all time steps in an OnlineStudy
-        fit.
+        Computes marginal hyper-parameter distributions of a single hyper-parameter for all time steps in an
+        OnlineStudy fit. Only available if Online Study is created with flag 'storeHistory=True'.
 
         Args:
             name(str): hyper-parameter name
@@ -2504,6 +2591,10 @@ class OnlineStudy(HyperStudy):
             ndarray, ndarray: The first array contains the hyper-parameter values, the second one the
                 corresponding probability values (first axis is time).
         """
+        if not self.storeHistory:
+            raise PostProcessingError('To get past hyper-parameter distributions, Online Study must be called with '
+                                      'flag "storeHistory=True". Use "getCurrentHyperParameterDistributions instead.')
+
         # determine indices of transition model and hyper-parameter
         hpIndex = -1
         for i, tm in enumerate(self.transitionModels):
@@ -2546,7 +2637,7 @@ class OnlineStudy(HyperStudy):
         """
         Plot method to display a series of marginal posterior distributions corresponding to a single model parameter.
         This method includes the removal of plotting artefacts, gamma correction as well as an overlay of the posterior
-        mean values.
+        mean values. Only available if Online Study is created with flag 'storeHistory=True'.
 
         Args:
             name(str): hyper-parameter name
@@ -2554,6 +2645,10 @@ class OnlineStudy(HyperStudy):
             gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5
             kwargs: all further keyword-arguments are passed to the plot of the posterior mean values
         """
+        if not self.storeHistory:
+            raise PostProcessingError('To get past hyper-parameter distributions, Online Study must be called with '
+                                      'flag "storeHistory=True". Use "getCurrentHyperParameterDistribution" instead.')
+
         # determine indices of transition model and hyper-parameter
         hpIndex = -1
         for i, tm in enumerate(self.transitionModels):
@@ -2595,3 +2690,6 @@ class OnlineStudy(HyperStudy):
         plt.ylim(uniqueValues[0], uniqueValues[-1])
         plt.ylabel(self.hyperParameterNames[tmIndex][hpIndex])
         plt.xlabel('time step')
+
+    def getJointHyperParameterDistribution(self, names, plot=False, figure=None, subplot=111, **kwargs):
+        raise NotImplementedError('This method is not available in "OnlineStudy".')
