@@ -26,7 +26,7 @@ Alternatively, use this `zipped version <https://github.com/christophmark/bayesl
 Dependencies
 ------------
 
-*bayesloop* is tested on both Python 2.7 and Python 3.6. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and dill. All except the last two are already included in the `Anaconda distribution <https://www.continuum.io/downloads>`__ of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`__.
+*bayesloop* is tested on Python 2.7, 3.5 and 3.6. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and dill. All except the last two are already included in the `Anaconda distribution <https://www.continuum.io/downloads>`__ of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`__.
 
 Optional dependencies
 ---------------------
