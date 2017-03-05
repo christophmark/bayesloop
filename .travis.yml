@@ -3,8 +3,14 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
-install: 
+before_install:
+  - pip install pytest pytest-cov
+  - pip install coveralls
+install:
   - pip install --upgrade pip setuptools wheel
   - pip install --only-binary=numpy,scipy numpy scipy
   - python setup.py install
-script: py.test
+script:
+  - py.test
+after_success:
+  - if [[ $ENV == python=3.6* ]]; then coveralls; fi
