@@ -51,6 +51,7 @@ plt.xlim([1852, 1961])
 plt.bar(S.rawTimestamps, S.rawData,
         align='center', facecolor='r', alpha=.5)
 S.plotParameterEvolution('rate')
+plt.xlabel('year')
 
 # plot hyper-parameter distribution
 plt.subplot(gs[1])
