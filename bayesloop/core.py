@@ -1093,8 +1093,7 @@ class HyperStudy(Study):
             # we need a dummy value for transition models without hyper-parameters
             self.flatHyperPriorValues = np.array([1])
 
-    def fit(self, forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1, referenceLogEvidence=None,
-            customHyperGrid=False):
+    def fit(self, forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1, customHyperGrid=False):
         """
         This method over-rides the according method of the Study-class. It runs the algorithm for equally spaced hyper-
         parameter values as defined by the variable 'hyperGrid'. The posterior sequence represents the average
@@ -1109,10 +1108,6 @@ class HyperStudy(Study):
                 forwardOnly option, no posterior mean values are computed and no posterior distributions are stored.
             silent(bool): If set to true, reduced output is created by this method.
             nJobs(int): Number of processes to employ. Multiprocessing is based on the 'pathos' module.
-            referenceLogEvidence(float): Reference value to increase numerical stability when computing average
-                posterior sequence. Ideally, this value represents the mean value of all log-evidence values. As an
-                approximation, the default behavior sets it to the log-evidence of the first set of hyper-parameter
-                values.
             customHyperGrid(bool): If set to true, the method "_createHyperGrid" is not called before starting the fit.
                 This is used by the class "ChangepointStudy", which employs a custom version of "_createHyperGrid".
         """
