@@ -9,6 +9,9 @@ from . import observationModels as om  # short form
 from . import transitionModels
 from . import transitionModels as tm  # short form
 
+# probability parser
+from .parser import Parser
+
 # misc
 from .helper import cint, oint
 from .jeffreys import getJeffreysPrior, computeJeffreysPriorAR1
