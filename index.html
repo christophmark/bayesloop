@@ -1,58 +1,219 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="bayesloop : Probabilistic programming framework that facilitates objective model selection for time-varying parameter models.">
+<head>
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="bayesloop is a probabilistic programming framework to facilitate model selection, parameter inference and forecasting with time-varying parameters.">
+    <meta name="author" content="Christoph Mark">
+    <link rel="shortcut icon" href="img/favicon.ico"/>
 
-    <title>bayesloop</title>
-  </head>
+    <title>bayesloop - Probabilistic programming framework</title>
 
-  <body>
+    <!-- Bootstrap Core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/christophmark/bayesloop">View on GitHub</a>
+    <!-- Theme CSS -->
+    <link href="css/style.css" rel="stylesheet">
 
-          <h1 id="project_title">bayesloop</h1>
-          <h2 id="project_tagline">Probabilistic programming framework that facilitates objective model selection for time-varying parameter models.</h2>
-        </header>
-    </div>
+    <!-- Custom Fonts -->
+    <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
 
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <p>Time series analysis today is an important cornerstone of quantitative science in many disciplines, including natural and life sciences as well as economics and social sciences. Regarding diverse phenomena like tumor cell migration, brain activity and stock trading, a similarity of these complex systems becomes apparent: the observable data we measure – cell migration paths, neuron spike rates and stock prices – are the result of a multitude of underlying processes that act over a broad range of spatial and temporal scales. It is thus to expect that the statistical properties of these systems are not constant, but themselves show stochastic or deterministic dynamics of their own. Time series models used to understand the dynamics of complex systems therefore have to account for temporal changes of the models' parameters.</p>
+    <!-- Syntax highlighting -->
+    <link href="css/highlight-github.css" rel="stylesheet">
 
-<p><em>bayesloop</em> is a python module that focuses on fitting time series models with time-varying parameters and model selection based on <a href="https://cocosci.berkeley.edu/tom/papers/tutorial.pdf">Bayesian inference</a>. Instead of relying on <a href="http://www.cs.ubc.ca/%7Earnaud/andrieu_defreitas_doucet_jordan_intromontecarlomachinelearning.pdf">MCMC methods</a>, <em>bayesloop</em> uses a grid-based approach to evaluate probability distributions, allowing for an efficient approximation of the <a href="http://alumni.media.mit.edu/%7Etpminka/statlearn/demo/">marginal likelihood (evidence)</a>. The marginal likelihood represents a powerful tool to objectively compare different models and/or optimize the hyper-parameters of hierarchical models. To avoid the <a href="https://en.wikipedia.org/wiki/Curse_of_dimensionality">curse of dimensionality</a> when analyzing time series models with time-varying parameters, <em>bayesloop</em> employs a sequential inference algorithm that is based on the <a href="https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm">forward-backward-algorithm</a> used in <a href="http://www.cs.sjsu.edu/%7Estamp/RUA/HMM.pdf">Hidden Markov models</a>. Here, the relevant parameter spaces are kept low-dimensional by processing time series data step by step. The module covers a large class of time series models and is easily extensible.</p>
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
 
-<p>The underlying algorithm of <em>bayesloop</em> has been successfully employed in cancer research, studying the migration paths of invasive tumor cells, see this <a href="http://www.nature.com/articles/ncomms8516">article</a>.</p>
+</head>
 
-<h2>
-<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
+<body id="page-top" class="index">
+    <!-- Navigation -->
+    <nav id="mainNav" class="navbar navbar-default navbar-fixed-top navbar-custom">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span> Menu <i class="fa fa-bars"></i>
+                </button>
+                <a class="navbar-brand" href="#page-top">bayesloop</a>
+            </div>
 
-<ul>
-<li>infer time-varying parameters from time series data </li>
-<li>compare hypotheses about parameter dynamics (model evidence)</li>
-<li>create custom models based on SymPy and SciPy</li>
-<li>straight-forward handling of missing data points</li>
-<li>predict future parameter values</li>
-<li>detect change-points and structural breaks in time series data</li>
-<li>employ model selection to online data streams</li>
-</ul>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="hidden">
+                        <a href="#page-top"></a>
+                    </li>
+                    <li class="page-scroll">
+                        <a href="#applications">APPLICATIONS</a>
+                    </li>
+                    <li class="page-scroll">
+                        <a href="#features">FEATURES</a>
+                    </li>
+                    <li class="page-scroll">
+                        <a href="#gettingstarted">GETTING STARTED</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container-fluid -->
+    </nav>
 
-<h2>
-<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting started</h2>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <img class="img-responsive" src="img/logo.png" alt="">
+                    <div class="intro-text">
+                        <span class="name">bayesloop</span>
+                        <span class="description">A probabilistic programming framework that facilitates model selection, parameter inference and forecasting with time-varying parameters.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
 
-<p>For a comprehensive introduction and overview of the main features that <em>bayesloop</em> provides, see the <a href="http://docs.bayesloop.com">documentation</a>.</p>
+    <!-- applications Grid Section -->
+    <section id="applications">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 applications-item">
+                    <a href="http://docs.bayesloop.com/en/stable/examples/stockmarketfluctuations.html" class="applications-link" data-toggle="modal">
+                        <div class="caption img-rounded">
+                            <div class="caption-content">
+                                <i class="fa fa-flask fa-2x"></i>
+                                <p>learn more...</p>
+                            </div>
+                        </div>
+                        <img src="img/applications/stockmarket.png" class="img-responsive img-rounded" alt="">
+                    </a>
+                </div>
+                <div class="col-lg-12 applications-item">
+                    <a href="http://docs.bayesloop.com/en/stable/tutorials.html" class="applications-link" data-toggle="modal">
+                        <div class="caption img-rounded">
+                            <div class="caption-content">
+                                <i class="fa fa-flask fa-2x"></i>
+                                <p>learn more...</p>
+                            </div>
+                        </div>
+                        <img src="img/applications/policy.png" class="img-responsive img-rounded" alt="">
+                    </a>
+                </div>
+                <div class="col-lg-12 applications-item">
+                    <a href="http://docs.bayesloop.com/en/stable/examples/anomalousdiffusion.html" class="applications-link" data-toggle="modal">
+                        <div class="caption img-rounded">
+                            <div class="caption-content">
+                                <i class="fa fa-flask fa-2x"></i>
+                                <p>learn more...</p>
+                            </div>
+                        </div>
+                        <img src="img/applications/diffusion.png" class="img-responsive img-rounded" alt="">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
-<p>The following code provides a minimal example of an analysis carried out using <em>bayesloop</em>. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this <a href="http://www.dima.unige.it/%7Ericcomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf">article</a> for further information).</p>
+    <section class="divider">
+        <div class="row">
+            <div class="col-lg-4 col-lg-offset-3 h1 text-center">
+                <p>Need help to analyze a particular data set or need a custom extension to bayesloop's functionality?</p>
+            </div>
+            <div class="col-lg-2 h1 text-center">
+                <a href="mailto:bayesloop@gmail.com" class="btn btn-lg btn-outline">
+                  <i class="fa fa-envelope"></i> Contact us!
+                </a>
+            </div>
+        </div>
+    </section>
 
-<pre><code>import bayesloop as bl
+    <!-- Features Section -->
+    <section id="features">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h2>features</h2>
+                </div>
+            </div>
+
+            <div class="row features-item">
+                <div class="col-lg-4 col-lg-offset-2 text-center">
+                    <p>In contrast to MCMC methods and the Variational Bayes approach, bayesloop uses a discrete, regular grid to represent parameter distributions.</p>
+                    <p>Computing the model evidence for hypothesis testing then reduces to a simple sum over all lattice points on this grid!</p>
+                </div>
+                <div class="col-lg-4">
+                    <img class="img-responsive center-block" src="img/features/feature1.png" alt="">
+                </div>
+            </div>
+
+            <hr/>
+
+            <div class="row features-item">
+                <div class="col-lg-6">
+                    <img class="img-responsive center-block" src="img/features/feature2.png" alt="">
+                </div>
+                <div class="col-lg-4 text-center">
+                    <p>By inferring parameter distributions sequentially, time step by time step, bayesloop effectively breaks down one high-dimensional inference problem into many low-dimensional ones.</p>
+                    <p>This efficient approach can be employed for both retrospective and online analyses!</p>
+                </div>
+            </div>
+
+            <hr/>
+
+            <div class="row features-item">
+                <div class="col-lg-4  col-lg-offset-1 text-center">
+                    <p>bayesloop serves a specific niche of statistical models: We focus on well-known, simple statistical models with only few parameters, and extend these parameters to be time-varying.</p>
+                    <p>The resulting time-varying parameter models rest on a well-known statistical foundation and yet offer new insights into complex systems like invasive cancer cells or financial markets!</p>
+                </div>
+                <div class="col-lg-6">
+                    <img class="img-responsive center-block" src="img/features/feature3.png" alt="">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started Section -->
+    <section id="gettingstarted">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h2>getting started</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2">
+                    <p>bayesloop is a Python module and the latest stable version is most easily added to your existing Python distribution via the built-in package manager:</p>
+                    <pre><code>pip install bayesloop</code></pre>
+                    <p>Alternatively, a zipped version can be downloaded <a href="https://github.com/christophmark/bayesloop/releases">here</a>. In that case, the module is installed by calling<p>
+                    <pre><code>python setup.py install</code></pre>
+                    <p>Further information about the installation of bayesloop and troubleshooting can be found in the <a href="http://docs.bayesloop.com/en/stable/installation.html">documentation</a>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Minimal Example Section -->
+    <section id="minimalexample">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h2>minimal example</h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2">
+                    <p>The following code provides a minimal example of an analysis carried out using bayesloop. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this <a href="http://www.dima.unige.it/%7Ericcomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf" target="_blank">article</a> for further information).</p>
+                    <pre><code class="Python">import bayesloop as bl
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
@@ -65,8 +226,7 @@ L = bl.observationModels.Poisson('rate')
 S.setObservationModel(L)
 
 # disaster rate itself may change gradually over time
-T = bl.transitionModels.GaussianRandomWalk('sigma',
-                        bl.cint(0, 1.0, 20), target='rate')
+T = bl.transitionModels.GaussianRandomWalk('sigma', bl.cint(0, 1.0, 20), target='rate')
 S.setTransitionModel(T)
 
 S.fit()  # inference
@@ -77,86 +237,94 @@ gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1])
 
 plt.subplot(gs[0])
 plt.xlim([1852, 1961])
-plt.bar(S.rawTimestamps, S.rawData,
-        align='center', facecolor='r', alpha=.5)
+plt.bar(S.rawTimestamps, S.rawData, align='center', facecolor='r', alpha=.5)
 S.plotParameterEvolution('rate')
 
 # plot hyper-parameter distribution
 plt.subplot(gs[1])
 plt.xlim([0, 1])
-S.getHyperParameterDistribution('sigma', plot=True,
-                                facecolor='g', alpha=0.7)
+S.getHyperParameterDistribution('sigma', plot=True, facecolor='g', alpha=0.7)
 plt.tight_layout()
 plt.show()
-</code></pre>
+                        </code></pre>
+                        <img class="img-responsive img-rounded center-block" src="https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/example.png" alt="">
+                        <p>This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the documentation for further insights into this dataset!</p>
+                        <p>The documentation further provides a detailed description of all features of bayesloop, including inference and hypothesis testing for time-varying parameter models, the detection of change-points and structural breaks in time series data, the prediction of future parameter values, the handling of missing data points, custom models based on the statistics modules of SymPy and SciPy, and model selection for online data streams.</p>
+                    </div>
+                    <div class="col-lg-8 col-lg-offset-2 text-center">
+                        <a href="http://docs.bayesloop.com" class="btn btn-lg btn-outline">
+                            <i class="fa fa-wrench"></i> Documentation
+                        </a>
+                    </div>
+                </div>
+            </div>
+    </section>
 
-<p><img src="https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/example.png" alt="Analysis plot" width="103%"></p>
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="footer-above">
+            <div class="container">
+                <div class="row">
 
-<p>This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the <a href="http://docs.bayesloop.com">documentation</a> for further insights!</p>
+                    <div class="footer-col col-md-4">
+                        <h4>License</h4>
+                        <p class="small">bayesloop is released under the <a href="https://github.com/christophmark/bayesloop/blob/master/LICENSE">MIT License</a>, a permissive free software license.</p>
+                    </div>
 
-<h2>
-<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+                    <div class="footer-col col-md-4">
+                        <h4>Around the Web</h4>
+                        <ul class="list-inline">
+                            <li>
+                                <a target="_blank" href="https://github.com/christophmark/bayesloop" class="btn-social btn-outline"><i class="fa fa-fw fa-github"></i></a>
+                            </li>
+                            <li>
+                                <a target="_blank" href="http://stackoverflow.com/search?q=bayesloop" class="btn-social btn-outline"><i class="fa fa-fw fa-stack-overflow"></i></a>
+                            </li>
+                        </ul>
+                    </div>
 
-<p>The easiest way to install the latest release version of <em>bayesloop</em> is via <code>pip</code>:</p>
+                    <div class="footer-col col-md-4">
+                        <h4>About this site</h4>
+                        <p class="small">bayesloop is maintained by <a target="_blank" href="https://github.com/christophmark">christophmark</a>. This site is based on the Bootstrap theme <a target="_blank" href="https://startbootstrap.com/template-overviews/freelancer/">Freelancer</a> and is published with <a target="_blank" href="https://pages.github.com/">GitHub Pages</a>.</p>
+                    </div>
 
-<pre><code>pip install bayesloop
-</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="footer-below">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        Copyright &copy; Christoph Mark 2017
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
 
-<p>Alternatively, a zipped version can be downloaded <a href="https://github.com/christophmark/bayesloop/releases">here</a>. The module is installed by calling <code>python setup.py install</code>.</p>
-
-<h3>
-<a id="development-version" class="anchor" href="#development-version" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Development version</h3>
-
-<p>The latest development version of <em>bayesloop</em> can be installed from the master branch using pip (requires git):</p>
-
-<pre><code>pip install git+https://github.com/christophmark/bayesloop
-</code></pre>
-
-<p>Alternatively, use this <a href="https://github.com/christophmark/bayesloop/zipball/master">zipped version</a> or clone the repository.</p>
-
-<h2>
-<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dependencies</h2>
-
-<p><em>bayesloop</em> is tested on both Python 2.7 and Python 3.5. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and dill. All except the last two are already included in the <a href="https://www.continuum.io/downloads">Anaconda distribution</a> of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at <a href="http://www.lfd.uci.edu/%7Egohlke/pythonlibs/">Christoph Gohlke's page</a>.</p>
-
-<h2>
-<a id="optional-dependencies" class="anchor" href="#optional-dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Optional dependencies</h2>
-
-<p><em>bayesloop</em> supports multiprocessing for computationally expensive analyses, based on the <a href="https://github.com/uqfoundation/pathos">pathos</a> module. The latest version can be obtained directly from GitHub using pip (requires git):</p>
-
-<pre><code>pip install git+https://github.com/uqfoundation/pathos
-</code></pre>
-
-<p><strong>Note</strong>: Windows users need to install a C compiler <em>before</em> installing pathos. One possible solution for 64bit systems is to install <a href="http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092">Microsoft Visual C++ 2008 SP1 Redistributable Package (x64)</a> and <a href="http://www.microsoft.com/en-us/download/details.aspx?id=44266">Microsoft Visual C++ Compiler for Python 2.7</a>.</p>
-
-<h2>
-<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
-
-<p><a href="https://github.com/christophmark/bayesloop/blob/master/LICENSE">The MIT License (MIT)</a></p>
-
-<p>If you have any further questions, suggestions or comments, do not hesitate to contact me: bayesloop@gmail.com</p>
-      </section>
+    <!-- Scroll to Top Button (Only visible on small and extra-small screen sizes) -->
+    <div class="scroll-top page-scroll hidden-sm hidden-xs hidden-lg hidden-md">
+        <a class="btn btn-primary" href="#page-top">
+            <i class="fa fa-chevron-up"></i>
+        </a>
     </div>
 
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">bayesloop maintained by <a href="https://github.com/christophmark">christophmark</a></p>
-        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
+    <!-- jQuery -->
+    <script src="vendor/jquery/jquery.min.js"></script>
 
-              <script type="text/javascript">
-            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-          </script>
-          <script type="text/javascript">
-            try {
-              var pageTracker = _gat._getTracker("UA-88435297-1");
-            pageTracker._trackPageview();
-            } catch(err) {}
-          </script>
+    <!-- Activate syntax highlighting -->
+    <script src="js/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
 
+    <!-- Bootstrap Core JavaScript -->
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
 
-  </body>
+    <!-- Plugin JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+
+    <!-- Theme JavaScript -->
+    <script src="js/freelancer.min.js"></script>
+
+</body>
+
 </html>
