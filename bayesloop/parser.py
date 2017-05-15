@@ -95,8 +95,18 @@ class Parser:
                              pp.Optional(point + pp.Optional(pp.Word(pp.nums))) +
                              pp.Optional(e + pp.Word("+-" + pp.nums, pp.nums)))
 
+        # initialize list of all numpy functions, remove functions that collide with (hyper-)parameter names
+        self.functions = dir(np)
+        for name in self.names:
+            try:
+                self.functions.remove(name)
+                print('! WARNING: Numpy function "{}" will not be available in parser, as it collides with '
+                      '(hyper-)parameter names.'.format(name))
+            except ValueError:
+                pass
+
         # initialize operators for parsing
-        funcop = pp.Word(pp.alphas)
+        funcop = pp.oneOf(self.functions)
         atop = pp.Literal('@')
         expop = pp.Literal('^')
         signop = pp.oneOf('+ -')
@@ -104,11 +114,11 @@ class Parser:
         plusop = pp.oneOf('+ -')
 
         # minimal symbol
-        atom = (fnumber | parameter)
+        atom = (parameter | fnumber)
 
         # expression based on operator precedence
-        self.expr = pp.operatorPrecedence(atom, [(atop, 2, pp.opAssoc.LEFT),
-                                                 (funcop, 1, pp.opAssoc.RIGHT),
+        self.expr = pp.operatorPrecedence(atom, [(funcop, 1, pp.opAssoc.RIGHT),
+                                                 (atop, 2, pp.opAssoc.LEFT),
                                                  (expop, 2, pp.opAssoc.RIGHT),
                                                  (signop, 1, pp.opAssoc.RIGHT),
                                                  (multop, 2, pp.opAssoc.LEFT),
@@ -124,17 +134,19 @@ class Parser:
         Returns:
             Derived Parameter instance
         """
+        # cases like "3*3*2" are split into "(3*3)*2"
+        if len(parsedString) > 3:
+            while len(parsedString) > 3:
+                if parsedString[0] in self.functions:
+                    parsedString = [parsedString[:2]] + parsedString[2:]
+                else:
+                    parsedString = [parsedString[:3]] + parsedString[3:]
+
         result = []
         for e in parsedString:
             if isinstance(e, list):
-                # cases like "3*3*2" are split into "(3*3)*2"
-                if len(e) > 3:
-                    n = len(e) // 3
-                    temp = [e[i:i + 3] for i in range(n)]
-                    e = temp + e[3 * n:]
-
                 # unary minus: "-4" --> "(-1)*4"
-                elif len(e) == 2 and e[0] == '-':
+                if len(e) == 2 and e[0] == '-':
                     e = ['-1', '*', e[1]]
 
                 # unary plus: "+4" --> "1*4"
