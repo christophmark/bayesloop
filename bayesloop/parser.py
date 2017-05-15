@@ -66,8 +66,10 @@ class Parser:
     def __init__(self, *studies):
         # import all parameter names
         self.studies = studies
-        self.names = []
+        if len(self.studies) == 0:
+            raise ConfigurationError('Parser instance takes at least one Study instance as argument.')
 
+        self.names = []
         for study in studies:
             if isinstance(study, OnlineStudy):
                 raise NotImplementedError('Parser does not support OnlineStudy instances.')
@@ -85,9 +87,6 @@ class Parser:
         # define arithmetic operators
         self.arith = {'+': operator.add, '-': operator.sub, '*': operator.mul, '/': operator.truediv, '^': operator.pow}
 
-        # initialize expression stack
-        self.exprStack = []
-
         # initialize symbols for parsing
         parameter = pp.oneOf(self.names)
         point = pp.Literal(".")
@@ -95,47 +94,99 @@ class Parser:
         fnumber = pp.Combine(pp.Word("+-" + pp.nums, pp.nums) +
                              pp.Optional(point + pp.Optional(pp.Word(pp.nums))) +
                              pp.Optional(e + pp.Word("+-" + pp.nums, pp.nums)))
-        ident = pp.Word(pp.alphas, pp.alphas + pp.nums + "_$")
 
-        plus   = pp.Literal("+")
-        minus  = pp.Literal("-")
-        mult   = pp.Literal("*")
-        div    = pp.Literal("/")
-        at     = pp.Literal("@")
-        lpar   = pp.Literal("(").suppress()
-        rpar   = pp.Literal(")").suppress()
-        addop  = plus | minus
-        multop = mult | div
-        expop  = pp.Literal("^")
+        # initialize operators for parsing
+        funcop = pp.Word(pp.alphas)
+        atop = pp.Literal('@')
+        expop = pp.Literal('^')
+        signop = pp.oneOf('+ -')
+        multop = pp.oneOf('* /')
+        plusop = pp.oneOf('+ -')
 
-        # initialize operator handling
-        expr = pp.Forward()
-        atom = (pp.Optional("-") + (parameter | fnumber | ident + lpar + expr + rpar).setParseAction(self._push) |
-                (lpar + expr.suppress() + rpar)).setParseAction(self._pushUM)
+        # minimal symbol
+        atom = (fnumber | parameter)
 
-        factor = pp.Forward()
-        factor2 = pp.Forward()
+        # expression based on operator precedence
+        self.expr = pp.operatorPrecedence(atom, [(atop, 2, pp.opAssoc.LEFT),
+                                                 (funcop, 1, pp.opAssoc.RIGHT),
+                                                 (expop, 2, pp.opAssoc.RIGHT),
+                                                 (signop, 1, pp.opAssoc.RIGHT),
+                                                 (multop, 2, pp.opAssoc.LEFT),
+                                                 (plusop, 2, pp.opAssoc.LEFT)])
 
-        factor << atom + pp.ZeroOrMore((at + factor).setParseAction(self._push))
-        term = factor + pp.ZeroOrMore((expop + factor).setParseAction(self._push))
-        factor2 << term + pp.ZeroOrMore((multop + factor).setParseAction(self._push))
-        expr << factor2 + pp.ZeroOrMore((addop + term).setParseAction(self._push))
+    def _evaluate(self, parsedString):
+        """
+        Recursive function to evaluate nested mathematical operations on (Hyper)Parameter instances.
 
-        # initialize Backus-Naur form
-        self.bnf = expr
+        Args:
+            parsedString(list): nested list generated from query by parser
+
+        Returns:
+            Derived Parameter instance
+        """
+        result = []
+        for e in parsedString:
+            if isinstance(e, list):
+                # cases like "3*3*2" are split into "(3*3)*2"
+                if len(e) > 3:
+                    n = len(e) // 3
+                    temp = [e[i:i + 3] for i in range(n)]
+                    e = temp + e[3 * n:]
+
+                # unary minus: "-4" --> "(-1)*4"
+                elif len(e) == 2 and e[0] == '-':
+                    e = ['-1', '*', e[1]]
+
+                # unary plus: "+4" --> "1*4"
+                elif len(e) == 2 and e[0] == '+':
+                    e = ['1', '*', e[1]]
+
+                # numpy function
+                elif len(e) == 2 and isinstance(e[0], str):
+                    e = [e[0], 'func', e[1]]
+
+                # recursion
+                result.append(self._evaluate(e))
+            else:
+                result.append(e)
+        result = self._operation(result[1], result[0], result[2])
+        return result
+
+    def _convert(self, string):
+        """
+        Converts string in query to either a Parameter instance, a Numpy function, or a float number
+
+        Args:
+            string(str): string to convert
+
+        Returns:
+            Parameter instance, Numpy function or float
+        """
+        if string in self.names:
+            param = [p for p in self.parameters if p.name == string][0]
+            return param.copy()
+        elif isinstance(string, str) and (string in dir(np)) and callable(getattr(np, string)):
+            return getattr(np, string)
+        else:
+            return float(string)
 
     def _operation(self, symbol, a, b):
         """
         Handles arithmetic operations and selection of time steps for (hyper-)parameters.
 
         Args:
-            symbol(str): operator symbol (one of '+-*/^@')
-            a: Parameter/HyperParameter instance, or number
+            symbol(str): operator symbol (one of '+-*/^@' or 'func')
+            a: Parameter/HyperParameter instance, or number, or numpy function name
             b: Parameter/HyperParameter instance, or number
 
         Returns:
-            Derived arameter/HyperParameter instance, or number
+            Derived Parameter/HyperParameter instance, or number
         """
+        if isinstance(a, str):
+            a = self._convert(a)
+        if isinstance(b, str):
+            b = self._convert(b)
+
         # time operation
         if symbol == '@':
             if type(a) == Parameter and not (type(b) == Parameter or type(b) == HyperParameter):
@@ -143,6 +194,10 @@ class Parser:
                 a.prob = a.prob[timeIndex]
                 a.time = b
                 return a
+
+        # numpy function
+        if symbol == 'func':
+            return a(b)
 
         # arithmetic operation
         elif symbol in self.arith.keys():
@@ -172,31 +227,6 @@ class Parser:
             # apply operator directly if compound distribution is not needed
             else:
                 return self.arith[symbol](a, b)
-
-    def _push(self, strg, loc, toks):
-        self.exprStack.append(toks[0])
-
-    def _pushUM(self, strg, loc, toks):
-        if toks and toks[0] == '-':
-            self.exprStack.append('unary -')
-
-    def _evaluateStack(self, s):
-        op = s.pop()
-        if op in self.names:
-            param = [p for p in self.parameters if p.name == op][0]
-            return param.copy()
-        if op == 'unary -':
-            return -self._evaluateStack(s)
-        if op in "+-*/^@":
-            op2 = self._evaluateStack(s)
-            op1 = self._evaluateStack(s)
-            return self._operation(op, op1, op2)
-        elif isinstance(op, str) and (op in dir(np)) and callable(getattr(np, op)):
-            return getattr(np, op)(self._evaluateStack(s))
-        elif op[0].isalpha():
-            return op
-        else:
-            return float(op)
 
     def __call__(self, query, t=None, silent=False):
         # load parameter values, probabilities
@@ -252,9 +282,8 @@ class Parser:
                                      'or none to obtain derived distribution.')
 
         # evaluate left side
-        self.exprStack = []
-        self.bnf.parseString(reducedQuery)
-        derivedParameter = self._evaluateStack(self.exprStack[:])
+        parsedString = self.expr.parseString(reducedQuery).asList()[0]
+        derivedParameter = self._evaluate(parsedString)
 
         # if no relational operator in query, compute derived distribution
         if len(splitQuery) == 1:
