@@ -331,6 +331,15 @@ footer .footer-below {
   border: solid 2px white;
   background: transparent;
   transition: all 0.3s ease-in-out;
+  margin-top: 0px;
+}
+
+#documentation {
+  color: #393033;
+  font-size: 20px;
+  border: solid 2px #393033;
+  background: transparent;
+  transition: all 0.3s ease-in-out;
   margin-top: 15px;
 }
 
@@ -341,6 +350,15 @@ footer .footer-below {
   color: #233140;
   background: white;
   border: solid 2px white;
+}
+
+#documentation:hover,
+#documentation:focus,
+#documentation:active,
+#documentation.active {
+  color: white;
+  background: #393033;
+  border: solid 2px #393033;
 }
 
 .btn-primary {
