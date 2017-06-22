@@ -71,15 +71,18 @@ class Parser:
 
         self.names = []
         for study in studies:
-            if isinstance(study, OnlineStudy):
-                raise NotImplementedError('Parser does not support OnlineStudy instances.')
-
             self.names.extend(study.observationModel.parameterNames)
 
             try:
-                self.names.extend(study.flatHyperParameterNames)
+                # OnlineStudy: loop over all transition models
+                for names in study.hyperParameterNames:
+                    self.names.extend(names)
             except AttributeError:
-                pass
+                try:
+                    # Hyper/ChangepointStudy: only one transition model
+                    self.names.extend(study.flatHyperParameterNames)
+                except AttributeError:
+                    pass
 
         if not len(np.unique(self.names)) == len(self.names):
             raise ConfigurationError('Specified study objects contain duplicate parameter names.')
@@ -201,7 +204,8 @@ class Parser:
 
         # time operation
         if symbol == '@':
-            if type(a) == Parameter and not (type(b) == Parameter or type(b) == HyperParameter):
+            if (type(a) == Parameter or (type(a) == HyperParameter and len(a.prob.shape) == 2)) and \
+                    not (type(b) == Parameter or type(b) == HyperParameter):
                 timeIndex = list(a.study.formattedTimestamps).index(b)
                 a.prob = a.prob[timeIndex]
                 a.time = b
@@ -219,6 +223,12 @@ class Parser:
                 raise ConfigurationError('No timestamp defined for parameter "{}"'.format(a.name))
             if type(b) == Parameter and b.name != '_derived' and b.time is None:
                 raise ConfigurationError('No timestamp defined for parameter "{}"'.format(b.name))
+
+            # check if hyper-parameters from OnlineStudy instances have a defined time step
+            if type(a) == HyperParameter and len(a.prob.shape) == 2 and a.time is None:
+                raise ConfigurationError('No timestamp defined for hyper-parameter "{}"'.format(a.name))
+            if type(b) == HyperParameter and len(b.prob.shape) == 2 and b.time is None:
+                raise ConfigurationError('No timestamp defined for hyper-parameter "{}"'.format(b.name))
 
             # compute compound distribution of two (hyper-)parameters
             if (type(a) == Parameter and type(b) == Parameter and (not (a.study is b.study) or
@@ -241,9 +251,10 @@ class Parser:
                 return self.arith[symbol](a, b)
 
     def __call__(self, query, t=None, silent=False):
+        self.parameters = []
+
         # load parameter values, probabilities
         if t is None:
-            self.parameters = []
             for study in self.studies:
                 names = study.observationModel.parameterNames
                 for i, name in enumerate(names):
@@ -256,7 +267,6 @@ class Parser:
             # compute index of timestamp
             timeIndex = list(self.studies[0].formattedTimestamps).index(t)
 
-            self.parameters = []
             for study in self.studies:
                 names = study.observationModel.parameterNames
                 for i, name in enumerate(names):
@@ -269,19 +279,68 @@ class Parser:
 
         # load hyper-parameter values, probabilities
         for study in self.studies:
-            # check whether study type supports hyper-parameter inference
+            # check for OnlineStudy
             try:
-                names = study.flatHyperParameterNames
-            except AttributeError:
-                continue
+                allNames = study.hyperParameterNames
 
-            for i, name in enumerate(names):
-                index = study._getHyperParameterIndex(study.transitionModel, name)
-                normedDist = study.hyperParameterDistribution / np.sum(study.hyperParameterDistribution)
-                self.parameters.append(HyperParameter(study.hyperGridValues[:, index],
-                                                      normedDist,
-                                                      name=name,
-                                                      study=study))
+                # loop over different transition models
+                for j, names in enumerate(allNames):
+                    # loop over hyper-parameters in transition model
+                    for i, name in enumerate(names):
+                        index = study._getHyperParameterIndex(study.transitionModels[j], name)
+
+                        if t is None:
+                            if study.storeHistory:
+                                # extract sequence of only one hyper-parameter
+                                hps = []
+                                for x in study.hyperParameterSequence:
+                                    dist = x[j]/np.sum(x[j])
+                                    hps.append(dist)
+                                hps = np.array(hps)
+
+                                self.parameters.append(HyperParameter(study.hyperParameterValues[j][:, index],
+                                                                      hps,
+                                                                      name=name,
+                                                                      study=study))
+                            else:
+                                dist = study.hyperParameterDistribution[j]/np.sum(study.hyperParameterDistribution[j])
+                                self.parameters.append(HyperParameter(study.hyperParameterValues[j][:, index],
+                                                                      dist,
+                                                                      name=name,
+                                                                      time=study.formattedTimestamps[-1],
+                                                                      study=study))
+                        else:
+                            if study.storeHistory:
+                                # compute index of timestamp
+                                timeIndex = list(self.studies[0].formattedTimestamps).index(t)
+
+                                dist = study.hyperParameterSequence[timeIndex][j] / \
+                                       np.sum(study.hyperParameterSequence[timeIndex][j])
+
+                                self.parameters.append(HyperParameter(study.hyperParameterValues[j][:, index],
+                                                                      dist,
+                                                                      name=name,
+                                                                      time=t,
+                                                                      study=study))
+                            else:
+                                raise ConfigurationError('OnlineStudy instance is not configured to store history, '
+                                                         'cannot access t={}.'.format(t))
+
+            except AttributeError:
+                # check for Hyper/ChangepointStudy, i.e. whether study type supports hyper-parameter inference
+                try:
+                    names = study.flatHyperParameterNames
+
+                    for i, name in enumerate(names):
+                        index = study._getHyperParameterIndex(study.transitionModel, name)
+                        normedDist = study.hyperParameterDistribution / np.sum(study.hyperParameterDistribution)
+                        self.parameters.append(HyperParameter(study.hyperGridValues[:, index],
+                                                              normedDist,
+                                                              name=name,
+                                                              study=study))
+                except AttributeError:
+                    # do not try to access hyper-parameters of basic Study class
+                    continue
 
         # reduce equation
         splitQuery = re.split('>=|<=|==|>|<', query)
