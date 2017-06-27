@@ -16,6 +16,7 @@ from scipy.misc import factorial
 from scipy.special import iv
 from .exceptions import ConfigurationError, PostProcessingError
 from .helper import cint, oint
+import warnings
 
 
 class ObservationModel:
@@ -58,8 +59,8 @@ class SciPy(ObservationModel):
 
     Args:
         rv: SciPy random distribution
-        valueDict: dictionary containing names and corresponding parameter values (using bayesloop.cint() or
-            bayesloop.oint())
+        args: succession of names and corresponding parameter values (using bayesloop.cint() or
+            bayesloop.oint()) Example: 'mu', bl.cint(-1, 1, 100), 'sigma', bl.oint(0, 3, 100)
         fixedParameters(dict): Dictionary defining the names and values of fixed parameters
         prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
@@ -74,7 +75,7 @@ class SciPy(ObservationModel):
     ::
         import bayesloop as bl
         import scipy.stats
-        L = bl.om.SciPy(scipy.stats.poisson, {'mu': bl.oint(0, 6, 1000)}, fixedParameters={'loc': 0})
+        L = bl.om.SciPy(scipy.stats.poisson, 'mu', bl.oint(0, 6, 1000), fixedParameters={'loc': 0})
 
     This will result in a model for poisson-distributed observations with a rate parameter 'mu' between 0 and 6. The
     distribution is not shifted (loc = 0).
@@ -83,12 +84,8 @@ class SciPy(ObservationModel):
     to be set, they have to be added to the fixedParameters dictionary in bayesloop to be treated as a constant.
     Using SciPy.stats distributions, bayesloop uses a flat prior by default.
     """
-
-    def __init__(self, rv, valueDict={}, prior=None, fixedParameters={}):
-        self.rv = rv
-        self.fixedParameterDict = fixedParameters
-        self.prior = prior
-
+    def __init__(self, rv, *args, **kwargs):
+        # def __init__(self, rv, valueDict={}, prior=None, fixedParameters={}):
         # check if first argument is valid
         try:
             self.module = rv.__module__.split('.')
@@ -96,6 +93,34 @@ class SciPy(ObservationModel):
             assert self.module[1] == 'stats'
         except:
             raise ConfigurationError('SciPy observation model must contain SciPy probability distribution')
+
+        self.rv = rv
+        self.name = rv.name  # scipy.stats name is used
+
+        # get specified parameter names/values
+        if len(args) == 1 and isinstance(args[0], dict):
+            warnings.warn(
+                "Using a dictionary to define parameter names/values is deprecated and will be removed in a "
+                "future version. Pass parameter names and values as successive arguments.",
+                DeprecationWarning)
+            valueDict = args[0]
+            self.parameterNames = valueDict.keys()
+            self.parameterValues = valueDict.values()
+        else:
+            self.parameterNames = args[::2]
+            self.parameterValues = args[1::2]
+
+        # check for unknown keyword-arguments
+        for key in kwargs.keys():
+            if key not in ['prior', 'fixedParameters']:
+                raise TypeError("__init__() got an unexpected keyword argument '{}'".format(key))
+
+        # get allowed keyword-arguments
+        self.prior = kwargs.get('prior', None)
+        self.fixedParameterDict = kwargs.get('fixedParameters', {})
+
+        self.segmentLength = 1  # currently only independent observations are supported by Custom class
+        self.multiplyLikelihoods = True
 
         # check whether random variable is a continuous variable
         if "pdf" in dir(self.rv):
@@ -114,17 +139,19 @@ class SciPy(ObservationModel):
             shapes.append('scale')  # scale parameter is only available for continuous variables
 
         # list of free parameters
-        self.freeParameters = [param for param in shapes if not (param in self.fixedParameterDict)]
+        rvNames = [param for param in shapes if not (param in self.fixedParameterDict)]
 
-        # set class attributes similar to other observation models
-        self.name = rv.name  # scipy.stats name is used
-        self.segmentLength = 1  # currently only independent observations are supported by Custom class
-        self.parameterNames = self.freeParameters
-        if valueDict:
-            self.parameterValues = [valueDict[key] for key in self.parameterNames]
-        else:
-            self.parameterValues = None
-        self.multiplyLikelihoods = True
+        # if no parameters are provided, take all free parameters and assign "None" as values
+        if len(self.parameterNames) == 0:
+            self.parameterNames = rvNames
+            self.parameterValues = [None] * len(rvNames)
+
+        # check if free parameters from SymPy RV match supplied parameter names
+        diff = set(self.parameterNames).difference(set(rvNames))
+        if len(diff) > 0:
+            raise ConfigurationError(
+                'The following parameter names from the observation model do not match the parameter names '
+                'of the SciPy distribution: {} (options: {})'.format(list(diff), rvNames))
 
     def pdf(self, grid, dataSegment):
         """
@@ -138,7 +165,7 @@ class SciPy(ObservationModel):
             ndarray: Discretized pdf (with same shape as grid)
         """
         # create dictionary from list
-        freeParameterDict = {key: value for key, value in zip(self.freeParameters, grid)}
+        freeParameterDict = {key: value for key, value in zip(self.parameterNames, grid)}
 
         # merge free/fixed parameter dictionaries
         parameterDict = freeParameterDict.copy()
@@ -158,8 +185,8 @@ class SymPy(ObservationModel):
 
     Args:
         rv: SymPy random symbol
-        valueDict: dictionary containing names and corresponding parameter values (using bayesloop.cint() or
-            bayesloop.oint())
+        args: succession of names and corresponding parameter values (using bayesloop.cint() or
+            bayesloop.oint()) Example: 'mu', bl.cint(-1, 1, 100), 'sigma', bl.oint(0, 3, 100)
         determineJeffreysPrior(bool): If set to true, Jeffreys prior is analytically derived
         prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
@@ -187,11 +214,7 @@ class SymPy(ObservationModel):
     observation model, bayesloop tries to determine the corresponding Jeffreys prior. This behavior can be turned
     off by setting the keyword-argument 'determineJeffreysPrior=False'.
     """
-
-    def __init__(self, rv, valueDict={}, prior=None, determineJeffreysPrior=True):
-        self.rv = rv
-        self.prior = prior
-
+    def __init__(self, rv, *args, **kwargs):
         # check if first argument is valid
         try:
             self.module = rv.__module__.split('.')
@@ -200,16 +223,46 @@ class SymPy(ObservationModel):
         except:
             raise ConfigurationError('SymPy observation model must contain SymPy random variable.')
 
-        # extract free variables from SymPy random variable
-        parameters = list(self.rv._sorted_args[0].distribution.free_symbols)
-
+        self.rv = rv
         self.name = str(rv)  # user-defined name for random variable is used
-        self.segmentLength = 1  # currently only independent observations are supported by Custom class
-        self.parameterNames = [str(p) for p in parameters]
-        if valueDict:
-            self.parameterValues = [valueDict[key] for key in self.parameterNames]
+
+        # get specified parameter names/values
+        if len(args) == 1 and isinstance(args[0], dict):
+            warnings.warn("Using a dictionary to define parameter names/values is deprecated and will be removed in a "
+                          "future version. Pass parameter names and values as successive arguments.",
+                          DeprecationWarning)
+            valueDict = args[0]
+            self.parameterNames = valueDict.keys()
+            self.parameterValues = valueDict.values()
         else:
-            self.parameterValues = None
+            self.parameterNames = args[::2]
+            self.parameterValues = args[1::2]
+
+        # extract free variables from SymPy RV
+        rvParams = list(self.rv._sorted_args[0].distribution.free_symbols)
+        rvNames = [str(p) for p in rvParams]
+
+        # if no parameters are provided, take the ones from the random variables and assign "None" as values
+        if len(self.parameterNames) == 0:
+            self.parameterNames = rvNames
+            self.parameterValues = [None]*len(rvNames)
+
+        # check if free parameters from SymPy RV match supplied parameter names
+        diff = set(self.parameterNames).difference(set(rvNames))
+        if len(diff) > 0:
+            raise ConfigurationError('The following parameter names from the observation model do not match the names '
+                                     'of SymPy random variables: {}'.format(list(diff)))
+
+        # check for unknown keyword-arguments
+        for key in kwargs.keys():
+            if key not in ['prior', 'determineJeffreysPrior']:
+                raise TypeError("__init__() got an unexpected keyword argument '{}'".format(key))
+
+        # get allowed keyword-arguments
+        self.prior = kwargs.get('prior', None)
+        determineJeffreysPrior = kwargs.get('determineJeffreysPrior', True)
+
+        self.segmentLength = 1  # currently only independent observations are supported by Custom class
         self.multiplyLikelihoods = True
 
         # determine Jeffreys prior
@@ -229,8 +282,7 @@ class SymPy(ObservationModel):
         # provide lambda function for probability density
         x = abc.x
         symDensity = density(rv)(x)
-        self.density = lambdify([x]+parameters, symDensity, modules=['numpy', {'factorial': factorial,
-                                                                               'besseli': iv}])
+        self.density = lambdify([x]+rvParams, symDensity, modules=['numpy', {'factorial': factorial, 'besseli': iv}])
 
     def pdf(self, grid, dataSegment):
         """
