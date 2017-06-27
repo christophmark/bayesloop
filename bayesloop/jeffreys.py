@@ -56,6 +56,10 @@ def getJeffreysPrior(rv):
     # symbolic Jeffreys prior
     symJeff = simplify(sqrt(G.det()))
 
+    # check if computed Jeffreys prior is equal to 0 (happens e.g. for Cauchy distribution)
+    if symJeff == 0:
+        raise Exception('Jeffreys prior could be computed correctly.')
+
     # return symbolic Jeffreys prior and corresponding lambda function
     return symJeff, lambdify(parameters, symJeff, 'numpy')
 
