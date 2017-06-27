@@ -414,11 +414,9 @@ class Study(object):
                     likelihood = likelihood.astype(np.float)
 
                 # compute local evidence
-                try:
+                with np.errstate(invalid='ignore'):
                     self.localEvidence[i] = 1./(np.sum(self.posteriorSequence[i]/likelihood) *
                                                 np.prod(self.latticeConstant))  # integration, not only sum
-                except:  # in case division by zero happens
-                    self.localEvidence[i] = np.nan
 
                 # compute beta for next iteration
                 beta = self.transitionModel.computeBackwardPrior(beta*likelihood, self.formattedTimestamps[i])
