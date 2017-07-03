@@ -36,7 +36,7 @@ class Study(object):
     forward-backward-algorithm for analyzing time series data using hierarchical models. For efficient computation,
     all parameter distributions are discretized on a parameter grid.
     """
-    def __init__(self):
+    def __init__(self, silent=False):
         self.observationModel = None
         self.transitionModel = None
 
@@ -59,7 +59,8 @@ class Study(object):
         self.selectedHyperParameters = []
         self.fitWarningCounter = 0
 
-        print('+ Created new study.')
+        if not silent:
+            print('+ Created new study.')
 
     def loadExampleData(self, silent=False):
         """
@@ -969,8 +970,8 @@ class HyperStudy(Study):
     compute the distribution of hyper-parameters of a given transition model. For further information, see the
     documentation of the fit-method of this class.
     """
-    def __init__(self):
-        super(HyperStudy, self).__init__()
+    def __init__(self, silent=False):
+        super(HyperStudy, self).__init__(silent=silent)
 
         self.hyperGrid = []
         self.hyperGridValues = []
@@ -984,7 +985,8 @@ class HyperStudy(Study):
         self.logEvidenceList = []
         self.localEvidenceList = []
 
-        print('  --> Hyper-study')
+        if not silent:
+            print('  --> Hyper-study')
 
     def _createHyperGrid(self, silent=False):
         """
@@ -1563,8 +1565,8 @@ class ChangepointStudy(HyperStudy):
     average model from all possible change points and creates a probability distribution of change point times. It
     supports any number of change-points and arbitarily combined models.
     """
-    def __init__(self):
-        super(ChangepointStudy, self).__init__()
+    def __init__(self, silent=False):
+        super(ChangepointStudy, self).__init__(silent=silent)
 
         # store all possible combinations of change-points (even the ones that are assigned a probability of zero),
         # to reconstruct change-point distribution after analysis
@@ -1574,7 +1576,9 @@ class ChangepointStudy(HyperStudy):
 
         self.userDefinedGrid = False  # needed to ensure that user-defined hyper-grid is not overwritten by fit-method
         self.hyperGridBackup = []  # needed to reconstruct hyperGrid attribute in the case of break-point model
-        print('  --> Change-point analysis')
+
+        if not silent:
+            print('  --> Change-point analysis')
 
     def fit(self, forwardOnly=False, evidenceOnly=False, silent=False, nJobs=1):
         """
@@ -1757,8 +1761,8 @@ class OnlineStudy(HyperStudy):
         storeHistory(bool): If true, posterior distributions and their mean values, as well as hyper-posterior
             distributions are stored for all time steps.
     """
-    def __init__(self, storeHistory=False):
-        super(OnlineStudy, self).__init__()
+    def __init__(self, storeHistory=False, silent=False):
+        super(OnlineStudy, self).__init__(silent=silent)
 
         self.firstStep = True
 
@@ -1791,7 +1795,9 @@ class OnlineStudy(HyperStudy):
         self.hyperParameterSequence = []
         self.transitionModelSequence = []
         self.localTransitionModelSequence = []
-        print('  --> Online study')
+
+        if not silent:
+            print('  --> Online study')
 
     def addTransitionModel(self, name, transitionModel):
         """
