@@ -253,6 +253,9 @@ class SymPy(ObservationModel):
             raise ConfigurationError('The following parameter names from the observation model do not match the names '
                                      'of SymPy random variables: {}'.format(list(diff)))
 
+        # order of rvParams seems to be random, so we need to adjust it to self.parameterNames
+        rvParamsSorted = [rvParams[rvNames.index(name)] for name in self.parameterNames]
+
         # check for unknown keyword-arguments
         for key in kwargs.keys():
             if key not in ['prior', 'determineJeffreysPrior']:
@@ -282,7 +285,8 @@ class SymPy(ObservationModel):
         # provide lambda function for probability density
         x = abc.x
         symDensity = density(rv)(x)
-        self.density = lambdify([x]+rvParams, symDensity, modules=['numpy', {'factorial': factorial, 'besseli': iv}])
+        self.density = lambdify([x]+rvParamsSorted, symDensity,
+                                modules=['numpy', {'factorial': factorial, 'besseli': iv}])
 
     def pdf(self, grid, dataSegment):
         """
