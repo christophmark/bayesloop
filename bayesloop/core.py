@@ -62,6 +62,10 @@ class Study(object):
         if not silent:
             print('+ Created new study.')
 
+    @property
+    def log10Evidence(self):
+        return self.logEvidence/np.log(10)
+
     def loadExampleData(self, silent=False):
         """
         Loads UK coal mining disaster data.
