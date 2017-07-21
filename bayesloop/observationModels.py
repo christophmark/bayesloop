@@ -15,7 +15,7 @@ from .jeffreys import getJeffreysPrior
 from scipy.misc import factorial
 from scipy.special import iv
 from .exceptions import ConfigurationError, PostProcessingError
-from .helper import cint, oint
+from .helper import cint, oint, freeSymbols
 import warnings
 
 
@@ -238,8 +238,7 @@ class SymPy(ObservationModel):
             self.parameterNames = args[::2]
             self.parameterValues = args[1::2]
 
-        # extract free variables from SymPy RV
-        rvParams = list(self.rv._sorted_args[0].distribution.free_symbols)
+        rvParams = freeSymbols(self.rv)
         rvNames = [str(p) for p in rvParams]
 
         # if no parameters are provided, take the ones from the random variables and assign "None" as values

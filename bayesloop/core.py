@@ -23,7 +23,7 @@ from copy import copy, deepcopy
 from collections import OrderedDict, Iterable
 from inspect import getargspec
 from tqdm import tqdm, tqdm_notebook
-from .helper import assignNestedItem, recursiveIndex, flatten, createColormap, oint, cint
+from .helper import assignNestedItem, recursiveIndex, flatten, createColormap, oint, cint, freeSymbols
 from .preprocessing import movingWindow
 from .transitionModels import CombinedTransitionModel
 from .transitionModels import SerialTransitionModel
@@ -237,7 +237,7 @@ class Study(object):
             for i, rv in enumerate(prior):
                 if type(rv) is not sympy.stats.rv.RandomSymbol:
                     raise ConfigurationError('Only lambda functions or SymPy random variables can be used as a prior.')
-                if len(list(rv._sorted_args[0].distribution.free_symbols)) > 0:
+                if len(freeSymbols(rv)) > 0:
                     raise ConfigurationError('Prior distribution must not contain free parameters.')
 
                 # multiply total pdf with density for current parameter
@@ -1070,7 +1070,7 @@ class HyperStudy(Study):
                     priorNamesList.append('list/array')
 
             else:  # SymPy RV
-                if len(list(prior._sorted_args[0].distribution.free_symbols)) > 0:
+                if len(freeSymbols(prior)) > 0:
                     raise ConfigurationError('Hyper-prior for "{}" must not contain free parameters.'.format(name))
 
                 # get symbolic representation of probability density

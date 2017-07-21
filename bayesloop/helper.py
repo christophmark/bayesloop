@@ -118,3 +118,25 @@ def cint(start, stop, num):
         ndarray: Array of evenly spaced numbers from the specified closed interval.
     """
     return np.linspace(start, stop, num)
+
+def freeSymbols(rv):
+    """
+    Extracts the free symbols/parameters of a probability distribution from a SymPy random variable, independent of the
+    SymPy version.
+
+    Note: In SymPy version <=1.0, the attribute "distribution" was found in rv._sorted_args[0].distribution, while
+    as of version 1.1, it is found in rv._sorted_args[1].distribution.
+
+    Args:
+        rv: SymPy random variable
+
+    Returns:
+        Free symbols of a SymPy random variable
+    """
+
+    try:
+        symbols = rv._sorted_args[0].distribution.free_symbols
+    except AttributeError:
+        symbols = rv._sorted_args[1].distribution.free_symbols
+
+    return list(symbols)

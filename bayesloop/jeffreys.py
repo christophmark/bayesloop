@@ -10,6 +10,7 @@ import sympy.abc as abc
 from sympy.stats import density
 from sympy import Symbol, Matrix, simplify, diff, integrate, summation, lambdify
 from sympy import ln, sqrt
+from .helper import freeSymbols
 from .exceptions import ConfigurationError, PostProcessingError
 
 
@@ -32,10 +33,13 @@ def getJeffreysPrior(rv):
     """
 
     # get support of random variable
-    support = rv._sorted_args[0].distribution.set
+    try:
+        support = rv._sorted_args[0].distribution.set  # SymPy version <=1.0
+    except AttributeError:
+        support = rv._sorted_args[1].distribution.set  # SymPy version >=1.1
 
     # get list of free parameters
-    parameters = list(rv._sorted_args[0].distribution.free_symbols)
+    parameters = freeSymbols(rv)
     x = abc.x
 
     # symbolic probability density function
