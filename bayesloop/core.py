@@ -564,6 +564,43 @@ class Study(object):
         # return negative log-evidence (is minimized to maximize evidence)
         return -self.logEvidence
 
+    def simulate(self, x, t=None, density=False):
+        """
+        Computes the probability (density) for a set of observations, based on the inferred parameter distributions of a
+        given time step, or based on the time-averaged parameter distributions. It can be used to compute the expected
+        distribution of the observed data, taking into account the uncertainty in the parameters (as well as
+        hyper-parameters for Hyper-Studies).
+
+        Args:
+            x: array of observation values
+            t: Time step/stamp for which the parameter distribution is evaluated
+            density: If true, probability density is computed; if false, probability value is computed
+
+        Returns:
+            ndarray: probability (density) values corresponding to observation values
+        """
+        if self.observationModel.segmentLength > 1:
+            raise NotImplementedError('Method "simulate" is only available for observation models with '
+                                      'segment length 1.')
+
+        # if no time is provided, use time-averaged posterior distribution
+        if t is None:
+            post = np.sum(self.posteriorSequence, axis=0) / len(self.posteriorSequence)
+        else:
+            # check if supplied time stamp exists
+            if t not in self.formattedTimestamps:
+                raise PostProcessingError('Supplied time ({}) does not exist in data or is out of range.'.format(t))
+            timeIndex = list(self.formattedTimestamps).index(t)  # to select corresponding posterior distribution
+            post = self.posteriorSequence[timeIndex]
+
+        # compute distribution of observations/data at the given points x
+        prob = np.array([np.sum(self.observationModel.pdf(self.grid, [xi]) * post) for xi in x])
+
+        if not density:
+            prob /= np.sum(prob)
+
+        return prob
+
     def _unpackHyperParameters(self, transitionModel, values=False):
         """
         Returns list of all hyper-parameters (names or values), nested as the transition model.
