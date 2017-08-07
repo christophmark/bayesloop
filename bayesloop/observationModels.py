@@ -16,6 +16,7 @@ from scipy.misc import factorial
 from scipy.special import iv
 from .exceptions import ConfigurationError, PostProcessingError
 from .helper import cint, oint, freeSymbols
+from inspect import getargspec
 import warnings
 
 
@@ -50,6 +51,93 @@ class ObservationModel:
             return np.ones_like(grid[0])  # grid of ones does not alter the current prior distribution
 
         return self.pdf(grid, dataSegment)
+
+
+class NumPy(ObservationModel):
+    """
+    Model based on NumPy functions. This observation model class allows the user to create new observation models by
+    expressing the likelihood function as a Python function that takes a data point (or vector) and arrays of parameter
+    values as input, and outputs the probability density of those parameter values. Note that the Python function must
+    be able to broadcast the arrays of parameter values, so that the output array has the same shape as the input
+    arrays.
+
+    Args:
+        function: Likelihood function that takes a data point as the first argument and one NumPy array per model
+            parameter (see example below).
+        args: succession of names and corresponding parameter values (using bayesloop.cint() or
+            bayesloop.oint()) Example: 'mu', bl.cint(-1, 1, 100), 'sigma', bl.oint(0, 3, 100)
+        prior: custom prior distribution that may be passed as a NumPy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
+
+    Example:
+    ::
+        # Assume that we have a data set of Gaussian random variates. We know the standard deviation for each random
+        # variate, but not the mean value. The data has the form [[variate_1, std_1], [variate_2, std_2], ...]. We can
+        # design an observation model to infer the mean value of the data taking into account the known standard
+        # deviation as follows:
+
+        import bayesloop as bl
+        S = bl.Study()
+
+        data = np.array([[0.12, 0.2], [-0.23, 0.2], [-0.03, 0.1], [0.12, 0.1]])
+        S.loadData(data)
+
+        def likelihood(data, mu):
+            # read in one data point of the form [variate_n, std_n]
+            x, std = data
+
+            # define Gaussian likelihood function (pdf) with known standard deviation
+            pdf = np.exp((x - mu)**2./(2*std**2.))/np.sqrt(2*np.pi*std**2.)
+
+            return pdf
+
+        L = bl.om.NumPy(likelihood, 'mu', bl.cint(-3, 3, 1000))
+        S.setOM(L)
+    """
+    def __init__(self, function, *args, **kwargs):
+        # check if first argument is valid
+        if not hasattr(function, '__call__'):
+            raise ConfigurationError('Expected a function as the first argument of NumPy observation model')
+
+        self.function = function
+        self.name = function.__name__
+        self.segmentLength = 1  # all required data for one time step is bundled
+        self.multiplyLikelihoods = False  # no more than one observation per time step
+
+        # get specified parameter names/values
+        self.parameterNames = args[::2]
+        self.parameterValues = args[1::2]
+
+        # check if number of specified parameters matches number of arguments of function (-1 for data)
+        nArgs = len(getargspec(self.function).args)
+        if not len(self.parameterNames) == nArgs-1:
+            raise ConfigurationError('Supplied function has {} parameters, observation model has {}'
+                                     .format(nArgs-1, len(self.parameterNames)))
+
+        # check if first argument of supplied function is called 'data'
+        if not getargspec(self.function).args[0] == 'data':
+            raise ConfigurationError('First argument of supplied function must be called "data"')
+
+        # check for unknown keyword-arguments
+        for key in kwargs.keys():
+            if key not in ['prior']:
+                raise TypeError("__init__() got an unexpected keyword argument '{}'".format(key))
+
+        # get allowed keyword-arguments
+        self.prior = kwargs.get('prior', None)
+
+    def pdf(self, grid, dataSegment):
+        """
+        Probability density function of custom models
+
+        Args:
+            grid(list): Parameter grid for discrete parameter values
+            dataSegment(ndarray): Data segment from formatted data
+
+        Returns:
+            ndarray: Discretized pdf (with same shape as grid)
+        """
+        return self.function(dataSegment[0], *grid)
 
 
 class SciPy(ObservationModel):
