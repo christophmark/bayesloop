@@ -25,8 +25,8 @@ from inspect import getargspec
 from tqdm import tqdm, tqdm_notebook
 from .helper import assignNestedItem, recursiveIndex, flatten, createColormap, oint, cint, freeSymbols
 from .preprocessing import movingWindow
-from .transitionModels import CombinedTransitionModel
-from .transitionModels import SerialTransitionModel
+from .observationModels import ObservationModel
+from .transitionModels import TransitionModel, CombinedTransitionModel, SerialTransitionModel
 from .exceptions import ConfigurationError, PostProcessingError
 
 
@@ -114,6 +114,12 @@ class Study(object):
 
         if not silent:
             print('+ Successfully imported array.')
+
+    def load(self, array, timestamps=None, silent=False):
+        """
+        See :meth:`.Study.loadData`.
+        """
+        self.loadData(array, timestamps=timestamps, silent=silent)
 
     def setObservationModel(self, L, silent=False):
         """
@@ -273,6 +279,43 @@ class Study(object):
         See :meth:`.Study.setTransitionModel`.
         """
         self.setTransitionModel(T, silent=silent)
+
+    def set(self, *args, **kwargs):
+        """
+        Set observation model or transition model, or both. See :meth:`.Study.setTransitionModel` and
+        :meth:`.Study.setObservationModel`.
+
+        Args:
+            args: Sequence of Observation model instance and Transition model instance, or just one of those two types
+            silent(bool): If true, no output is printed by this method
+        """
+        # Check for unknown keyword-arguments
+        for key in kwargs.keys():
+            if key not in ['silent']:
+                raise TypeError("set() got an unexpected keyword argument '{}'".format(key))
+
+        # For Python 2 compatibility (no argument with default value after *args)
+        silent = kwargs.pop('silent', False)
+
+        om = False
+        tm = False
+
+        for model in args:
+            if ObservationModel in model.__class__.__bases__:
+                if om:
+                    raise ConfigurationError('More than one observation model supplied.')
+                om = True
+                self.setObservationModel(model, silent=silent)
+
+            elif TransitionModel in model.__class__.__bases__:
+                if tm:
+                    raise ConfigurationError('More than one transition model supplied.')
+
+                tm = True
+                self.setTransitionModel(model, silent=silent)
+
+            else:
+                raise ConfigurationError('Expected observation model or transition model instance as first argument.')
 
     def fit(self, forwardOnly=False, evidenceOnly=False, silent=False):
         """
