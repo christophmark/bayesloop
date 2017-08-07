@@ -19,7 +19,14 @@ from copy import deepcopy
 from .exceptions import ConfigurationError, PostProcessingError
 
 
-class Static:
+class TransitionModel:
+    """
+    Parent class for transition models. All transition models inherit from this class. It is currently only used to
+    identify transition models as such.
+    """
+
+
+class Static(TransitionModel):
     """
     Constant parameters over time. This trivial model assumes no change of parameter values over time.
     """
@@ -51,7 +58,7 @@ class Static:
         return self.computeForwardPrior(posterior, t - 1)
 
 
-class GaussianRandomWalk:
+class GaussianRandomWalk(TransitionModel):
     """
     Gaussian parameter fluctuations. This model assumes that parameter changes are Gaussian-distributed. The standard
     deviation can be set individually for each model parameter.
@@ -105,7 +112,7 @@ class GaussianRandomWalk:
         return self.computeForwardPrior(posterior, t - 1)
 
 
-class AlphaStableRandomWalk:
+class AlphaStableRandomWalk(TransitionModel):
     """
     Parameter changes follow alpha-stable distribution. This model assumes that parameter changes are distributed
     according to the symmetric alpha-stable distribution. For each parameter, two hyper-parameters can be set: the
@@ -247,7 +254,7 @@ class AlphaStableRandomWalk:
         return convolution
 
 
-class ChangePoint:
+class ChangePoint(TransitionModel):
     """
     Abrupt parameter change at a specified time step. Parameter values are allowed to change only at a single point in
     time, right after a specified time step (Hyper-parameter tChange). Note that a uniform parameter distribution is
@@ -303,7 +310,7 @@ class ChangePoint:
         return self.computeForwardPrior(posterior, t - 1)
 
 
-class Independent:
+class Independent(TransitionModel):
     """
     Observations are treated as independent. This transition model restores the prior distribution for the parameters
     at each time step, effectively assuming independent observations.
@@ -349,7 +356,7 @@ class Independent:
         return self.computeForwardPrior(posterior, t - 1)
 
 
-class RegimeSwitch:
+class RegimeSwitch(TransitionModel):
     """
     Small probability for a parameter jump in each time step. In case the number of change-points in a given data set
     is unknown, the regime-switching model may help to identify potential abrupt changes in parameter values. At each
@@ -401,7 +408,7 @@ class RegimeSwitch:
         return self.computeForwardPrior(posterior, t - 1)
 
 
-class NotEqual:
+class NotEqual(TransitionModel):
     """
     Unlikely parameter values are preferred in the next time step. Assumes an "inverse" parameter distribution at each
     new time step. The new prior is derived by substracting the posterior probability values from their maximal value
@@ -460,7 +467,7 @@ class NotEqual:
         return self.computeForwardPrior(posterior, t - 1)
 
 
-class Deterministic:
+class Deterministic(TransitionModel):
     """
     Deterministic parameter variations. Given a function with time as the first argument and further  keyword-arguments
     as hyper-parameters, plus the name of a parameter of the observation model that is supposed to follow this function
@@ -592,7 +599,7 @@ class Deterministic:
         return newPrior
 
 
-class CombinedTransitionModel:
+class CombinedTransitionModel(TransitionModel):
     """
     Different models act at the same time. This class allows to combine different transition models to be
     able to explore more complex parameter dynamics. All sub-models are passed to this class as arguments on
@@ -648,7 +655,7 @@ class CombinedTransitionModel:
         return newPrior
 
 
-class SerialTransitionModel:
+class SerialTransitionModel(TransitionModel):
     """
     Different models act at different time steps. To model fundamental changes in parameter dynamics, different
     transition models can be serially coupled. Depending on the time step, a corresponding sub-model is chosen to
@@ -803,7 +810,7 @@ class SerialTransitionModel:
         return self._forwardChangePointCheck(posterior, t - 1)
 
 
-class BreakPoint:
+class BreakPoint(TransitionModel):
     """
     Break-point. This class can only be used to specify break-point within a SerialTransitionModel instance.
 
