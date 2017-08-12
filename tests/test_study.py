@@ -16,12 +16,12 @@ class TestOneParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('rate')[1][:, 250],
+        np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
                                    [0.00046598, 0.00046598, 0.00046598, 0.00046598, 0.00046598],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
-        np.testing.assert_allclose(S.getParameterMeanValues('rate'),
+        np.testing.assert_allclose(S.getParameterMeanValues('rate', density=False),
                                    [2.99835794, 2.99835794, 2.99835794, 2.99835794, 2.99835794],
                                    rtol=1e-05, err_msg='Erroneous posterior mean values.')
 
@@ -38,7 +38,7 @@ class TestOneParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('rate')[1][:, 250],
+        np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
                                    [0.00055206, 0.00051683, 0.00048233, 0.00045903, 0.00045629],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -64,7 +64,7 @@ class TestOneParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('rate')[1][:, 250],
+        np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
                                    [0.00052993, 0.00050302, 0.00047929, 0.00045883, 0.00045629],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -86,7 +86,7 @@ class TestOneParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('rate')[1][:, 250],
+        np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
                                    [0.00048679, 0.00045124, 0.00041767, 0.00039717, 0.00039976],
                                    rtol=1e-04, err_msg='Erroneous posterior distribution values.')
 
@@ -108,7 +108,7 @@ class TestOneParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('rate')[1][:, 250],
+        np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
                                    [0.0007529, 0.00070742, 0.00066273, 0.00063262, 0.00062968],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -130,7 +130,7 @@ class TestOneParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('rate')[1][:, 250],
+        np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
                                    [0.0020607, 0.0019692, 0.00187339, 0.0018053, 0.00179584],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -156,7 +156,7 @@ class TestOneParameterModel:
         S.optimize()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('rate')[1][:, 250],
+        np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
                                    [0.00181567, 0.00213315, 0.00091028, 0.00041154, 0.00090885],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -186,7 +186,7 @@ class TestTwoParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [0.00707902, 0.00707902, 0.00707902, 0.00707902, 0.00707902],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -208,7 +208,7 @@ class TestTwoParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [0.00722368, 0.00712209, 0.00702789, 0.00696926, 0.00696322],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -234,7 +234,7 @@ class TestTwoParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [0.02976422, 0.15404218, 0.10859567, 0.02553673, 0.00054109],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -256,7 +256,7 @@ class TestTwoParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [0.04317995, 0.04296549, 0.04275526, 0.04262151, 0.04262491],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -278,7 +278,7 @@ class TestTwoParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [0.01591204, 0.01579036, 0.01567361, 0.01559665, 0.01558591],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -301,7 +301,7 @@ class TestTwoParameterModel:
         S.fit()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [0.00909976, 0.0089861, 0.00887967, 0.00881235, 0.00880499],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -327,7 +327,7 @@ class TestTwoParameterModel:
         S.optimize()
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [4.52572851e-04, 1.67790320e-03, 2.94525791e-07, 1.49841548e-08, 1.10238422e-09],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 

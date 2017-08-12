@@ -18,7 +18,7 @@ class TestTwoParameterModel:
             S.step(d)
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [0.0053811, 0.38690331, 0.16329865, 0.04887604, 0.01334921],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
@@ -70,7 +70,7 @@ class TestTwoParameterModel:
                                    rtol=1e-05, err_msg='Erroneous hyper-parameter distribution.')
 
         # test parameter distributions
-        np.testing.assert_allclose(S.getParameterDistributions('mean')[1][:, 5],
+        np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [0.05825921, 0.20129444, 0.07273516, 0.02125759, 0.0039255],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
