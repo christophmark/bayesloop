@@ -913,7 +913,7 @@ class Study(object):
 
         x = self.marginalGrid[paramIndex]
         dx = self.latticeConstant[paramIndex]
-        marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, dist, axesToMarginalize))
+        marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, dist, axesToMarginalize)).copy()
 
         if density:
             marginalDistribution /= dx
@@ -977,7 +977,8 @@ class Study(object):
 
         x = self.marginalGrid[paramIndex]
         dx = self.latticeConstant[paramIndex]
-        marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize))
+        marginalPosteriorSequence = np.squeeze(
+            np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize)).copy()
 
         if density:
             marginalPosteriorSequence /= dx
@@ -2307,7 +2308,8 @@ class OnlineStudy(HyperStudy):
 
         x = self.marginalGrid[paramIndex]
         dx = self.latticeConstant[paramIndex]
-        marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, self.marginalizedPosterior, axesToMarginalize))
+        marginalDistribution = np.squeeze(
+            np.apply_over_axes(np.sum, self.marginalizedPosterior, axesToMarginalize)).copy()
 
         if density:
             marginalDistribution /= dx
