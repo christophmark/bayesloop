@@ -1953,6 +1953,12 @@ class OnlineStudy(HyperStudy):
         """
         self.addTransitionModel(name, transitionModel)
 
+    def add(self, name, transitionModel):
+        """
+        See :meth:`.OnlineStudy.addTransitionModel`.
+        """
+        self.addTransitionModel(name, transitionModel)
+
     def setTransitionModelPrior(self, transitionModelPrior, silent=False):
         """
         Sets prior probabilities for transition models added to the online study instance.
