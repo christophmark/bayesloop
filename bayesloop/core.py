@@ -862,28 +862,37 @@ class Study(object):
 
         return self.posteriorMeanValues[paramIndex]
 
-    def getParameterDistribution(self, t, name, plot=False, **kwargs):
+    def getParameterDistribution(self, t, name, plot=False, density=True, **kwargs):
         """
         Compute the marginal parameter distribution at a given time step.
 
         Args:
-            t: Time step/stamp for which the parameter distribution is evaluated
+            t: Time step/stamp for which the parameter distribution is evaluated (or 'avg' for time-averaged parameter
+                distribution)
             name(str): Name of the parameter to display
             plot(bool): If True, a plot of the distribution is created
+            density(bool): If true, probability density is returned; if false, probability values
             **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
 
         Returns:
             ndarray, ndarray: The first array contains the parameter values, the second one the corresponding
-                probability values
+                probability (density) values
         """
         if self.posteriorSequence == []:
             raise PostProcessingError('Cannot plot posterior sequence as it has not yet been computed. '
                                       'Run complete fit.')
 
-        # check if supplied time stamp exists
-        if t not in self.formattedTimestamps:
-            raise PostProcessingError('Supplied time ({}) does not exist in data or is out of range.'.format(t))
-        timeIndex = list(self.formattedTimestamps).index(t)  # to select corresponding posterior distribution
+        if t == 'avg':
+            # compute time-averaged posterior distribution
+            dist = np.sum(self.posteriorSequence, axis=0)/len(self.posteriorSequence)
+        else:
+            # check if supplied time stamp exists
+            if t not in self.formattedTimestamps:
+                raise PostProcessingError('Supplied time ({}) does not exist in data or is out of range.'.format(t))
+            timeIndex = list(self.formattedTimestamps).index(t)  # to select corresponding posterior distribution
+
+            # select posterior distribution of speciifed time step
+            dist = self.posteriorSequence[timeIndex]
 
         # get parameter index
         paramIndex = -1
@@ -903,29 +912,36 @@ class Study(object):
             raise PostProcessingError('Wrong parameter index. Available indices: {}'.format(axesToMarginalize))
 
         x = self.marginalGrid[paramIndex]
-        marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence[timeIndex],
-                                                             axesToMarginalize))
+        dx = self.latticeConstant[paramIndex]
+        marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, dist, axesToMarginalize))
+
+        if density:
+            marginalDistribution /= dx
 
         if plot:
             plt.fill_between(x, 0, marginalDistribution, **kwargs)
             plt.xlabel(self.observationModel.parameterNames[paramIndex])
-            plt.ylabel('probability')
+            if density:
+                plt.ylabel('probability density')
+            else:
+                plt.ylabel('probability')
 
         return x, marginalDistribution
 
-    def getPD(self, t, name, plot=False, **kwargs):
+    def getPD(self, t, name, plot=False, density=True, **kwargs):
         """
         See :meth:`.Study.getParameterDistribution`.
         """
-        return self.getParameterDistribution(t, name, plot=plot, **kwargs)
+        return self.getParameterDistribution(t, name, plot=plot, density=density, **kwargs)
 
-    def getParameterDistributions(self, name, plot=False, **kwargs):
+    def getParameterDistributions(self, name, plot=False, density=True, **kwargs):
         """
         Computes the time series of marginal posterior distributions with respect to a given model parameter.
 
         Args:
             name(str): Name of the parameter to display
             plot(bool): If True, a plot of the series of distributions is created (density map)
+            density(bool): If true, probability density is returned; if false, probability values
             **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
 
         Returns:
@@ -960,7 +976,11 @@ class Study(object):
                                       .format(np.array(axesToMarginalize) - 1))
 
         x = self.marginalGrid[paramIndex]
+        dx = self.latticeConstant[paramIndex]
         marginalPosteriorSequence = np.squeeze(np.apply_over_axes(np.sum, self.posteriorSequence, axesToMarginalize))
+
+        if density:
+            marginalPosteriorSequence /= dx
 
         if plot:
             if 'c' in kwargs:
@@ -978,11 +998,11 @@ class Study(object):
 
         return x, marginalPosteriorSequence
 
-    def getPDs(self, name, plot=False, **kwargs):
+    def getPDs(self, name, plot=False, density=True, **kwargs):
         """
         See :meth:`.Study.getParameterDistributions`.
         """
-        return self.getParameterDistributions(name, plot=plot, **kwargs)
+        return self.getParameterDistributions(name, plot=plot, density=density, **kwargs)
 
     def plotParameterEvolution(self, name, color='b', gamma=0.5, **kwargs):
         """
@@ -1047,6 +1067,33 @@ class Study(object):
         plt.ylim(self.boundaries[paramIndex])
         plt.ylabel(self.observationModel.parameterNames[paramIndex])
         plt.xlabel('time step')
+
+    def plot(self, name, **kwargs):
+        """
+        Convenience method to plot the temporal evolution of observation model parameters, or the parameter distribution
+        at a specific time step. Extended functionality for other study classes.
+
+        Args:
+            name(str): name of the parameter to display
+            color: color from which a light colormap is created (for parameter evolution only)
+            gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5 (for
+                parameter evolution only)
+            t: Time step/stamp for which the parameter distribution is evaluated
+            density(bool): If true, probability density is plotted; if false, probability values
+            kwargs: all further keyword-arguments are passed to the axes object of the plot
+        """
+        density = kwargs.pop('density', True)
+
+        # plot parameter distribution at specific time step
+        if 't' in kwargs.keys():
+            t = kwargs.pop('t')
+            self.getParameterDistribution(t, name, plot=True, density=density, **kwargs)
+        # plot parameter evolution
+        else:
+            # read additional kwargs (or set default values)
+            color = kwargs.pop('color', 'b')
+            gamma = kwargs.pop('gamma', 0.5)
+            self.plotParameterEvolution(name, color=color, gamma=gamma, **kwargs)
 
     def _checkConsistency(self):
         """
@@ -1661,6 +1708,46 @@ class HyperStudy(Study):
         """
         return self.getJointHyperParameterDistribution(names, plot=plot, figure=figure, subplot=subplot, **kwargs)
 
+    def plot(self, name, **kwargs):
+        """
+        Convenience method to plot the temporal evolution of observation model parameters, the distribution of a
+        parameter at a specific time step, or the distribution of a hyper-parameter.
+
+        Args:
+            name(str): name of the (hyper-)parameter to display
+            color: color from which a light colormap is created (for parameter evolution only)
+            gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5 (for
+                parameter evolution only)
+            t: Time step/stamp for which the parameter distribution is evaluated
+            density(bool): If true, probability density is plotted; if false, probability values. Note: Only availble
+                for parameters, not hyper-parameters.
+            kwargs: all further keyword-arguments are passed to the axes object of the plot
+        """
+        density = kwargs.pop('density', True)
+
+        # plot parameter distribution at specific time step
+        if 't' in kwargs.keys():
+            t = kwargs.pop('t')
+            self.getParameterDistribution(t, name, plot=True, density=density, **kwargs)
+
+        else:
+            # check is name belongs to hyper-parameter
+            try:
+                self._getHyperParameterIndex(self.transitionModel, name)
+                hyper = True
+            except PostProcessingError:
+                hyper = False
+
+            # for hyper-parameters, plot distribution
+            if hyper:
+                self.getHyperParameterDistribution(name, plot=True, **kwargs)
+            # for parameters, plot temporal evolution
+            else:
+                # read additional kwargs (or set default values)
+                color = kwargs.pop('color', 'b')
+                gamma = kwargs.pop('gamma', 0.5)
+                self.plotParameterEvolution(name, color=color, gamma=gamma, **kwargs)
+
 
 class ChangepointStudy(HyperStudy):
     """
@@ -2150,7 +2237,7 @@ class OnlineStudy(HyperStudy):
     def fit(self, *args, **kwargs):
         raise NotImplementedError('OnlineStudy object has no "fit" method. Use "step" instead.')
 
-    def getParameterDistribution(self, t, name, plot=False, **kwargs):
+    def getParameterDistribution(self, t, name, plot=False, density=True, **kwargs):
         """
         Compute the marginal parameter distribution at a given time step. Only available if Online Study is created
         with flag 'storeHistory=True'.
@@ -2159,6 +2246,7 @@ class OnlineStudy(HyperStudy):
             t(int, float): Time step/stamp for which the parameter distribution is evaluated
             name(str): Name of the parameter to display
             plot(bool): If True, a plot of the distribution is created
+            density(bool): If true, probability density is plotted; if false, probability values.
             **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
 
         Returns:
@@ -2173,26 +2261,27 @@ class OnlineStudy(HyperStudy):
         self.formattedTimestamps = np.array(self.formattedTimestamps)
         self.posteriorSequence = np.array(self.posteriorSequence)
 
-        x, p = Study.getParameterDistribution(self, t, name, plot=plot, **kwargs)
+        x, p = Study.getParameterDistribution(self, t, name, plot=plot, density=density, **kwargs)
 
         # re-transform arrays to lists, so online study may continue to append values
         self.formattedTimestamps = list(self.formattedTimestamps)
         self.posteriorSequence = list(self.posteriorSequence)
         return x, p
 
-    def getPD(self, t, name, plot=False, **kwargs):
+    def getPD(self, t, name, plot=False, density=True, **kwargs):
         """
         See :meth:`.OnlineStudy.getParameterDistribution`.
         """
         return self.getParameterDistribution(t, name, plot=plot, **kwargs)
 
-    def getCurrentParameterDistribution(self, name, plot=False, **kwargs):
+    def getCurrentParameterDistribution(self, name, plot=False, density=True, **kwargs):
         """
         Compute the current marginal parameter distribution.
 
         Args:
             name(str): Name of the parameter to display
             plot(bool): If True, a plot of the distribution is created
+            density(bool): If true, probability density is plotted; if false, probability values.
             **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
 
         Returns:
@@ -2217,22 +2306,29 @@ class OnlineStudy(HyperStudy):
             raise PostProcessingError('Wrong parameter index. Available indices: {}'.format(axesToMarginalize))
 
         x = self.marginalGrid[paramIndex]
+        dx = self.latticeConstant[paramIndex]
         marginalDistribution = np.squeeze(np.apply_over_axes(np.sum, self.marginalizedPosterior, axesToMarginalize))
+
+        if density:
+            marginalDistribution /= dx
 
         if plot:
             plt.fill_between(x, 0, marginalDistribution, **kwargs)
             plt.xlabel(self.observationModel.parameterNames[paramIndex])
-            plt.ylabel('probability')
+            if density:
+                plt.ylabel('probability density')
+            else:
+                plt.ylabel('probability')
 
         return x, marginalDistribution
 
-    def getCPD(self, name, plot=False, **kwargs):
+    def getCPD(self, name, plot=False, density=True, **kwargs):
         """
         See :meth:`.OnlineStudy.getCurrentParameterDistribution`.
         """
-        return self.getCurrentParameterDistribution(name, plot=plot, **kwargs)
+        return self.getCurrentParameterDistribution(name, plot=plot, density=density, **kwargs)
 
-    def getParameterDistributions(self, name, plot=False, **kwargs):
+    def getParameterDistributions(self, name, plot=False, density=True, **kwargs):
         """
         Computes the time series of marginal posterior distributions with respect to a given model parameter. Only
         available if Online Study is created with flag 'storeHistory=True'.
@@ -2240,6 +2336,7 @@ class OnlineStudy(HyperStudy):
         Args:
             name(str): Name of the parameter to display
             plot(bool): If True, a plot of the series of distributions is created (density map)
+            density(bool): If true, probability density is plotted; if false, probability values.
             **kwargs: All further keyword-arguments are passed to the plot (see matplotlib documentation)
 
         Returns:
@@ -2254,18 +2351,18 @@ class OnlineStudy(HyperStudy):
         self.formattedTimestamps = np.array(self.formattedTimestamps)
         self.posteriorSequence = np.array(self.posteriorSequence)
 
-        x, p = Study.getParameterDistributions(self, name, plot=plot, **kwargs)
+        x, p = Study.getParameterDistributions(self, name, plot=plot, density=density, **kwargs)
 
         # re-transform arrays to lists, so online study may continue to append values
         self.formattedTimestamps = list(self.formattedTimestamps)
         self.posteriorSequence = list(self.posteriorSequence)
         return x, p
 
-    def getPDs(self, name, plot=False, **kwargs):
+    def getPDs(self, name, plot=False, density=True, **kwargs):
         """
         See :meth:`.OnlineStudy.getParameterDistributions`.
         """
-        return self.getParameterDistributions(name, plot=plot, **kwargs)
+        return self.getParameterDistributions(name, plot=plot, density=density, **kwargs)
 
     def plotParameterEvolution(self, name, color='b', gamma=0.5, **kwargs):
         """
@@ -2565,7 +2662,7 @@ class OnlineStudy(HyperStudy):
         OnlineStudy fit. Only available if Online Study is created with flag 'storeHistory=True'.
 
         Args:
-            t(int): Time step at which to compute distribution
+            t(int): Time step at which to compute distribution, or 'avg' for time-averaged distribution
             name(str): hyper-parameter name
             plot(bool): If True, a bar chart of the distribution is created
             **kwargs: All further keyword-arguments are passed to the bar-plot (see matplotlib documentation)
@@ -2590,11 +2687,16 @@ class OnlineStudy(HyperStudy):
             raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
         # access hyper-parameter distribution
-        try:
-            hyperParameterDistribution = self.hyperParameterSequence[t]
-        except IndexError:
-            raise PostProcessingError('No hyper-parameter distribution found for t={}. Choose 0 <= t <= {}.'
-                                      .format(t, len(self.formattedTimestamps)-1))
+        if t == 'avg':
+            # compute time-averaged distribution
+            hyperParameterDistribution = np.sum(self.hyperParameterSequence, axis=0)/len(self.hyperParameterSequence)
+        else:
+            # try to access distribution of specified time step
+            try:
+                hyperParameterDistribution = self.hyperParameterSequence[t]
+            except IndexError:
+                raise PostProcessingError('No hyper-parameter distribution found for t={}. Choose 0 <= t <= {}.'
+                                          .format(t, len(self.formattedTimestamps)-1))
 
         hyperParameterDistribution = hyperParameterDistribution[tmIndex]
         axesToMarginalize = list(range(len(self.hyperParameterNames[tmIndex])))
@@ -2802,3 +2904,95 @@ class OnlineStudy(HyperStudy):
 
     def getJointHyperParameterDistribution(self, names, plot=False, figure=None, subplot=111, **kwargs):
         raise NotImplementedError('This method is not available in "OnlineStudy".')
+
+    def plot(self, name, **kwargs):
+        """
+        Convenience method to plot the temporal evolution of (hyper-)parameters, the distribution of a
+        (hyper-)parameter at a specific time step, or the temporal evolution of the probability of a transition model.
+
+        Args:
+            name(str): name of the (hyper-)parameter or transition model to display
+            color: color from which a light colormap is created (for (hyper-)parameter evolution only)
+            gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5 (for
+                (hyper-)parameter evolution only)
+            t: Time step/stamp for which the parameter distribution is evaluated
+            density(bool): If true, probability density is plotted; if false, probability values. Note: Only availble
+                for parameters, not hyper-parameters.
+            local(bool): If true, transition model probabilities taking into account only the data point at the
+                corresponding time step is returned
+            kwargs: all further keyword-arguments are passed to the axes object of the plot
+        """
+        density = kwargs.pop('density', True)
+
+        # check if time-step/stamp is supplied
+        t = kwargs.pop('t', None)
+
+        # check if results were stored
+        if t is not None and not self.storeHistory:
+            raise PostProcessingError('Online study has only stored current parameter data ("storeHistory=False"), '
+                                      'no time step can be specified, only current (hyper-)parameter distributions will'
+                                      'be plotted.')
+
+        # check if name belongs to hyper-parameter
+        hyper = False
+        for tm in self.transitionModels:
+            try:
+                self._getHyperParameterIndex(tm, name)
+                hyper = True
+            except PostProcessingError:
+                pass
+
+        # check if name belongs to transition model
+        try:
+            transitionModelIndex = self.transitionModelNames.index(name)
+            model = True
+        except ValueError:
+            model = False
+
+        if not hyper and not model:
+            # parameter evolution plot
+            if t is None and self.storeHistory:
+                # read additional kwargs (or set default values)
+                color = kwargs.pop('color', 'b')
+                gamma = kwargs.pop('gamma', 0.5)
+                self.plotParameterEvolution(name, color=color, gamma=gamma, **kwargs)
+
+            # parameter distribution plot
+            elif t is not None and self.storeHistory:
+                self.getParameterDistribution(t, name, plot=True, density=density, **kwargs)
+            else:
+                self.getCurrentParameterDistribution(name, plot=True, density=density, **kwargs)
+
+        elif hyper and not model:
+            # hyper-parameter evolution plot
+            if t is None and self.storeHistory:
+                # read additional kwargs (or set default values)
+                color = kwargs.pop('color', 'b')
+                gamma = kwargs.pop('gamma', 0.5)
+                self.plotHyperParameterEvolution(name, color=color, gamma=gamma, **kwargs)
+
+            # hyper-parameter distribution plot
+            elif t is not None and self.storeHistory:
+                self.getHyperParameterDistribution(t, name, plot=True, **kwargs)
+            else:
+                self.getCurrentHyperParameterDistribution(name, plot=True, **kwargs)
+
+        elif model and not hyper:
+            # read additional kwargs (or set default values)
+            local = kwargs.pop('local', False)
+
+            # plot local transition model probabilities
+            if local:
+                plt.plot(self.formattedTimestamps,
+                         np.array(self.localTransitionModelSequence)[:, transitionModelIndex],
+                         **kwargs)
+
+            # plot transition model probabilities
+            else:
+                plt.plot(self.formattedTimestamps,
+                         np.array(self.transitionModelSequence)[:, transitionModelIndex],
+                         **kwargs)
+
+        else:
+            raise PostProcessingError('Duplicate names of hyper-/parameters/transition models, cannot use "plot" '
+                                      'method.')
