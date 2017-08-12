@@ -21,7 +21,7 @@ class TestOneParameterModel:
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
-        np.testing.assert_allclose(S.getParameterMeanValues('rate', density=False),
+        np.testing.assert_allclose(S.getParameterMeanValues('rate'),
                                    [2.99835794, 2.99835794, 2.99835794, 2.99835794, 2.99835794],
                                    rtol=1e-05, err_msg='Erroneous posterior mean values.')
 
