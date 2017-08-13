@@ -332,8 +332,17 @@ class Parser:
 
                     for i, name in enumerate(names):
                         index = study._getHyperParameterIndex(study.transitionModel, name)
+
+                        # probability values
                         normedDist = study.hyperParameterDistribution / np.sum(study.hyperParameterDistribution)
-                        self.parameters.append(HyperParameter(study.hyperGridValues[:, index],
+
+                        # hyper-parameter values
+                        try:
+                            values = study.allHyperGridValues  # Changepoint-Study
+                        except AttributeError:
+                            values = study.hyperGridValues  # Hyper-Study
+
+                        self.parameters.append(HyperParameter(values[:, index],
                                                               normedDist,
                                                               name=name,
                                                               study=study))
