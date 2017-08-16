@@ -35,6 +35,7 @@ Observation models
 
    SymPy
    SciPy
+   NumPy
    Bernoulli
    Poisson
    Gaussian
