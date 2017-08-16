@@ -2543,11 +2543,11 @@ class OnlineStudy(HyperStudy):
                                       .format(self.observationModel.parameterNames))
 
         # access parameter distribution
-        try:
-            parameterDistribution = self.posteriorSequence[t]
-        except IndexError:
-            raise PostProcessingError('No parameter distribution found for t={}. Choose 0 <= t <= {}.'
-                                      .format(t, len(self.formattedTimestamps) - 1))
+        if t not in self.formattedTimestamps:
+            raise PostProcessingError('Supplied time ({}) does not exist in data or is out of range.'.format(t))
+        timeIndex = list(self.formattedTimestamps).index(t)  # to select corresponding posterior distribution
+
+        parameterDistribution = self.posteriorSequence[timeIndex]
 
         mean = np.sum(parameterDistribution[t] * self.grid[paramIndex])
         return mean
@@ -2609,11 +2609,11 @@ class OnlineStudy(HyperStudy):
             raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
         # access hyper-parameter distribution
-        try:
-            hyperParameterDistribution = self.hyperParameterSequence[t]
-        except IndexError:
-            raise PostProcessingError('No hyper-parameter distribution found for t={}. Choose 0 <= t <= {}.'
-                                      .format(t, len(self.formattedTimestamps) - 1))
+        if t not in self.formattedTimestamps:
+            raise PostProcessingError('Supplied time ({}) does not exist in data or is out of range.'.format(t))
+        timeIndex = list(self.formattedTimestamps).index(t)  # to select corresponding posterior distribution
+
+        hyperParameterDistribution = self.hyperParameterSequence[timeIndex]
 
         hyperParameterDistribution = hyperParameterDistribution[tmIndex][:, None]
         hyperParameterValues = self.hyperParameterValues[tmIndex]
@@ -2694,11 +2694,11 @@ class OnlineStudy(HyperStudy):
             hyperParameterDistribution = np.sum(self.hyperParameterSequence, axis=0)/len(self.hyperParameterSequence)
         else:
             # try to access distribution of specified time step
-            try:
-                hyperParameterDistribution = self.hyperParameterSequence[t]
-            except IndexError:
-                raise PostProcessingError('No hyper-parameter distribution found for t={}. Choose 0 <= t <= {}.'
-                                          .format(t, len(self.formattedTimestamps)-1))
+            if t not in self.formattedTimestamps:
+                raise PostProcessingError('Supplied time ({}) does not exist in data or is out of range.'.format(t))
+            timeIndex = list(self.formattedTimestamps).index(t)  # to select corresponding posterior distribution
+
+            hyperParameterDistribution = self.hyperParameterSequence[timeIndex]
 
         hyperParameterDistribution = hyperParameterDistribution[tmIndex]
         axesToMarginalize = list(range(len(self.hyperParameterNames[tmIndex])))
