@@ -9,7 +9,7 @@ before_install:
 install:
   - pip install --upgrade pip setuptools wheel
   - pip install --only-binary=numpy,scipy numpy scipy
-  - python setup.py install
+  - python setup.py develop
 script:
   - py.test --cov=bayesloop
 after_success:
