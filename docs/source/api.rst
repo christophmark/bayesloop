@@ -103,3 +103,8 @@ File I/O
         bl.save('test.bl', S)
         ...
         S = bl.load('test.bl')
+
+Probability Parser
+------------------
+
+.. autoclass:: Parser

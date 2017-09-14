@@ -13,5 +13,6 @@ Tutorials
     tutorials/onlinestudy.ipynb
     tutorials/priordistributions.ipynb
     tutorials/customobservationmodels.ipynb
+    tutorials/probabilityparser.ipynb
     tutorials/multiprocessing.ipynb
     
