@@ -107,4 +107,4 @@ File I/O
 Probability Parser
 ------------------
 
-.. autoclass:: Parser
+.. autoclass:: bayesloop.Parser
