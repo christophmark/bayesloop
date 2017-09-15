@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 from __future__ import print_function, division
-import matplotlib
-matplotlib.use('Agg')
-
 import bayesloop as bl
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,10 +18,10 @@ class TestPlot:
         S.fit()
 
         S.plot('rate')
-        plt.close('all')
+        plt.close()
 
         S.plot('rate', t=2)
-        plt.close('all')
+        plt.close()
 
     def test_plot_hyperstudy(self):
         S = bl.HyperStudy()
@@ -37,13 +34,13 @@ class TestPlot:
         S.fit()
 
         S.plot('rate')
-        plt.close('all')
+        plt.close()
 
         S.plot('rate', t=2)
-        plt.close('all')
+        plt.close()
 
         S.plot('sigma')
-        plt.close('all')
+        plt.close()
 
     def test_plot_changepointstudy(self):
         S = bl.ChangepointStudy()
@@ -60,16 +57,16 @@ class TestPlot:
         S.fit()
 
         S.plot('rate')
-        plt.close('all')
+        plt.close()
 
         S.plot('rate', t=2)
-        plt.close('all')
+        plt.close()
 
         S.plot('sigma')
-        plt.close('all')
+        plt.close()
 
         S.getDD(['t1', 't2'], plot=True)
-        plt.close('all')
+        plt.close()
 
     def test_plot_onlinestudy(self):
         S = bl.OnlineStudy(storeHistory=True)
@@ -81,19 +78,19 @@ class TestPlot:
             S.step(d)
 
         S.plot('rate')
-        plt.close('all')
+        plt.close()
 
         S.plot('rate', t=2)
-        plt.close('all')
+        plt.close()
 
         S.plot('sigma')
-        plt.close('all')
+        plt.close()
 
         S.plot('sigma', t=2)
-        plt.close('all')
+        plt.close()
 
         S.plot('gradual')
-        plt.close('all')
+        plt.close()
 
         S.plot('gradual', local=True)
-        plt.close('all')
+        plt.close()
