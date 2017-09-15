@@ -165,8 +165,8 @@ class AlphaStableRandomWalk(TransitionModel):
         if not self.kernelParameters == self.hyperParameterValues:
             normedC = []
             for lc in self.latticeConstant:
-                normedC.append(self.hyperParameters['c'] / lc)
-            alpha = [self.hyperParameters['alpha']] * len(normedC)
+                normedC.append(self.hyperParameterValues[0] / lc)
+            alpha = [self.hyperParameterValues[1]] * len(normedC)
 
             axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
             selectedC = normedC[axisToTransform]
@@ -174,7 +174,7 @@ class AlphaStableRandomWalk(TransitionModel):
             normedC[axisToTransform] = selectedC
 
             self.kernel = self.createKernel(normedC[0], alpha[0], 0)
-            for i, (a, c) in enumerate(zip(alpha, normedC)[1:]):
+            for i, (a, c) in enumerate(zip(alpha[1:], normedC[1:])):
                 self.kernel *= self.createKernel(c, a, i+1)
 
             self.kernel = self.kernel.T
@@ -249,7 +249,7 @@ class AlphaStableRandomWalk(TransitionModel):
         if len(gs) == 2:
             convolution = padded_convolution[gs[0]:2*gs[0], gs[1]:2*gs[1]]
         elif len(gs) == 1:
-            convolution = padded_convolution[gs[0]:gs[0]]
+            convolution = padded_convolution[gs[0]:2*gs[0]]
 
         return convolution
 
