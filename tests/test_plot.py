@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 from __future__ import print_function, division
+import matplotlib
+matplotlib.use('Agg')
+
 import bayesloop as bl
 import numpy as np
 import matplotlib.pyplot as plt
