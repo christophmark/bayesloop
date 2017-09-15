@@ -452,7 +452,7 @@ class NotEqual(TransitionModel):
             ndarray: Prior parameter distribution for subsequent time step
         """
         newPrior = posterior.copy()
-        limit = (10**self.hyperParameters['log10pMin'])*np.prod(self.latticeConstant)  # convert prob. density to prob.
+        limit = (10**self.hyperParameterValues[0])*np.prod(self.latticeConstant)  # convert prob. density to prob.
 
         newPrior = np.amax(newPrior) - newPrior
         newPrior /= np.sum(newPrior)
