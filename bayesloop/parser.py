@@ -255,13 +255,30 @@ class Parser:
         # load parameter values, probabilities
         if t is None:
             for study in self.studies:
-                names = study.observationModel.parameterNames
-                for i, name in enumerate(names):
-                    index = study.observationModel.parameterNames.index(name)
-                    self.parameters.append(Parameter(np.ravel(study.grid[index]),
-                                                     np.array([np.ravel(post) for post in study.posteriorSequence]),
-                                                     name=name,
-                                                     study=study))
+                # check for OnlineStudy
+                storeHistory = -1
+                try:
+                    storeHistory = study.storeHistory
+                except AttributeError:
+                    pass
+
+                if storeHistory == -1 or storeHistory == 1:
+                    names = study.observationModel.parameterNames
+                    for i, name in enumerate(names):
+                        index = study.observationModel.parameterNames.index(name)
+                        self.parameters.append(Parameter(np.ravel(study.grid[index]),
+                                                         np.array([np.ravel(post) for post in study.posteriorSequence]),
+                                                         name=name,
+                                                         study=study))
+                else:
+                    names = study.observationModel.parameterNames
+                    for i, name in enumerate(names):
+                        index = study.observationModel.parameterNames.index(name)
+                        self.parameters.append(Parameter(np.ravel(study.grid[index]),
+                                                         np.ravel(study.marginalizedPosterior),
+                                                         name=name,
+                                                         time=study.formattedTimestamps[-1],
+                                                         study=study))
         else:
             # compute index of timestamp
             timeIndex = list(self.studies[0].formattedTimestamps).index(t)
