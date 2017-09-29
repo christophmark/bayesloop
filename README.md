@@ -27,39 +27,33 @@ The following code provides a minimal example of an analysis carried out using *
 ```
 import bayesloop as bl
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
 import seaborn as sns
 
 S = bl.HyperStudy()  # start new data study
 S.loadExampleData()  # load data array
 
 # observed number of disasters is modeled by Poisson distribution
-L = bl.observationModels.Poisson('rate')
-S.setObservationModel(L)
+L = bl.om.Poisson('rate')
 
 # disaster rate itself may change gradually over time
-T = bl.transitionModels.GaussianRandomWalk('sigma',
-                        bl.cint(0, 1.0, 20), target='rate')
-S.setTransitionModel(T)
+T = bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 1.0, 20), target='rate')
 
+S.set(L, T)
 S.fit()  # inference
 
 # plot data together with inferred parameter evolution
 plt.figure(figsize=(8, 3))
-gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1])
 
-plt.subplot(gs[0])
+plt.subplot2grid((1, 3), (0, 0), colspan=2)
 plt.xlim([1852, 1961])
-plt.bar(S.rawTimestamps, S.rawData,
-        align='center', facecolor='r', alpha=.5)
-S.plotParameterEvolution('rate')
+plt.bar(S.rawTimestamps, S.rawData, align='center', facecolor='r', alpha=.5)
+S.plot('rate')
 plt.xlabel('year')
 
 # plot hyper-parameter distribution
-plt.subplot(gs[1])
+plt.subplot2grid((1, 3), (0, 2))
 plt.xlim([0, 1])
-S.getHyperParameterDistribution('sigma', plot=True,
-                                facecolor='g', alpha=0.7)
+S.plot('sigma', facecolor='g', alpha=0.7, lw=1, edgecolor='k')
 plt.tight_layout()
 plt.show()
 ```
