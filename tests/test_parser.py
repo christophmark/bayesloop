@@ -72,3 +72,16 @@ class TestHyperParameterParsing:
 
         np.testing.assert_almost_equal(p, 0.61228433813735061, decimal=5,
                                        err_msg='Erroneous parsing result for inequality.')
+
+        S = bl.OnlineStudy(storeHistory=False)
+        S.setOM(bl.om.Poisson('rate', bl.oint(0, 6, 50)))
+        S.add('gradual', bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 5), target='rate'))
+        S.add('static', bl.tm.Static())
+
+        for d in np.arange(3):
+            S.step(d)
+
+        p = S.eval('exp(0.99*log(sigma))+1 > 1.1')
+
+        np.testing.assert_almost_equal(p, 0.61228433813735061, decimal=5,
+                                       err_msg='Erroneous parsing result for inequality.')
