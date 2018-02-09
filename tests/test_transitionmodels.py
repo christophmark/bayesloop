@@ -76,7 +76,7 @@ class TestBuiltin:
         S.fit()
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -10.070975044765181, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -12.894336092378385, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_regimeswitch(self):
@@ -143,5 +143,5 @@ class TestNested:
         S.fit()
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -10.446556976602032, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -13.269918024215237, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
