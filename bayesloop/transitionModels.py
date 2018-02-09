@@ -302,6 +302,7 @@ class ChangePoint(TransitionModel):
 
             # normalize prior (necessary in case an improper prior is used)
             prior /= np.sum(prior)
+            prior *= np.prod(self.study.latticeConstant)
             return prior
         else:
             return posterior
@@ -802,6 +803,7 @@ class SerialTransitionModel(TransitionModel):
 
             # normalize prior (necessary in case an improper prior is used)
             prior /= np.sum(prior)
+            prior *= np.prod(self.study.latticeConstant)
             return prior
         else:
             return posterior
