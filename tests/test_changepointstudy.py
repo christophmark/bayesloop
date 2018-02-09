@@ -38,7 +38,7 @@ class TestTwoParameterModel:
                                    rtol=1e-05, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -11.5679526945, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -15.072007461556161, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
         # test hyper-parameter distribution
@@ -84,7 +84,7 @@ class TestTwoParameterModel:
                                    rtol=1e-05, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -12.2054799231, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -15.709534690217343, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
         # test hyper-parameter distribution
