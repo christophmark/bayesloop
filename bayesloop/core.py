@@ -489,7 +489,7 @@ class Study(object):
             if not silent:
                 print('    + Computed mean parameter values.')
 
-    def optimize(self, parameterList=[], **kwargs):
+    def optimize(self, parameterList=[], forwardOnly=False, **kwargs):
         """
         Uses the COBYLA minimization algorithm from SciPy to perform a maximization of the log-evidence with respect
         to all hyper-parameters (the parameters of the transition model) of a time seris model. The starting values
@@ -502,6 +502,9 @@ class Study(object):
             parameterList(list): List of hyper-parameter names to optimize. For nested transition models with multiple,
                 identical hyper-parameter names, the sub-model index can be provided. By default, all hyper-parameters
                 are optimized.
+            forwardOnly(bool): If set to True, the fitting process is terminated after the forward pass. The resulting
+                posterior distributions are so-called "filtering distributions" which - at each time step -
+                only incorporate the information of past data points.
             **kwargs - All other keyword parameters are passed to the 'minimize' routine of scipy.optimize.
         """
         # set list of parameters to optimize
@@ -542,7 +545,7 @@ class Study(object):
         self._setSelectedHyperParameters(result.x)
 
         # run analysis with optimal parameter values
-        self.fit()
+        self.fit(forwardOnly=forwardOnly)
 
         # reset list of parameters to optimize, so that unpacking and setting hyper-parameters works as expected
         self.selectedHyperParameters = []
