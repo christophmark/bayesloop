@@ -397,7 +397,7 @@ class RegimeSwitch(TransitionModel):
             ndarray: Prior parameter distribution for subsequent time step
         """
         newPrior = posterior.copy()
-        limit = (10**self.hyperParameterValues[0])*np.prod(self.latticeConstant)  # convert prob. density to prob.
+        limit = (10.**self.hyperParameterValues[0])*np.prod(self.latticeConstant)  # convert prob. density to prob.
         newPrior[newPrior < limit] = limit
 
         # transformation above violates proper normalization; re-normalization needed
