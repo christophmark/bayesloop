@@ -590,7 +590,7 @@ class Gaussian(ObservationModel):
         """
         Jeffreys prior for Gaussian model.
         """
-        return 1./sigma**3.
+        return 1./sigma**2.
 
 
 class GaussianMean(ObservationModel):
