@@ -14,6 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import minimize
 from scipy.misc import factorial
 from scipy.misc import logsumexp
+from scipy.special import beta as beta_func
 import sympy.abc as abc
 from sympy import Symbol
 from sympy import lambdify
@@ -253,7 +254,7 @@ class Study(object):
             # set density as lambda function
             if not silent:
                 print('    + Set prior (sympy): {}'.format(pdf))
-            return lambdify(x, pdf, modules=['numpy', {'factorial': factorial}])(*self.grid)
+            return lambdify(x, pdf, modules=['numpy', {'factorial': factorial, 'beta': beta_func}])(*self.grid)
 
     def setTransitionModel(self, T, silent=False):
         """
