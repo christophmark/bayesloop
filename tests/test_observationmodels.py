@@ -159,6 +159,18 @@ class TestBuiltin:
         np.testing.assert_almost_equal(S.logEvidence, -12.430583625665736, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
+    def test_laplace(self):
+        S = bl.Study()
+        S.load(np.array([1, 0, 1, 0, 0]))
+
+        L = bl.om.Laplace('mu', None, 'b', None)
+        T = bl.tm.Static()
+        S.set(L, T)
+
+        S.fit()
+        np.testing.assert_almost_equal(S.logEvidence, -10.658573159, decimal=5,
+                                       err_msg='Erroneous log-evidence value.')
+
     def test_gaussianmean(self):
         S = bl.Study()
         S.loadData(np.array([[1, 0.5], [0, 0.4], [1, 0.3], [0, 0.2], [0, 0.1]]))

@@ -593,6 +593,74 @@ class Gaussian(ObservationModel):
         return 1./sigma**2.
 
 
+class Laplace(ObservationModel):
+    """
+    Laplace model. All observations are independently drawn from a Laplace (double-sided exponential) distribution. The
+    model has two parameters, mean and scale.
+
+    Args:
+        name1(str): custom name for mean
+        value1(list, tuple, ndarray): Regularly spaced parameter values for the model parameter mean
+        name2(str): custom name for the scale parameter
+        value2(list, tuple, ndarray): Regularly spaced parameter values for the scale parameter
+        prior: custom prior distribution that may be passed as a Numpy array that has tha same shape as the parameter
+            grid, as a(lambda) function or as a (list of) SymPy random variable(s)
+    """
+
+    def __init__(self, name1='mean', value1=None, name2='scale', value2=None, prior='Jeffreys'):
+        self.name = 'Laplace observations'
+        self.segmentLength = 1  # number of measurements in one data segment
+        self.parameterNames = [name1, name2]
+        self.parameterValues = [value1, value2]
+        self.multiplyLikelihoods = True
+
+        if isinstance(prior, str) and prior == 'Jeffreys':
+            self.prior = self.jeffreys  # default: Jeffreys prior
+        else:
+            self.prior = prior
+
+    def pdf(self, grid, dataSegment):
+        """
+        Probability density function of the Laplace model.
+
+        Args:
+            grid(list): Parameter grid for discrete values of mean and scale
+            dataSegment(ndarray): Data segment from formatted data (containing a single measurement)
+
+        Returns:
+            ndarray: Discretized Normal pdf (with same shape as grid).
+        """
+        return np.exp(-np.abs(dataSegment[0] - grid[0])/grid[1])/(2.*grid[1])
+
+    def estimateParameterValues(self, name, rawData):
+        """
+        Returns appropriate boundaries based on the imported data. Is called in case fit method is called and no
+        boundaries are defined.
+
+        Args:
+            name(str): name of a parameter of the observation model
+            rawData(ndarray): observed data points that may be used to determine appropriate parameter boundaries
+
+        Returns:
+            list: parameter boundaries.
+        """
+        mean = np.nanmean(np.ravel(rawData))
+        std = np.nanstd(np.ravel(rawData))
+
+        if name == self.parameterNames[0]:
+            return cint(mean-2*std, mean+2*std, 200)
+        elif name == self.parameterNames[1]:
+            return oint(0, np.sqrt(2) * std, 200)
+        else:
+            raise ConfigurationError('Gaussian model does not contain a parameter "{}".'.format(name))
+
+    def jeffreys(self, mu, scale):
+        """
+        Jeffreys prior for the Laplace model.
+        """
+        return 1./scale**2.
+
+
 class GaussianMean(ObservationModel):
     """
     Observations with given error interval. This observation model represents a Gaussian distribution with given
