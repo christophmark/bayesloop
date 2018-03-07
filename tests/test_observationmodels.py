@@ -151,7 +151,7 @@ class TestBuiltin:
         S = bl.Study()
         S.loadData(np.array([1, 0, 1, 0, 0]))
 
-        L = bl.om.Gaussian('mu', bl.oint(0, 1, 100), 'std', bl.oint(0, 1, 100))
+        L = bl.om.Gaussian('mu', bl.oint(0, 1, 100), 'std', bl.oint(0, 1, 100), prior=lambda m, s: 1/s**3)
         T = bl.tm.Static()
         S.set(L, T)
 

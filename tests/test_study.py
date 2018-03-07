@@ -181,7 +181,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.Study()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
         S.setTM(bl.tm.Static())
         S.fit()
 
@@ -203,7 +203,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.Study()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
         S.setTM(bl.tm.GaussianRandomWalk('sigma', 0.1, target='mean'))
         S.fit()
 
@@ -225,7 +225,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.Study()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
 
         T = bl.tm.CombinedTransitionModel(bl.tm.GaussianRandomWalk('sigma', 0.1, target='mean'),
                                           bl.tm.RegimeSwitch('log10pMin', -3))
@@ -318,7 +318,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.Study()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
 
         T = bl.tm.CombinedTransitionModel(bl.tm.GaussianRandomWalk('sigma', 1.07, target='mean'),
                                           bl.tm.RegimeSwitch('log10pMin', -3.90))

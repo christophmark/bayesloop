@@ -10,7 +10,7 @@ class TestTwoParameterModel:
     def test_step_set1TM_0hp(self):
         # carry out fit
         S = bl.OnlineStudy(storeHistory=True)
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
         S.setTM(bl.tm.Static())
 
         data = np.array([1, 2, 3, 4, 5])

@@ -11,7 +11,7 @@ class TestTwoParameterModel:
         # carry out fit (this test is designed to fall back on the fit method of the Study class)
         S = bl.HyperStudy()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
         S.setTM(bl.tm.Static())
         S.fit()
 
@@ -33,7 +33,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.HyperStudy()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
         S.setTM(bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 2), target='mean'))
         S.fit()
 
@@ -62,7 +62,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.HyperStudy()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
 
         T = bl.tm.CombinedTransitionModel(bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 2), target='mean'),
                                           bl.tm.RegimeSwitch('log10pMin', [-3, -1]))
@@ -106,7 +106,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.HyperStudy()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
         S.setTM(bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 2), target='mean', prior=np.array([0.2, 0.8])))
         S.fit()
 
@@ -134,7 +134,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.HyperStudy()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
         S.setTM(bl.tm.GaussianRandomWalk('sigma', bl.cint(0.1, 0.3, 2), target='mean', prior=lambda s: 1./s))
         S.fit()
 
@@ -162,7 +162,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.HyperStudy()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
         S.setTM(bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 2), target='mean', prior=stats.Exponential('e', 1.)))
         S.fit()
 

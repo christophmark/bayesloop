@@ -11,7 +11,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.ChangepointStudy()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
 
         T = bl.tm.SerialTransitionModel(
             bl.tm.Static(),
@@ -57,7 +57,7 @@ class TestTwoParameterModel:
         # carry out fit
         S = bl.ChangepointStudy()
         S.loadData(np.array([1, 2, 3, 4, 5]))
-        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20)))
+        S.setOM(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20), prior=lambda m, s: 1/s**3))
 
         T = bl.tm.SerialTransitionModel(
             bl.tm.Static(),
