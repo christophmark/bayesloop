@@ -10,7 +10,15 @@ Time series analysis today is an important cornerstone of quantitative science i
 
 *bayesloop* is a python module that focuses on fitting time series models with time-varying parameters and model selection based on [Bayesian inference](https://cocosci.berkeley.edu/tom/papers/tutorial.pdf). Instead of relying on [MCMC methods](http://www.cs.ubc.ca/~arnaud/andrieu_defreitas_doucet_jordan_intromontecarlomachinelearning.pdf), *bayesloop* uses a grid-based approach to evaluate probability distributions, allowing for an efficient approximation of the [marginal likelihood (evidence)](http://alumni.media.mit.edu/~tpminka/statlearn/demo/). The marginal likelihood represents a powerful tool to objectively compare different models and/or optimize the hyper-parameters of hierarchical models. To avoid the [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality) when analyzing time series models with time-varying parameters, *bayesloop* employs a sequential inference algorithm that is based on the [forward-backward-algorithm](https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm) used in [Hidden Markov models](http://www.cs.sjsu.edu/~stamp/RUA/HMM.pdf). Here, the relevant parameter spaces are kept low-dimensional by processing time series data step by step. The module covers a large class of time series models and is easily extensible.
 
-The underlying algorithm of *bayesloop* has been successfully employed in cancer research, studying the migration paths of invasive tumor cells, see this [article](http://www.nature.com/articles/ncomms8516).
+*bayesloop* has been successfully employed in cancer research (studying the migration paths of invasive tumor cells), financial risk assessment, climate research and accident analysis. For a detailed description of these applications, see the following articles:
+
+**Bayesian model selection for complex dynamic systems**
+Mark C., Metzner C., Lautscham L., Strissel P.L., Strick R. and Fabry B.
+[*Nature Communications 9:1803 (2018)*](https://www.nature.com/articles/s41467-018-04241-5)
+
+**Superstatistical analysis and modelling of heterogeneous random walks**
+Metzner C., Mark C., Steinwachs J., Lautscham L., Stadler F. and Fabry B.
+[*Nature Communications 6:7516 (2015)*](https://www.nature.com/articles/ncomms8516)
 
 ## Features
 * infer time-varying parameters from time series data 
