@@ -8,7 +8,8 @@ before_install:
   - pip install coveralls
 install:
   - pip install --upgrade pip setuptools wheel
-  - pip install --only-binary=numpy,scipy,sympy numpy scipy==0.19.1 sympy==1.1
+  - pip install sympy==1.1.1
+  - pip install --only-binary=numpy,scipy numpy scipy==0.19.1
   - python setup.py develop
 before_script:
   - "export DISPLAY=:99.0"
