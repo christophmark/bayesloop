@@ -12,12 +12,12 @@ Time series analysis today is an important cornerstone of quantitative science i
 
 *bayesloop* has been successfully employed in cancer research (studying the migration paths of invasive tumor cells), financial risk assessment, climate research and accident analysis. For a detailed description of these applications, see the following articles:
 
-**Bayesian model selection for complex dynamic systems**
-Mark C., Metzner C., Lautscham L., Strissel P.L., Strick R. and Fabry B.
+**Bayesian model selection for complex dynamic systems**<br>
+Mark C., Metzner C., Lautscham L., Strissel P.L., Strick R. and Fabry B.<br>
 [*Nature Communications 9:1803 (2018)*](https://www.nature.com/articles/s41467-018-04241-5)
 
-**Superstatistical analysis and modelling of heterogeneous random walks**
-Metzner C., Mark C., Steinwachs J., Lautscham L., Stadler F. and Fabry B.
+**Superstatistical analysis and modelling of heterogeneous random walks**<br>
+Metzner C., Mark C., Steinwachs J., Lautscham L., Stadler F. and Fabry B.<br>
 [*Nature Communications 6:7516 (2015)*](https://www.nature.com/articles/ncomms8516)
 
 ## Features
