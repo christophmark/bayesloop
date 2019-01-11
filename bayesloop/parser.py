@@ -10,6 +10,7 @@ import pyparsing as pp
 import re
 import operator
 import numpy as np
+import scipy.special as sp
 from tqdm import tqdm, tqdm_notebook
 from .exceptions import ConfigurationError
 
@@ -168,19 +169,22 @@ class Parser:
 
     def _convert(self, string):
         """
-        Converts string in query to either a Parameter instance, a Numpy function, or a float number
+        Converts string in query to either a Parameter instance, a Numpy function, a scipy.special function or
+        a float number.
 
         Args:
             string(str): string to convert
 
         Returns:
-            Parameter instance, Numpy function or float
+            Parameter instance, function or float
         """
         if string in self.names:
             param = [p for p in self.parameters if p.name == string][0]
             return param.copy()
         elif isinstance(string, str) and (string in dir(np)) and callable(getattr(np, string)):
             return getattr(np, string)
+        elif isinstance(string, str) and (string in dir(sp)) and callable(getattr(sp, string)):
+            return getattr(sp, string)
         else:
             return float(string)
 
