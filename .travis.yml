@@ -4,7 +4,7 @@ python:
   - "3.5"
   - "3.6"
 before_install:
-  - pip install pytest pytest-cov<2.6
+  - pip install pytest pytest-cov==2.5.1
   - pip install coveralls
 install:
   - pip install --upgrade pip setuptools wheel
