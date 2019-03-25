@@ -101,11 +101,12 @@ class GaussianRandomWalk(TransitionModel):
         """
         axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
         normedSigma = self.hyperParameterValues[0]/self.latticeConstant[axisToTransform]
-
-        if normedSigma < 0.0:  # gaussian_filter1d cannot handle negative st.dev.
-            normedSigma = 0.0
-
-        newPrior = gaussian_filter1d(posterior, normedSigma, axis=axisToTransform)
+        
+        if normedSigma > 0.:
+            newPrior = gaussian_filter1d(posterior, normedSigma, axis=axisToTransform)
+        else:
+            newPrior = posterior.copy()
+        
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):
