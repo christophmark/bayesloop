@@ -12,8 +12,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import minimize
-from scipy.misc import factorial
-from scipy.misc import logsumexp
+from scipy.special import factorial
+from scipy.special import logsumexp
 from scipy.special import beta as beta_func
 import sympy.abc as abc
 from sympy import Symbol
