@@ -12,8 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import minimize
-from scipy.special import factorial
-from scipy.special import logsumexp
+from scipy.special import factorial, logsumexp
 from scipy.special import beta as beta_func
 import sympy.abc as abc
 from sympy import Symbol
@@ -996,7 +995,7 @@ class Study(object):
                 cmap = createColormap('b')
 
             plt.imshow(marginalPosteriorSequence.T,
-                       origin=0,
+                       origin='lower',
                        cmap=cmap,
                        extent=[self.formattedTimestamps[0], self.formattedTimestamps[-1]] + self.boundaries[paramIndex],
                        aspect='auto')
@@ -1054,7 +1053,7 @@ class Study(object):
         marginalPosteriorSequence[marginalPosteriorSequence < pmax*(10**-20)] = 0
 
         plt.imshow(marginalPosteriorSequence.T**gamma,
-                   origin=0,
+                   origin='lower',
                    cmap=createColormap(color),
                    extent=[self.formattedTimestamps[0], self.formattedTimestamps[-1]] + self.boundaries[paramIndex],
                    aspect='auto')
@@ -2888,7 +2887,7 @@ class OnlineStudy(HyperStudy):
         marginalDistribution[marginalDistribution < pmax * (10 ** -20)] = 0
 
         plt.imshow(marginalDistribution.T ** gamma,
-                   origin=0,
+                   origin='lower',
                    cmap=createColormap(color),
                    extent=[self.formattedTimestamps[0], self.formattedTimestamps[-1]] +
                           [uniqueValues[0], uniqueValues[-1]],

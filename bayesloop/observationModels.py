@@ -12,8 +12,7 @@ import sympy.abc as abc
 from sympy import lambdify
 from sympy.stats import density
 from .jeffreys import getJeffreysPrior
-from scipy.special import factorial
-from scipy.special import iv
+from scipy.special import iv, factorial
 from .exceptions import ConfigurationError, PostProcessingError
 from .helper import cint, oint, freeSymbols
 from inspect import getargspec

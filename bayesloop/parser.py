@@ -376,7 +376,9 @@ class Parser:
         if len(splitQuery) == 1:
             reducedQuery = query
         elif len(splitQuery) == 2:
-            reducedQuery = '-'.join(splitQuery)
+            # last arithmetic may be omitted in some cases if right side is appended to the left, needs to come first
+            #reducedQuery = '-'.join(splitQuery)
+            reducedQuery = '-1*('+splitQuery[1]+')+'+splitQuery[0]
         else:
             raise ConfigurationError('Use exactly one operator out of (<, >, <=, >=, ==) to obtain probability value, '
                                      'or none to obtain derived distribution.')
