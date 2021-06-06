@@ -191,8 +191,8 @@ class SciPy(ObservationModel):
                 "future version. Pass parameter names and values as successive arguments.",
                 DeprecationWarning)
             valueDict = args[0]
-            self.parameterNames = valueDict.keys()
-            self.parameterValues = valueDict.values()
+            self.parameterNames = list(valueDict.keys())
+            self.parameterValues = list(valueDict.values())
         else:
             self.parameterNames = args[::2]
             self.parameterValues = args[1::2]
