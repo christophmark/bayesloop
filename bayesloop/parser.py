@@ -99,11 +99,11 @@ class Parser:
                              pp.Optional(e + pp.Word("+-" + pp.nums, pp.nums)))
 
         # initialize list of all numpy functions, remove functions that collide with (hyper-)parameter names
-        self.functions = dir(np)
+        self.functions = dir(np) + dir(sp)
         for name in self.names:
             try:
                 self.functions.remove(name)
-                print('! WARNING: Numpy function "{}" will not be available in parser, as it collides with '
+                print('! WARNING: Function "{}" will not be available in parser, as it collides with '
                       '(hyper-)parameter names.'.format(name))
             except ValueError:
                 pass
@@ -389,11 +389,15 @@ class Parser:
 
         # if no relational operator in query, compute derived distribution
         if len(splitQuery) == 1:
-            dmin = np.amin(derivedParameter)
-            dmax = np.amax(derivedParameter)
+            derivedParameter[np.isinf(derivedParameter)] = np.nan
+            dmin = np.nanmin(derivedParameter)
+            dmax = np.nanmax(derivedParameter)
 
             # bin size is chosen as maximal difference between two derived values
-            nBins = int((dmax-dmin)/(np.amax(np.diff(np.sort(derivedParameter)))))
+            print(f"dmax {dmax}")
+            print(f"dmin {dmin}")
+            print(np.diff(np.sort(derivedParameter)))
+            nBins = int((dmax-dmin)/(np.nanmax(np.diff(np.sort(derivedParameter)))))
             bins = np.linspace(dmin, dmax, nBins)
             binnedValues = bins[:-1] + (bins[1]-bins[0])
             binnedProbs = []
