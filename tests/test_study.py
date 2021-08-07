@@ -172,7 +172,7 @@ class TestOneParameterModel:
         # test optimized hyper-parameter values
         np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 2.11216289063, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
-        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -3.0, decimal=5,
+        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -3.0, decimal=3,
                                        err_msg='Erroneous log-evidence value.')
 
 
