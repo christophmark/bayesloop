@@ -240,7 +240,11 @@ class Study(object):
                                          .format(len(self.observationModel.parameterNames), len(prior)))
 
             pdf = 1
-            x = symbols(' '.join(list(string.ascii_lowercase)[:len(prior)]))
+            if len(prior) > 1:
+                x = symbols(' '.join(list(string.ascii_lowercase)[:len(prior)]))
+            else:
+                x = [abc.x]
+
             for i, rv in enumerate(prior):
                 if type(rv) is not sympy.stats.rv.RandomSymbol:
                     raise ConfigurationError('Only lambda functions or SymPy random variables can be used as a prior.')
