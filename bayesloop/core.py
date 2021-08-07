@@ -22,7 +22,7 @@ import sympy.stats
 from copy import copy, deepcopy
 from collections import OrderedDict, Iterable
 from inspect import getargspec
-from tqdm import tqdm, tqdm_notebook
+from tqdm.auto import tqdm
 from .helper import assignNestedItem, recursiveIndex, flatten, createColormap, oint, cint, freeSymbols
 from .preprocessing import movingWindow
 from .observationModels import ObservationModel
@@ -355,11 +355,8 @@ class Study(object):
 
         # show progressbar if silent=False
         if not silent:
-            # first assume jupyter notebook and try to use tqdm-widget; if it fails, use normal tqdm-progressbar
-            try:
-                enum = tqdm_notebook(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
-            except:
-                enum = tqdm(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
+
+            enum = tqdm(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
         else:
             enum = np.arange(0, len(self.formattedData))
 
@@ -426,11 +423,7 @@ class Study(object):
 
             # show progressbar if silent=False
             if not silent:
-                # first assume jupyter notebook and try to use tqdm-widget; if it fails, use normal tqdm-progressbar
-                try:
-                    enum = tqdm_notebook(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
-                except:
-                    enum = tqdm(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
+                enum = tqdm(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
             else:
                 enum = np.arange(0, len(self.formattedData))[::-1]
 
@@ -1346,12 +1339,7 @@ class HyperStudy(Study):
             else:
                 # show progressbar if silent=False
                 if not silent:
-                    # first assume jupyter notebook and tray to use tqdm-widget,
-                    # if it fails, use normal tqdm-progressbar
-                    try:
-                        enum = tqdm_notebook(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
-                    except:
-                        enum = tqdm(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
+                    enum = tqdm(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
                 else:
                     enum = enumerate(self.hyperGridValues)
 
@@ -1475,11 +1463,7 @@ class HyperStudy(Study):
 
         # show progressbar for last process if silent=False
         if not silent and idx == nJobs-1:
-            # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
-            try:
-                enum = tqdm_notebook(enumerate(S.hyperGridValues), total=len(S.hyperGridValues))
-            except:
-                enum = tqdm(enumerate(S.hyperGridValues), total=len(S.hyperGridValues))
+            enum = tqdm(enumerate(S.hyperGridValues), total=len(S.hyperGridValues))
         else:
             enum = enumerate(S.hyperGridValues)
 

@@ -11,7 +11,7 @@ import re
 import operator
 import numpy as np
 import scipy.special as sp
-from tqdm import tqdm, tqdm_notebook
+from tqdm.auto import tqdm
 from .exceptions import ConfigurationError
 
 
@@ -404,12 +404,7 @@ class Parser:
 
             if not silent:
                 print('+ Computing distribution: {}'.format(query))
-                # first assume jupyter notebook and try to use tqdm-widget,
-                # if it fails, use normal tqdm-progressbar
-                try:
-                    it = tqdm_notebook(zip(bins[:-1], bins[1:]), total=len(binnedValues))
-                except:
-                    it = tqdm(zip(bins[:-1], bins[1:]), total=len(binnedValues))
+                it = tqdm(zip(bins[:-1], bins[1:]), total=len(binnedValues))
             else:
                 it = zip(bins[:-1], bins[1:])
 
