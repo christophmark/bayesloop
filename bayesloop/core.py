@@ -8,14 +8,14 @@ data streams.
 """
 
 from __future__ import division, print_function
+import string
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import minimize
 from scipy.special import factorial, logsumexp
 from scipy.special import beta as beta_func
 import sympy.abc as abc
-from sympy import Symbol
+from sympy import symbols
 from sympy import lambdify
 from sympy.stats import density
 import sympy.stats
@@ -240,7 +240,7 @@ class Study(object):
                                          .format(len(self.observationModel.parameterNames), len(prior)))
 
             pdf = 1
-            x = [abc.x]*len(prior)
+            x = symbols(' '.join(list(string.ascii_lowercase)[:len(prior)]))
             for i, rv in enumerate(prior):
                 if type(rv) is not sympy.stats.rv.RandomSymbol:
                     raise ConfigurationError('Only lambda functions or SymPy random variables can be used as a prior.')
