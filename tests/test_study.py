@@ -172,7 +172,7 @@ class TestOneParameterModel:
         # test optimized hyper-parameter values
         np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 2.11216289063, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
-        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -3.0, decimal=5,
+        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -3.0, decimal=3,
                                        err_msg='Erroneous log-evidence value.')
 
 
@@ -328,7 +328,7 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [  4.525729e-04, 1.677903e-03, 2.945258e-07, 1.498415e-08, 1.102384e-09],
+                                   [4.525547e-04, 1.677968e-03, 2.946498e-07, 1.499508e-08, 1.102637e-09],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
@@ -337,11 +337,11 @@ class TestTwoParameterModel:
                                    rtol=1e-05, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -8.01030368139, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -8.010466752050611, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
         # test optimized hyper-parameter values
-        np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 1.06576569677, decimal=5,
+        np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 1.065854087589326, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
-        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -4.04001476542, decimal=5,
+        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -4.039735868499399, decimal=5,
                                        err_msg='Erroneous log-evidence value.')

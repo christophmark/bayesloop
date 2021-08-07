@@ -34,7 +34,7 @@ class TestBuiltin:
         S.fit()
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -9.4050089375418136, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -9.4050089375418136, decimal=3,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_gaussianrandomwalk(self):

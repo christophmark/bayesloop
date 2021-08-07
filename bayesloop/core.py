@@ -8,21 +8,21 @@ data streams.
 """
 
 from __future__ import division, print_function
+import string
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import minimize
 from scipy.special import factorial, logsumexp
 from scipy.special import beta as beta_func
 import sympy.abc as abc
-from sympy import Symbol
+from sympy import symbols
 from sympy import lambdify
 from sympy.stats import density
 import sympy.stats
 from copy import copy, deepcopy
 from collections import OrderedDict, Iterable
 from inspect import getargspec
-from tqdm import tqdm, tqdm_notebook
+from tqdm.auto import tqdm
 from .helper import assignNestedItem, recursiveIndex, flatten, createColormap, oint, cint, freeSymbols
 from .preprocessing import movingWindow
 from .observationModels import ObservationModel
@@ -240,7 +240,11 @@ class Study(object):
                                          .format(len(self.observationModel.parameterNames), len(prior)))
 
             pdf = 1
-            x = [abc.x]*len(prior)
+            if len(prior) > 1:
+                x = symbols(' '.join(list(string.ascii_lowercase)[:len(prior)]))
+            else:
+                x = [abc.x]
+
             for i, rv in enumerate(prior):
                 if type(rv) is not sympy.stats.rv.RandomSymbol:
                     raise ConfigurationError('Only lambda functions or SymPy random variables can be used as a prior.')
@@ -355,11 +359,8 @@ class Study(object):
 
         # show progressbar if silent=False
         if not silent:
-            # first assume jupyter notebook and try to use tqdm-widget; if it fails, use normal tqdm-progressbar
-            try:
-                enum = tqdm_notebook(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
-            except:
-                enum = tqdm(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
+
+            enum = tqdm(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
         else:
             enum = np.arange(0, len(self.formattedData))
 
@@ -426,11 +427,7 @@ class Study(object):
 
             # show progressbar if silent=False
             if not silent:
-                # first assume jupyter notebook and try to use tqdm-widget; if it fails, use normal tqdm-progressbar
-                try:
-                    enum = tqdm_notebook(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
-                except:
-                    enum = tqdm(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
+                enum = tqdm(np.arange(0, len(self.formattedData))[::-1], total=len(self.formattedData))
             else:
                 enum = np.arange(0, len(self.formattedData))[::-1]
 
@@ -1346,12 +1343,7 @@ class HyperStudy(Study):
             else:
                 # show progressbar if silent=False
                 if not silent:
-                    # first assume jupyter notebook and tray to use tqdm-widget,
-                    # if it fails, use normal tqdm-progressbar
-                    try:
-                        enum = tqdm_notebook(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
-                    except:
-                        enum = tqdm(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
+                    enum = tqdm(enumerate(self.hyperGridValues), total=len(self.hyperGridValues))
                 else:
                     enum = enumerate(self.hyperGridValues)
 
@@ -1475,11 +1467,7 @@ class HyperStudy(Study):
 
         # show progressbar for last process if silent=False
         if not silent and idx == nJobs-1:
-            # first assume jupyter notebook and tray to use tqdm-widget, if it fails, use normal tqdm-progressbar
-            try:
-                enum = tqdm_notebook(enumerate(S.hyperGridValues), total=len(S.hyperGridValues))
-            except:
-                enum = tqdm(enumerate(S.hyperGridValues), total=len(S.hyperGridValues))
+            enum = tqdm(enumerate(S.hyperGridValues), total=len(S.hyperGridValues))
         else:
             enum = enumerate(S.hyperGridValues)
 
