@@ -1,8 +1,8 @@
 [![bayesloop](https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/logo_400x100px.png)](http://bayesloop.com)
 
-[![Build status](https://api.travis-ci.org/christophmark/bayesloop.svg?branch=master)](https://travis-ci.org/christophmark/bayesloop#)
+[![Build status](https://github.com/christophmark/bayesloop/workflows/Tests/badge.svg?branch=master)](https://github.com/christophmark/bayesloop/actions/workflows/test.yml)
 [![Documentation status](https://readthedocs.org/projects/bayesloop/badge/?version=latest)](http://docs.bayesloop.com) 
-[![Coverage Status](https://coveralls.io/repos/github/christophmark/bayesloop/badge.svg?branch=master)](https://coveralls.io/github/christophmark/bayesloop?branch=master)
+[![Coverage Status](https://codecov.io/gh/christophmark/bayesloop/branch/master/graph/badge.svg?token=637W4M2RCE)](https://codecov.io/gh/christophmark/bayesloop)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![DOI](https://zenodo.org/badge/41474112.svg)](https://zenodo.org/badge/latestdoi/41474112)
 
