@@ -11,8 +11,10 @@ time step.
 from __future__ import division, print_function
 import numpy as np
 from scipy.signal import fftconvolve
+from scipy.signal import convolve2d
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.ndimage.interpolation import shift
+from scipy.stats import multivariate_normal
 from collections import Iterable
 from inspect import getargspec
 from copy import deepcopy
@@ -833,3 +835,74 @@ class BreakPoint(TransitionModel):
 
     def __str__(self):
         return 'Break-point'
+
+
+class BivariateRandomWalk(TransitionModel):
+    """
+    Correlated Gaussian parameter fluctuations. This model assumes that parameter changes follow a bivariate Gaussian
+    distribution.
+    """
+    def __init__(self, name1='sigma1', value1=None,
+                 name2='sigma2', value2=None,
+                 name3='rho', value3=None,
+                 prior=(None, None, None)):
+
+        if isinstance(value1, (list, tuple)):
+            value1 = np.array(value1)
+        if isinstance(value2, (list, tuple)):
+            value2 = np.array(value2)
+        if isinstance(value3, (list, tuple)):
+            value2 = np.array(value3)
+
+        self.study = None
+        self.latticeConstant = None
+        self.hyperParameterNames = [name1, name2, name3]
+        self.hyperParameterValues = [value1, value2, value3]
+        self.prior = prior
+        self.kernel = None
+        self.kernelParameters = None
+        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+
+    def __str__(self):
+        return 'Bivariate random walk'
+
+    def computeForwardPrior(self, posterior, t):
+        """
+        Compute new prior from old posterior (moving forwards in time).
+
+        Args:
+            posterior(ndarray): Parameter distribution from current time step
+            t(int): integer time step
+
+        Returns:
+            ndarray: Prior parameter distribution for subsequent time step
+        """
+
+        # if hyper-parameter values have changed, a new convolution kernel needs to be created
+        if not self.kernelParameters == self.hyperParameterValues:
+            normedSigma1 = self.hyperParameterValues[0] / self.latticeConstant[0]
+            normedSigma2 = self.hyperParameterValues[1] / self.latticeConstant[1]
+
+            self.kernel = self.createKernel(normedSigma1, normedSigma2, self.hyperParameterValues[2])
+            self.kernelParameters = deepcopy(self.hyperParameterValues)
+
+        newPrior = convolve2d(posterior, self.kernel, mode='same')
+        newPrior /= np.sum(newPrior)
+        return newPrior
+
+    def computeBackwardPrior(self, posterior, t):
+        return self.computeForwardPrior(posterior, t - 1)
+
+    @staticmethod
+    def createKernel(sigma1, sigma2, rho):
+        rv = multivariate_normal(cov=[[sigma1 ** 2., rho * sigma1 * sigma2],
+                                      [rho * sigma1 * sigma2, sigma2 ** 2.]])
+
+        x = np.arange(-3 * np.ceil(sigma1), 3 * np.ceil(sigma1) + 1)
+        y = np.arange(-3 * np.ceil(sigma2), 3 * np.ceil(sigma2) + 1)
+
+        xv, yv = np.meshgrid(x, y, sparse=False, indexing='ij')
+
+        kernel = rv.pdf(np.array([xv, yv]).T).T
+        kernel /= np.sum(kernel)
+        return kernel
