@@ -51,6 +51,20 @@ class TestBuiltin:
         np.testing.assert_almost_equal(S.logEvidence, -10.323144246611964, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
+    def test_bivariaterandomwalk(self):
+        S = bl.Study()
+        S.loadData(np.array([1, 2, 3, 4, 5]))
+
+        L = bl.om.Gaussian('mu', bl.oint(0, 6, 20), 'sigma', bl.oint(0, 2, 20))
+        T = bl.tm.BivariateRandomWalk('sigma1', 1., 'sigma2', 0.1, 'rho', 0.5)
+        S.set(L, T)
+
+        S.fit()
+
+        # test model evidence value
+        np.testing.assert_almost_equal(S.logEvidence, -7.330706514472251, decimal=5,
+                                       err_msg='Erroneous log-evidence value.')
+
     def test_alphastablerandomwalk(self):
         S = bl.Study()
         S.loadData(np.array([1, 2, 3, 4, 5]))

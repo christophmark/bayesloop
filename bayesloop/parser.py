@@ -120,12 +120,12 @@ class Parser:
         atom = (parameter | fnumber)
 
         # expression based on operator precedence
-        self.expr = pp.operatorPrecedence(atom, [(funcop, 1, pp.opAssoc.RIGHT),
-                                                 (atop, 2, pp.opAssoc.LEFT),
-                                                 (expop, 2, pp.opAssoc.RIGHT),
-                                                 (signop, 1, pp.opAssoc.RIGHT),
-                                                 (multop, 2, pp.opAssoc.LEFT),
-                                                 (plusop, 2, pp.opAssoc.LEFT)])
+        self.expr = pp.infixNotation(atom, [(funcop, 1, pp.opAssoc.RIGHT),
+                                            (atop, 2, pp.opAssoc.LEFT),
+                                            (expop, 2, pp.opAssoc.RIGHT),
+                                            (signop, 1, pp.opAssoc.RIGHT),
+                                            (multop, 2, pp.opAssoc.LEFT),
+                                            (plusop, 2, pp.opAssoc.LEFT)])
 
     def _evaluate(self, parsedString):
         """
