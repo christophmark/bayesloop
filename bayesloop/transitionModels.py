@@ -739,7 +739,7 @@ class SerialTransitionModel(TransitionModel):
 
         if not all(x < y if not ((isinstance(x, str) and x == 'all') or (isinstance(y, str) and y == 'all')) else True
                    for x, y in zip(firstValues, firstValues[1:])):
-            raise ConfigurationError('Time steps for structural breaks and/or change-pointshave to be passed in '
+            raise ConfigurationError('Time steps for structural breaks and/or change-points have to be passed in '
                                      'monotonically increasing order.')
 
         # check: n models require n-1 break times
