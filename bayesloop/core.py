@@ -2810,7 +2810,7 @@ class OnlineStudy(HyperStudy):
         if hpIndex == -1:
             raise PostProcessingError('No hyper-parameter "{}" found. Check hyper-parameter names.'.format(name))
 
-        hyperParameterSequence = np.array(self.hyperParameterSequence)[:, tmIndex]
+        hyperParameterSequence = np.array([x[tmIndex] for x in self.hyperParameterSequence])
 
         # marginalize the hyper-posterior probabilities
         hpv = np.array(self.hyperParameterValues[tmIndex])
