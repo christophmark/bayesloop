@@ -359,7 +359,6 @@ class Study(object):
 
         # show progressbar if silent=False
         if not silent:
-
             enum = tqdm(np.arange(0, len(self.formattedData)), total=len(self.formattedData))
         else:
             enum = np.arange(0, len(self.formattedData))
@@ -416,13 +415,8 @@ class Study(object):
             print('    + Log10-evidence: {:.5f}'.format(self.logEvidence / np.log(10)))
 
         if not (forwardOnly or evidenceOnly):
-            # set prior distribution for forward-pass
-            if self.observationModel.prior is not None:
-                beta = self._computePrior(silent=True)
-            else:
-                beta = np.ones(self.gridSize)  # flat prior
-
-            # normalize beta (for numerical stability only)
+            # initialize beta and normalize by grid size (for numerical stability only)
+            beta = np.ones(self.gridSize)
             beta /= np.sum(beta)
 
             # show progressbar if silent=False
