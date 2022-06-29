@@ -5,6 +5,7 @@ The following functions save or load instances of all `Study` types using the Py
 
 from __future__ import division, print_function
 import dill
+dill.settings['recurse'] = True
 
 
 def save(filename, study):

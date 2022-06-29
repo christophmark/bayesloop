@@ -309,8 +309,7 @@ class SymPy(ObservationModel):
             assert self.module[1] == 'stats'
         except:
             raise ConfigurationError('SymPy observation model must contain SymPy random variable.')
-
-        self.rv = rv
+        
         self.name = str(rv)  # user-defined name for random variable is used
 
         # get specified parameter names/values
@@ -325,7 +324,7 @@ class SymPy(ObservationModel):
             self.parameterNames = args[::2]
             self.parameterValues = args[1::2]
 
-        rvParams = freeSymbols(self.rv)
+        rvParams = freeSymbols(rv)
         rvNames = [str(p) for p in rvParams]
 
         # if no parameters are provided, take the ones from the random variables and assign "None" as values
