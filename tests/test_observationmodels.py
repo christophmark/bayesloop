@@ -23,7 +23,7 @@ class TestSymPy:
         S.fit()
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -10.447907381964875, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -10.238278174965238, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_sympy_2p(self):
