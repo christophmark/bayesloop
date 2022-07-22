@@ -75,7 +75,7 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [0.03372851, 0.05087598, 0.02024129, 0.00020918, 0.00020918],
+                                   [0.033729, 0.050869, 0.020636, 0.001647, 0.001647],
                                    rtol=1e-02, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
