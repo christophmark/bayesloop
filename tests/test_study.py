@@ -26,7 +26,7 @@ class TestOneParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -10.4463425036, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -10.4463425036, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_1hp(self):
@@ -48,7 +48,7 @@ class TestOneParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -10.4337420351, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -10.4337420351, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_2hp(self):
@@ -74,7 +74,7 @@ class TestOneParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -10.4342948181, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -10.4342948181, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_prior_array(self):
@@ -96,7 +96,7 @@ class TestOneParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -10.0866227472, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -10.0866227472, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_prior_function(self):
@@ -118,7 +118,7 @@ class TestOneParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -11.3966589329, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -11.3966589329, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_prior_sympy(self):
@@ -140,7 +140,7 @@ class TestOneParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -11.1819034242, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -11.1819034242, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_optimize(self):
@@ -166,11 +166,11 @@ class TestOneParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -9.47362827569, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -9.47362827569, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
         # test optimized hyper-parameter values
-        np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 2.11216289063, decimal=5,
+        np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 2.11216289063, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
         np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -3.0, decimal=3,
                                        err_msg='Erroneous log-evidence value.')
@@ -196,7 +196,7 @@ class TestTwoParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -16.1946904707, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -16.1946904707, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_1hp(self):
@@ -218,7 +218,7 @@ class TestTwoParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -16.1865343702, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -16.1865343702, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_2hp(self):
@@ -244,7 +244,7 @@ class TestTwoParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -14.3305753098, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -14.3305753098, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_prior_array(self):
@@ -266,7 +266,7 @@ class TestTwoParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -10.9827282104, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -10.9827282104, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_prior_function(self):
@@ -288,7 +288,7 @@ class TestTwoParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -11.9842221343, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -11.9842221343, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_fit_prior_sympy(self):
@@ -311,7 +311,7 @@ class TestTwoParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -12.4324853153, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -12.4324853153, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_optimize(self):
@@ -337,11 +337,11 @@ class TestTwoParameterModel:
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.logEvidence, -8.010466752050611, decimal=5,
+        np.testing.assert_almost_equal(S.logEvidence, -8.010466752050611, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
 
         # test optimized hyper-parameter values
-        np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 1.065854087589326, decimal=5,
+        np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 1.065854087589326, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
-        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -4.039735868499399, decimal=5,
+        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -4.039735868499399, decimal=2,
                                        err_msg='Erroneous log-evidence value.')

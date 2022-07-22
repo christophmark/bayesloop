@@ -80,7 +80,7 @@ class TestTwoParameterModel:
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
-                                   [0.9894398, 1.92805399, 3.33966456, 4.28759449, 4.28759449],
+                                   [0.98944 , 1.927195, 3.349921, 4.213695, 4.213695],
                                    rtol=1e-02, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
