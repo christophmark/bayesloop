@@ -17,13 +17,13 @@ class TestOneParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
-                                   [0.00046598, 0.00046598, 0.00046598, 0.00046598, 0.00046598],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.00034, 0.00034, 0.00034, 0.00034, 0.00034],
+                                   rtol=1e-3, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('rate'),
-                                   [2.99835794, 2.99835794, 2.99835794, 2.99835794, 2.99835794],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [3.09761, 3.09761, 3.09761, 3.09761, 3.09761],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -10.4463425036, decimal=5,
@@ -39,13 +39,13 @@ class TestOneParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
-                                   [0.00055206, 0.00051683, 0.00048233, 0.00045903, 0.00045629],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.000417, 0.000386, 0.000356, 0.000336, 0.000332],
+                                   rtol=1e-03, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('rate'),
-                                   [2.97583695, 2.98402851, 2.99501907, 3.00527058, 3.01126784],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [3.073534, 3.08179 , 3.093091, 3.104016, 3.111173],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -10.4337420351, decimal=5,
@@ -65,13 +65,13 @@ class TestOneParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
-                                   [0.00052993, 0.00050302, 0.00047929, 0.00045883, 0.00045629],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.000412, 0.000376, 0.000353, 0.000336, 0.000332],
+                                   rtol=1e-02, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('rate'),
-                                   [2.87337277, 2.9265807, 2.98217424, 3.00439557, 3.01127175],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [2.942708, 3.002756, 3.071995, 3.103038, 3.111179],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -10.4342948181, decimal=5,
@@ -87,13 +87,13 @@ class TestOneParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
-                                   [0.00048679, 0.00045124, 0.00041767, 0.00039717, 0.00039976],
-                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
+                                   [0.000221, 0.000202, 0.000184, 0.000172, 0.000172],
+                                   rtol=1e-02, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('rate'),
-                                   [2.81716591, 2.82337653, 2.83204058, 2.83944083, 2.84187612],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [3.174159, 3.180812, 3.190743, 3.200642, 3.20722 ],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -10.0866227472, decimal=5,
@@ -109,13 +109,13 @@ class TestOneParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
-                                   [0.0007529, 0.00070742, 0.00066273, 0.00063262, 0.00062968],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.000437, 0.000401, 0.000366, 0.000342, 0.000337],
+                                   rtol=1e-02, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('rate'),
-                                   [2.77252114, 2.78251864, 2.79475018, 2.80541289, 2.81072838],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [2.967834, 2.977838, 2.990624, 3.002654, 3.010419],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -11.3966589329, decimal=5,
@@ -131,13 +131,13 @@ class TestOneParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
-                                   [0.0020607, 0.0019692, 0.00187339, 0.0018053, 0.00179584],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.000881, 0.00081 , 0.00074 , 0.00069 , 0.000674],
+                                   rtol=1e-03, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('rate'),
-                                   [2.25427356, 2.26949283, 2.28527551, 2.29704214, 2.30024139],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [2.627709, 2.643611, 2.661415, 2.677185, 2.687023],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -11.1819034242, decimal=5,
@@ -157,13 +157,13 @@ class TestOneParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('rate', density=False)[1][:, 250],
-                                   [0.00181567, 0.00213315, 0.00091028, 0.00041154, 0.00090885],
+                                   [1.820641e-03, 2.083830e-03, 7.730833e-04, 1.977125e-04, 9.441302e-05],
                                    rtol=1e-05, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('rate'),
-                                   [1.01204314, 2.25763551, 3.24176817, 3.74634864, 3.12632199],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [1.015955, 2.291846, 3.36402 , 4.113622, 4.390356],
+                                   rtol=1e-03, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -9.47362827569, decimal=5,
@@ -187,8 +187,8 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [0.00707902, 0.00707902, 0.00707902, 0.00707902, 0.00707902],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.013349, 0.013349, 0.013349, 0.013349, 0.013349],
+                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
@@ -209,13 +209,13 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [0.00722368, 0.00712209, 0.00702789, 0.00696926, 0.00696322],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.013547, 0.013428, 0.013315, 0.013241, 0.013232],
+                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
-                                   [2.99313985, 2.99573566, 3., 3.00426434, 3.00686015],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [2.995242, 2.997088, 3.      , 3.002912, 3.004758],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -16.1865343702, decimal=5,
@@ -235,13 +235,13 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [0.02976422, 0.15404218, 0.10859567, 0.02553673, 0.00054109],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.018848, 0.149165, 0.025588, 0.006414, 0.005426],
+                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
-                                   [1.08288559, 2.24388932, 2.38033179, 2.98934128, 4.64547841],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [1.005987, 2.710129, 3.306985, 3.497192, 3.527645],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -14.3305753098, decimal=5,
@@ -257,13 +257,13 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [0.04317995, 0.04296549, 0.04275526, 0.04262151, 0.04262491],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.02045 , 0.020327, 0.020208, 0.020128, 0.020115],
+                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
-                                   [2.66415455, 2.66519273, 2.66664847, 2.66788051, 2.66828383],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [2.99656 , 2.997916, 3.      , 3.002084, 3.00344 ],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -10.9827282104, decimal=5,
@@ -279,13 +279,13 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [0.01591204, 0.01579036, 0.01567361, 0.01559665, 0.01558591],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.018242, 0.018119, 0.018001, 0.017921, 0.01791 ],
+                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
-                                   [2.99576496, 2.99741879, 3., 3.00258121, 3.00423504],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [2.996202, 2.997693, 3.      , 3.002307, 3.003798],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -11.9842221343, decimal=5,
@@ -302,13 +302,13 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [0.00909976, 0.0089861, 0.00887967, 0.00881235, 0.00880499],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [0.014305, 0.014183, 0.014066, 0.01399 , 0.01398 ],
+                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
-                                   [2.9942575, 2.99646768, 3., 3.00353232, 3.0057425],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [2.995526, 2.997271, 3.      , 3.002729, 3.004474],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -12.4324853153, decimal=5,
@@ -328,13 +328,13 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [4.525729e-04, 1.677903e-03, 2.945258e-07, 1.498415e-08, 1.102384e-09],
-                                   rtol=1e-05, err_msg='Erroneous posterior distribution values.')
+                                   [9.903855e-03, 1.887901e-02, 8.257234e-05, 5.142727e-06, 2.950377e-06],
+                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
-                                   [0.95899404, 1.93816557, 2.99999968, 4.06183394, 5.04100612],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [0.979099, 1.951689, 3.000075, 4.048376, 5.020886],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -8.010466752050611, decimal=5,

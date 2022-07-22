@@ -21,9 +21,9 @@ class TestParameterParsing:
 
         P = bl.Parser(S, S2)
         P('log(rate2*2*1.2) + 4 + rate^2 > 20', t=3)
-        np.testing.assert_almost_equal(P('log(rate2@1*2*1.2) + 4 + rate@2^2 > 20'), 0.162262091093, decimal=5,
+        np.testing.assert_almost_equal(P('log(rate2@1*2*1.2) + 4 + rate@2^2 > 20'), 0.19606860326174191, decimal=5,
                                        err_msg='Erroneous parsing result for inequality.')
-        np.testing.assert_almost_equal(P('log(rate2*2*1.2) + 4 + rate^2 > 20', t=3), 0.163699467863, decimal=5,
+        np.testing.assert_almost_equal(P('log(rate2*2*1.2) + 4 + rate^2 > 20', t=3), 0.19772797081330246, decimal=5,
                                        err_msg='Erroneous parsing result for inequality with fixed timestamp.')
 
     def test_distribution(self):
@@ -42,8 +42,8 @@ class TestParameterParsing:
         P = bl.Parser(S, S2)
         x, p = P('log(rate2@1*2*1.2)+ 4 + rate@2^2')
         np.testing.assert_allclose(p[100:105],
-                                   [0.00643873, 0.00618468, 0.00466452, 0.00314371, 0.00365816],
-                                   rtol=1e-05, err_msg='Erroneous derived probability distribution.')
+                                   [0.00732 , 0.007495, 0.005775, 0.003511, 0.003949],
+                                   rtol=1e-03, err_msg='Erroneous derived probability distribution.')
 
 
 class TestHyperParameterParsing:

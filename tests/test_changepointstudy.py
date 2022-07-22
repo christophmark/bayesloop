@@ -29,13 +29,13 @@ class TestTwoParameterModel:
 
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
-                                   [0.01243717, 0.03016095, 0.016939, 0.00024909, 0.00024909],
-                                   rtol=1e-04, err_msg='Erroneous posterior distribution values.')
+                                   [0.012437, 0.030168, 0.01761 , 0.001731, 0.001731],
+                                   rtol=1e-03, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
-                                   [0.96802204, 1.95705078, 3.47078681, 4.22225665, 4.22225665],
-                                   rtol=1e-05, err_msg='Erroneous posterior mean values.')
+                                   [0.968022, 1.956517, 3.476958, 4.161028, 4.161028],
+                                   rtol=1e-04, err_msg='Erroneous posterior mean values.')
 
         # test model evidence value
         np.testing.assert_almost_equal(S.logEvidence, -15.072007461556161, decimal=5,
