@@ -15,7 +15,7 @@ from scipy.signal import convolve2d
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.ndimage.interpolation import shift
 from scipy.stats import multivariate_normal
-from collections import Iterable
+from collections.abc import Iterable
 from inspect import getargspec
 from copy import deepcopy
 from .exceptions import ConfigurationError, PostProcessingError

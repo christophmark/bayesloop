@@ -20,7 +20,8 @@ from sympy import lambdify
 from sympy.stats import density
 import sympy.stats
 from copy import copy, deepcopy
-from collections import OrderedDict, Iterable
+from collections import OrderedDict
+from collections.abc import Iterable
 from inspect import getargspec
 from tqdm.auto import tqdm
 from .helper import assignNestedItem, recursiveIndex, flatten, createColormap, oint, cint, freeSymbols
