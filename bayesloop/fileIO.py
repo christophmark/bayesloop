@@ -4,8 +4,7 @@ The following functions save or load instances of all `Study` types using the Py
 """
 
 from __future__ import division, print_function
-import dill
-dill.settings['recurse'] = True
+import cloudpickle
 
 
 def save(filename, study):
@@ -17,7 +16,7 @@ def save(filename, study):
         study: Instance of study class (Study, HyperStudy, etc.)
     """
     with open(filename, 'wb') as f:
-        dill.dump(study, f, protocol=dill.HIGHEST_PROTOCOL)
+        cloudpickle.dump(study, f)
     print('+ Successfully saved current study.')
 
 
@@ -32,7 +31,7 @@ def load(filename):
         Study instance
     """
     with open(filename, 'rb') as f:
-        S = dill.load(f)
+        S = cloudpickle.load(f)
     print('+ Successfully loaded study.')
 
     return S
