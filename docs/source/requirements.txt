@@ -6,4 +6,4 @@ ipython
 sphinx
 jupyter_client
 nbsphinx
-nbconvert==5.0.0
+nbconvert==6.5.1
