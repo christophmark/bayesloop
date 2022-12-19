@@ -101,7 +101,7 @@ class Study(object):
             if not silent:
                 print('! WARNING: Data supplied as list, not as Numpy array. Converting list to Numpy array '
                       '(dtype=float).')
-            self.rawData = np.array(array, dtype=np.float)
+            self.rawData = np.array(array, dtype=float)
         else:
             raise ConfigurationError('Data type not supported. Please provide data as Numpy array.')
 
@@ -147,7 +147,7 @@ class Study(object):
                 except:
                     raise ConfigurationError('Could not estimate parameter values for "{}".'.format(n))
 
-            v = np.array(v, dtype=np.float)  # inference algorithm needs floats
+            v = np.array(v, dtype=float)  # inference algorithm needs floats
 
             self.marginalGrid.append(v)
             self.gridSize.append(len(v))
@@ -372,7 +372,7 @@ class Study(object):
 
             # force dtype float on likelihood (in case it is of dtype object)
             if likelihood.dtype == np.object:
-                likelihood = likelihood.astype(np.float)
+                likelihood = likelihood.astype(float)
 
             # update alpha based on likelihood
             alpha *= likelihood
@@ -452,7 +452,7 @@ class Study(object):
 
                 # force dtype float on likelihood (in case it is of dtype object)
                 if likelihood.dtype == np.object:
-                    likelihood = likelihood.astype(np.float)
+                    likelihood = likelihood.astype(float)
 
                 # compute local evidence
                 with np.errstate(invalid='ignore'):
@@ -1181,7 +1181,7 @@ class HyperStudy(Study):
         for prior, values, gridConst, name in zip(self.flatHyperPriors, self.flatHyperParameters,
                                                   self.hyperGridConstant, self.flatHyperParameterNames):
             if prior is None:  # no prior specified
-                priorValues = np.ones_like(values, dtype=np.float)
+                priorValues = np.ones_like(values, dtype=float)
                 priorValues /= np.sum(priorValues)
                 priorValues /= gridConst
                 priorNamesList.append('uniform')
