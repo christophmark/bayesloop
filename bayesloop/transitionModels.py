@@ -724,7 +724,7 @@ class SerialTransitionModel(TransitionModel):
             else:  # sub-model
                 self.models.append(arg)
 
-        self.changePointMask = np.array(self.changePointMask).astype(np.bool)
+        self.changePointMask = np.array(self.changePointMask).astype(bool)
 
         # check: break times have to be passed in monotonically increasing order
         # since multiple values can be passed for one break-point at init, we check first values only

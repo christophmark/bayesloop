@@ -1816,7 +1816,7 @@ class ChangepointStudy(HyperStudy):
         self.allHyperPriorValues = self.flatHyperPriorValues[:]
 
         # extract hyper-grid values that belong to changepoints
-        pointMask = np.sum([np.array(self.flatHyperParameterNames) == p for p in points], axis=0).astype(np.bool)
+        pointMask = np.sum([np.array(self.flatHyperParameterNames) == p for p in points], axis=0).astype(bool)
         maskedHyperGridValues = self.allHyperGridValues[:, pointMask]
 
         # only accept if change-point values are ordered (and not equal)
