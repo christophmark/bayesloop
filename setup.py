@@ -5,10 +5,10 @@ from setuptools import setup
 setup(
     name='bayesloop',
     packages=['bayesloop'],
-    version='1.5.6',
+    version='1.5.7',
     description='Probabilistic programming framework that facilitates objective model selection for time-varying parameter models.',
     url='http://bayesloop.com',
-    download_url = 'https://github.com/christophmark/bayesloop/tarball/1.5.4',
+    download_url = 'https://github.com/christophmark/bayesloop/tarball/1.5.7',
     author='Christoph Mark',
     author_email='christoph.mark@fau.de',
     license='The MIT License (MIT)',
