@@ -1012,7 +1012,7 @@ class Study(object):
             gamma(float): exponent for gamma correction of the displayed marginal distribution; default: 0.5
             kwargs: all further keyword-arguments are passed to the plot of the posterior mean values
         """
-        if self.posteriorSequence == []:
+        if len(self.posteriorSequence) == 0:
             raise PostProcessingError('Cannot plot posterior sequence as it has not yet been computed. '
                                       'Run complete fit.')
 
