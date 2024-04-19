@@ -22,7 +22,6 @@ import sympy.stats
 from copy import copy, deepcopy
 from collections import OrderedDict
 from collections.abc import Iterable
-from inspect import getargspec
 from tqdm.auto import tqdm
 from .helper import assignNestedItem, recursiveIndex, flatten, createColormap, oint, cint, freeSymbols
 from .preprocessing import movingWindow
@@ -30,6 +29,11 @@ from .observationModels import ObservationModel
 from .transitionModels import TransitionModel, CombinedTransitionModel, SerialTransitionModel
 from .exceptions import ConfigurationError, PostProcessingError
 from .parser import Parser
+
+try:
+    from inspect import getargspec
+except ImportError:
+    from inspect import getfullargspec as getargspec
 
 
 class Study(object):
