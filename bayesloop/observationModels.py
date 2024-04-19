@@ -15,8 +15,12 @@ from .jeffreys import getJeffreysPrior
 from scipy.special import iv, factorial
 from .exceptions import ConfigurationError, PostProcessingError
 from .helper import cint, oint, freeSymbols
-from inspect import getargspec
 import warnings
+
+try:
+    from inspect import getargspec
+except ImportError:
+    from inspect import getfullargspec as getargspec
 
 
 class ObservationModel:
