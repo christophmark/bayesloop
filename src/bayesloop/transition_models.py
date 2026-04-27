@@ -10,19 +10,15 @@ time step.
 
 from __future__ import division, print_function
 import numpy as np
+from inspect import Parameter, signature
 from scipy.signal import fftconvolve
 from scipy.signal import convolve2d
-from scipy.ndimage.filters import gaussian_filter1d
-from scipy.ndimage.interpolation import shift
+from scipy.ndimage import gaussian_filter1d
+from scipy.ndimage import shift
 from scipy.stats import multivariate_normal
 from collections.abc import Iterable
 from copy import deepcopy
 from .exceptions import ConfigurationError, PostProcessingError
-
-try:
-    from inspect import getargspec
-except ImportError:
-    from inspect import getfullargspec as getargspec
 
 class TransitionModel:
     """
@@ -511,10 +507,18 @@ class Deterministic(TransitionModel):
             raise ConfigurationError('No parameter set for transition model "Deterministic"')
 
         # create ordered dictionary of hyper-parameters from keyword-arguments of function
-        argspec = getargspec(self.function)
+        functionParameters = [
+            p for p in signature(self.function).parameters.values()
+            if p.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+        ]
+        defaults = [p.default for p in functionParameters[1:]]
 
         # only keyword arguments are allowed
-        if not len(argspec.args) == len(argspec.defaults)+1:
+        if (
+            len(functionParameters) == 0
+            or any(default is Parameter.empty for default in defaults)
+            or functionParameters[0].default is not Parameter.empty
+        ):
             raise ConfigurationError('Function to define deterministic transition model can only contain one '
                                      'non-keyword argument (time; first argument) and keyword-arguments '
                                      '(hyper-parameters) with default values.')
@@ -522,22 +526,23 @@ class Deterministic(TransitionModel):
         # define hyper-parameters of transition model
         self.hyperParameterNames = []
         self.hyperParameterValues = []
-        for arg, default in zip(argspec.args[1:], argspec.defaults):
+        for parameter, default in zip(functionParameters[1:], defaults):
             if isinstance(default, (list, tuple)):
                 default = np.array(default)
-            self.hyperParameterNames.append(arg)
+            self.hyperParameterNames.append(parameter.name)
             self.hyperParameterValues.append(default)
 
         if prior is None:
             # provide as many "None"-priors as there are hyper-parameters
-            self.prior = [None]*len(argspec.defaults)
+            self.prior = [None]*len(defaults)
         else:
             # if list of priors is supplied, check length
-            if isinstance(prior, Iterable):
-                if not len(prior) == len(argspec.defaults):
+            if isinstance(prior, Iterable) and not isinstance(prior, str):
+                if not len(prior) == len(defaults):
                     raise ConfigurationError('{} priors are defined for transition model "{}", but model contains {}'
                                              'hyper-parameters.'
-                                             .format(len(prior), self.function.__name__, len(argspec.defaults)))
+                                             .format(len(prior), self.function.__name__, len(defaults)))
+                self.prior = prior
             # if single prior is defined, pack it in a list
             else:
                 self.prior = [prior]

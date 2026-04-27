@@ -30,7 +30,7 @@ Study types
 Observation models
 ------------------
 
-.. currentmodule:: bayesloop.observationModels
+.. currentmodule:: bayesloop.observation_models
 .. autosummary::
 
    SymPy
@@ -53,13 +53,13 @@ Observation models
         import bayesloop as bl
         L = bl.om.SymPy(...)
    
-.. automodule:: bayesloop.observationModels
+.. automodule:: bayesloop.observation_models
    :members:
    
 Transition models
 -----------------
 
-.. currentmodule:: bayesloop.transitionModels
+.. currentmodule:: bayesloop.transition_models
 .. autosummary::
 
     Static
@@ -82,13 +82,13 @@ Transition models
         import bayesloop as bl
         T = bl.tm.ChangePoint(...)
 
-.. automodule:: bayesloop.transitionModels
+.. automodule:: bayesloop.transition_models
     :members:
 
 File I/O
 --------
 
-.. automodule:: bayesloop.fileIO
+.. automodule:: bayesloop.file_io
     :members:
 
 .. note::
@@ -103,8 +103,3 @@ File I/O
         bl.save('test.bl', S)
         ...
         S = bl.load('test.bl')
-
-Probability Parser
-------------------
-
-.. autoclass:: bayesloop.Parser

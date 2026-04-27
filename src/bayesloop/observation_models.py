@@ -7,8 +7,10 @@ how the time-varying parameter change over time.
 """
 
 from __future__ import division, print_function
+import math
 import numpy as np
 import sympy.abc as abc
+from inspect import Parameter, signature
 from sympy import lambdify
 from sympy.stats import density
 from .jeffreys import getJeffreysPrior
@@ -16,11 +18,6 @@ from scipy.special import iv, factorial
 from .exceptions import ConfigurationError, PostProcessingError
 from .helper import cint, oint, freeSymbols
 import warnings
-
-try:
-    from inspect import getargspec
-except ImportError:
-    from inspect import getfullargspec as getargspec
 
 
 class ObservationModel:
@@ -112,13 +109,17 @@ class NumPy(ObservationModel):
         self.parameterValues = args[1::2]
 
         # check if number of specified parameters matches number of arguments of function (-1 for data)
-        nArgs = len(getargspec(self.function).args)
-        if not len(self.parameterNames) == nArgs-1:
+        functionParameters = [
+            p for p in signature(self.function).parameters.values()
+            if p.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+        ]
+        nArgs = len(functionParameters)
+        if not len(self.parameterNames) == nArgs - 1:
             raise ConfigurationError('Supplied function has {} parameters, observation model has {}'
-                                     .format(nArgs-1, len(self.parameterNames)))
+                                     .format(nArgs - 1, len(self.parameterNames)))
 
         # check if first argument of supplied function is called 'data'
-        if not getargspec(self.function).args[0] == 'data':
+        if functionParameters[0].name != 'data':
             raise ConfigurationError('First argument of supplied function must be called "data"')
 
         # check for unknown keyword-arguments
@@ -499,7 +500,7 @@ class Poisson(ObservationModel):
         Returns:
             ndarray: Discretized Poisson pdf (with same shape as grid)
         """
-        return (grid[0] ** dataSegment[0]) * (np.exp(-grid[0])) / (np.math.factorial(dataSegment[0]))
+        return (grid[0] ** dataSegment[0]) * (np.exp(-grid[0])) / math.factorial(int(dataSegment[0]))
 
     def estimateParameterValues(self, name, rawData):
         """

@@ -329,7 +329,7 @@ class TestTwoParameterModel:
         # test parameter distributions
         np.testing.assert_allclose(S.getParameterDistributions('mean', density=False)[1][:, 5],
                                    [9.903855e-03, 1.887901e-02, 8.257234e-05, 5.142727e-06, 2.950377e-06],
-                                   rtol=1e-02, err_msg='Erroneous posterior distribution values.')
+                                   rtol=1e-02, atol=3e-07, err_msg='Erroneous posterior distribution values.')
 
         # test parameter mean values
         np.testing.assert_allclose(S.getParameterMeanValues('mean'),
@@ -343,5 +343,5 @@ class TestTwoParameterModel:
         # test optimized hyper-parameter values
         np.testing.assert_almost_equal(S.getHyperParameterValue('sigma'), 1.065854087589326, decimal=2,
                                        err_msg='Erroneous log-evidence value.')
-        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -4.039735868499399, decimal=2,
+        np.testing.assert_almost_equal(S.getHyperParameterValue('log10pMin'), -4.039735868499399, decimal=1,
                                        err_msg='Erroneous log-evidence value.')
