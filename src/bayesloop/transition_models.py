@@ -13,7 +13,7 @@ import numpy as np
 from inspect import Parameter, signature
 from scipy.signal import fftconvolve
 from scipy.signal import convolve2d
-from scipy.ndimage import gaussian_filter1d
+from scipy.ndimage import correlate1d
 from scipy.ndimage import shift
 from scipy.stats import multivariate_normal
 from collections.abc import Iterable
@@ -25,6 +25,17 @@ class TransitionModel:
     Parent class for transition models. All transition models inherit from this class. It is currently only used to
     identify transition models as such.
     """
+
+
+def gaussianKernel1d(sigma, truncate=4.0):
+    """
+    Create the order-0 Gaussian kernel used by scipy.ndimage.gaussian_filter1d.
+    """
+    radius = int(truncate * float(sigma) + 0.5)
+    x = np.arange(-radius, radius + 1)
+    kernel = np.exp(-0.5 / float(sigma) ** 2. * x ** 2.)
+    kernel /= np.sum(kernel)
+    return kernel
 
 
 class Static(TransitionModel):
@@ -82,6 +93,8 @@ class GaussianRandomWalk(TransitionModel):
         self.prior = prior
         self.selectedParameter = target
         self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.kernel = None
+        self.kernelParameters = None
 
         if target is None:
             raise ConfigurationError('No parameter set for transition model "GaussianRandomWalk"')
@@ -101,13 +114,18 @@ class GaussianRandomWalk(TransitionModel):
             ndarray: Prior parameter distribution for subsequent time step
         """
         axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-        normedSigma = self.hyperParameterValues[0]/self.latticeConstant[axisToTransform]
-        
+        normedSigma = self.hyperParameterValues[0] / self.latticeConstant[axisToTransform]
+
         if normedSigma > 0.:
-            newPrior = gaussian_filter1d(posterior, normedSigma, axis=axisToTransform)
+            kernelParameters = (float(normedSigma), axisToTransform)
+            if not self.kernelParameters == kernelParameters:
+                self.kernel = gaussianKernel1d(normedSigma)
+                self.kernelParameters = kernelParameters
+
+            newPrior = correlate1d(posterior, self.kernel, axis=axisToTransform, mode='reflect')
         else:
             newPrior = posterior.copy()
-        
+
         return newPrior
 
     def computeBackwardPrior(self, posterior, t):

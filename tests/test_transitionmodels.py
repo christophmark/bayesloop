@@ -3,9 +3,24 @@
 from __future__ import print_function, division
 import bayesloop as bl
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
 
 
 class TestBuiltin:
+    def test_gaussianrandomwalk_matches_scipy_filter(self):
+        S = bl.Study()
+        S.loadData(np.array([1, 2, 3, 4, 5]))
+
+        L = bl.om.Gaussian('mu', bl.oint(0, 6, 20), 'sigma', bl.oint(0, 2, 20))
+        T = bl.tm.GaussianRandomWalk('sigma', 0.2, target='mu')
+        S.set(L, T)
+
+        posterior = np.arange(400, dtype=float).reshape(20, 20)
+        posterior /= np.sum(posterior)
+
+        expected = gaussian_filter1d(posterior, 0.2 / S.latticeConstant[0], axis=0)
+        np.testing.assert_allclose(T.computeForwardPrior(posterior, 0), expected)
+
     def test_static(self):
         S = bl.Study()
         S.loadData(np.array([1, 2, 3, 4, 5]))

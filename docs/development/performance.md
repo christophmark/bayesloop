@@ -16,7 +16,7 @@ The benchmark harness lives in `benchmarks/performance_analysis.py`.
 
 The best first speedup is not Numba or a C extension. It is algorithmic reuse of observation likelihoods.
 
-`Study.fit` previously evaluated the same likelihood once in the forward pass and again in the backward pass. `HyperStudy.fit` amplified that cost by running the same observation likelihoods once per hyperparameter value. The implemented cached-likelihood path reproduces baseline results exactly and still delivers 1.19x to 1.36x speedups for larger continuous-model cases after the observation models themselves were optimized.
+`Study.fit` previously evaluated the same likelihood once in the forward pass and again in the backward pass. `HyperStudy.fit` amplified that cost by running the same observation likelihoods once per hyperparameter value. The implemented cached-likelihood path reproduces baseline results exactly and still delivers 1.21x to 1.50x speedups for larger continuous-model cases after the observation and transition models themselves were optimized.
 
 This first optimization is now implemented in core via `fit(..., cacheLikelihoods="auto", maxCacheSize=512)`.
 `cacheLikelihoods="auto"` is the default and caches full forward-backward fits only when the estimated likelihood
@@ -55,10 +55,10 @@ These timings compare `cacheLikelihoods=False` with the implemented default `cac
 
 | case | baseline median s | auto median s | speedup | sequence cache MiB | validation |
 | --- | ---: | ---: | ---: | ---: | --- |
-| `poisson_static_1d` | 0.0793 | 0.0708 | 1.12x | 0.0 | exact |
-| `gaussian_random_walk_2d` | 0.2036 | 0.1712 | 1.19x | 44.9 | exact |
-| `hyper_gaussian_random_walk_2d` | 0.8540 | 0.6380 | 1.34x | 12.4 | exact |
-| `ar1_static_2d` | 0.2783 | 0.2053 | 1.36x | 89.4 | exact |
+| `poisson_static_1d` | 0.1201 | 0.0979 | 1.23x | 0.0 | exact |
+| `gaussian_random_walk_2d` | 0.3046 | 0.2527 | 1.21x | 44.9 | exact |
+| `hyper_gaussian_random_walk_2d` | 1.2834 | 0.8847 | 1.45x | 12.4 | exact |
+| `ar1_static_2d` | 0.4092 | 0.2732 | 1.50x | 89.4 | exact |
 | `bivariate_random_walk_2d` quick | 0.0236 | 0.0212 | 1.11x | 1.1 | exact |
 
 Validation means zero measured difference in log evidence, posterior mean checksum, posterior final normalization, and HyperStudy entropy where applicable.
@@ -121,10 +121,10 @@ Phase 2: Observation-model grid preparation (implemented)
 - Unique-value likelihood caches are implemented for `Poisson` and `Bernoulli`.
 - Public observation model behavior is unchanged.
 
-Phase 3: Transition-model cleanup
+Phase 3: Transition-model cleanup (partially implemented)
 
 - Bind transition models to the study once and cache target axis indices instead of resolving names on every time step.
-- For `GaussianRandomWalk`, benchmark replacing repeated `gaussian_filter1d` calls with a cached 1D kernel plus `scipy.ndimage.correlate1d`. The profile shows kernel construction overhead exists, but the actual SciPy C correlation remains the main cost.
+- `GaussianRandomWalk` now replaces repeated `gaussian_filter1d` kernel construction with a cached 1D kernel plus `scipy.ndimage.correlate1d`. The actual SciPy C correlation remains the main cost.
 - For `BivariateRandomWalk`, focus on algorithm choice and SciPy kernel options rather than Python JIT. `convolve2d` dominates.
 
 Phase 4: Optional compiler path
@@ -137,8 +137,8 @@ Phase 4: Optional compiler path
 
 The remaining optimal route is:
 
-1. Re-profile transition models after the likelihood changes.
-2. Investigate `GaussianRandomWalk` and `BivariateRandomWalk` kernel choices.
+1. Re-profile transition models after the `GaussianRandomWalk` kernel-cache change.
+2. Investigate `BivariateRandomWalk` kernel choices.
 3. Use Numba selectively for custom/user-defined likelihood kernels after the internal kernel API is cleaner.
 4. Defer Cython/CPython until profiling shows a remaining pure-Python inner loop that cannot be expressed well in NumPy/SciPy/Numba.
 
