@@ -29,6 +29,18 @@ class ObservationModel:
     def __str__(self):
         return self.name
 
+    def prepareGrid(self, grid):
+        """
+        Prepare optional grid-dependent caches for repeated likelihood evaluations.
+        """
+        self._preparedGrid = grid
+
+    def _gridIsPrepared(self, grid):
+        return getattr(self, '_preparedGrid', None) is grid
+
+    def shouldCacheLikelihoodSequence(self):
+        return True
+
     def processedPdf(self, grid, dataSegment):
         """
         This method is called by the fit-method of the Study class (and the step method of the OnlineStudy class) and
@@ -417,6 +429,16 @@ class Bernoulli(ObservationModel):
         else:
             self.prior = prior
 
+    def prepareGrid(self, grid):
+        super(Bernoulli, self).prepareGrid(grid)
+        self._successLikelihood = grid[0].copy()
+        self._successLikelihood[self._successLikelihood > 1.] = 0.
+        self._successLikelihood[self._successLikelihood < 0.] = 0.
+        self._failureLikelihood = 1. - self._successLikelihood
+
+    def shouldCacheLikelihoodSequence(self):
+        return False
+
     def pdf(self, grid, dataSegment):
         """
         Probability density function of the Bernoulli model
@@ -428,16 +450,12 @@ class Bernoulli(ObservationModel):
         Returns:
             ndarray: Discretized Bernoulli pdf (with same shape as grid)
         """
-        temp = grid[0][:]  # make copy of parameter grid
-        temp[temp > 1.] = 0.  # p < 1
-        temp[temp < 0.] = 0.  # p > 0
+        if not self._gridIsPrepared(grid):
+            self.prepareGrid(grid)
 
         if dataSegment[0]:
-            pass  # pdf = p
-        else:
-            temp = 1. - temp  # pdf = 1 - p
-
-        return temp
+            return self._successLikelihood  # pdf = p
+        return self._failureLikelihood  # pdf = 1 - p
 
     def estimateParameterValues(self, name, rawData):
         """
@@ -489,6 +507,15 @@ class Poisson(ObservationModel):
         else:
             self.prior = prior
 
+    def prepareGrid(self, grid):
+        super(Poisson, self).prepareGrid(grid)
+        self._rateGrid = grid[0]
+        self._expNegativeRateGrid = np.exp(-grid[0])
+        self._likelihoodCache = {}
+
+    def shouldCacheLikelihoodSequence(self):
+        return False
+
     def pdf(self, grid, dataSegment):
         """
         Probability density function of the Poisson model
@@ -500,7 +527,16 @@ class Poisson(ObservationModel):
         Returns:
             ndarray: Discretized Poisson pdf (with same shape as grid)
         """
-        return (grid[0] ** dataSegment[0]) * (np.exp(-grid[0])) / math.factorial(int(dataSegment[0]))
+        if not self._gridIsPrepared(grid):
+            self.prepareGrid(grid)
+
+        dataValue = dataSegment[0]
+        try:
+            return self._likelihoodCache[dataValue]
+        except KeyError:
+            likelihood = (self._rateGrid ** dataValue) * self._expNegativeRateGrid / math.factorial(int(dataValue))
+            self._likelihoodCache[dataValue] = likelihood
+            return likelihood
 
     def estimateParameterValues(self, name, rawData):
         """
@@ -553,6 +589,13 @@ class Gaussian(ObservationModel):
         else:
             self.prior = prior
 
+    def prepareGrid(self, grid):
+        super(Gaussian, self).prepareGrid(grid)
+        self._meanGrid = grid[0]
+        variance = grid[1] ** 2.
+        self._negativeHalfInvVariance = -1. / (2. * variance)
+        self._logNormalization = -.5 * np.log(2. * np.pi * variance)
+
     def pdf(self, grid, dataSegment):
         """
         Probability density function of the Gaussian model.
@@ -564,8 +607,11 @@ class Gaussian(ObservationModel):
         Returns:
             ndarray: Discretized Normal pdf (with same shape as grid).
         """
-        return np.exp(
-            -((dataSegment[0] - grid[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(2. * np.pi * grid[1] ** 2.))
+        if not self._gridIsPrepared(grid):
+            self.prepareGrid(grid)
+
+        return np.exp(((dataSegment[0] - self._meanGrid) ** 2.) * self._negativeHalfInvVariance +
+                      self._logNormalization)
 
     def estimateParameterValues(self, name, rawData):
         """
@@ -622,6 +668,12 @@ class Laplace(ObservationModel):
         else:
             self.prior = prior
 
+    def prepareGrid(self, grid):
+        super(Laplace, self).prepareGrid(grid)
+        self._meanGrid = grid[0]
+        self._invScaleGrid = 1. / grid[1]
+        self._halfInvScaleGrid = .5 * self._invScaleGrid
+
     def pdf(self, grid, dataSegment):
         """
         Probability density function of the Laplace model.
@@ -633,7 +685,10 @@ class Laplace(ObservationModel):
         Returns:
             ndarray: Discretized Normal pdf (with same shape as grid).
         """
-        return np.exp(-np.abs(dataSegment[0] - grid[0])/grid[1])/(2.*grid[1])
+        if not self._gridIsPrepared(grid):
+            self.prepareGrid(grid)
+
+        return np.exp(-np.abs(dataSegment[0] - self._meanGrid) * self._invScaleGrid) * self._halfInvScaleGrid
 
     def estimateParameterValues(self, name, rawData):
         """
@@ -754,6 +809,12 @@ class WhiteNoise(ObservationModel):
         else:
             self.prior = prior
 
+    def prepareGrid(self, grid):
+        super(WhiteNoise, self).prepareGrid(grid)
+        variance = grid[0] ** 2.
+        self._negativeHalfInvVariance = -1. / (2. * variance)
+        self._logNormalization = -.5 * np.log(2. * np.pi * variance)
+
     def pdf(self, grid, dataSegment):
         """
         Probability density function of the white noise process.
@@ -765,7 +826,10 @@ class WhiteNoise(ObservationModel):
         Returns:
             ndarray: Discretized pdf (with same shape as grid).
         """
-        return np.exp(-(dataSegment[0] ** 2.) / (2. * grid[0] ** 2.) - .5 * np.log(2. * np.pi * grid[0] ** 2.))
+        if not self._gridIsPrepared(grid):
+            self.prepareGrid(grid)
+
+        return np.exp((dataSegment[0] ** 2.) * self._negativeHalfInvVariance + self._logNormalization)
 
     def estimateParameterValues(self, name, rawData):
         """
@@ -817,6 +881,13 @@ class AR1(ObservationModel):
         self.prior = prior  # default: flat prior
         self.multiplyLikelihoods = True
 
+    def prepareGrid(self, grid):
+        super(AR1, self).prepareGrid(grid)
+        self._correlationGrid = grid[0]
+        variance = grid[1] ** 2.
+        self._negativeHalfInvVariance = -1. / (2. * variance)
+        self._logNormalization = -.5 * np.log(2. * np.pi * variance)
+
     def pdf(self, grid, dataSegment):
         """
         Probability density function of the Auto-regressive process of first order
@@ -828,8 +899,11 @@ class AR1(ObservationModel):
         Returns:
             ndarray: Discretized pdf (for data point d_t, given d_(t-1) and parameters).
         """
-        return np.exp(-((dataSegment[1] - grid[0] * dataSegment[0]) ** 2.) / (2. * grid[1] ** 2.) - .5 * np.log(
-            2. * np.pi * grid[1] ** 2.))
+        if not self._gridIsPrepared(grid):
+            self.prepareGrid(grid)
+
+        residual = dataSegment[1] - self._correlationGrid * dataSegment[0]
+        return np.exp((residual ** 2.) * self._negativeHalfInvVariance + self._logNormalization)
 
     def estimateParameterValues(self, name, rawData):
         """
@@ -879,6 +953,14 @@ class ScaledAR1(ObservationModel):
         self.prior = prior  # default: flat prior
         self.multiplyLikelihoods = True
 
+    def prepareGrid(self, grid):
+        super(ScaledAR1, self).prepareGrid(grid)
+        self._correlationGrid = grid[0]
+        scaledStd = grid[1] * np.sqrt(1. - grid[0] ** 2.)
+        variance = scaledStd ** 2.
+        self._negativeHalfInvVariance = -1. / (2. * variance)
+        self._logNormalization = -.5 * np.log(2. * np.pi * variance)
+
     def pdf(self, grid, dataSegment):
         """
         Probability density function of the Auto-regressive process of first order
@@ -890,11 +972,11 @@ class ScaledAR1(ObservationModel):
         Returns:
             ndarray: Discretized pdf (for data point d_t, given d_(t-1) and parameters).
         """
-        r = grid[0]
-        s = grid[1]
-        sScaled = s*np.sqrt(1 - r**2.)
-        return np.exp(-((dataSegment[1] - r * dataSegment[0]) ** 2.) / (2. * sScaled ** 2.) - .5 * np.log(
-            2. * np.pi * sScaled ** 2.))
+        if not self._gridIsPrepared(grid):
+            self.prepareGrid(grid)
+
+        residual = dataSegment[1] - self._correlationGrid * dataSegment[0]
+        return np.exp((residual ** 2.) * self._negativeHalfInvVariance + self._logNormalization)
 
     def estimateParameterValues(self, name, rawData):
         """

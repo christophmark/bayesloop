@@ -161,6 +161,7 @@ class Study(object):
 
         # create grid
         self.grid = [m for m in np.meshgrid(*self.marginalGrid, indexing='ij')]
+        self.observationModel.prepareGrid(self.grid)
 
         # if observation model is updated, transition model must know the new lattice constant
         if self.transitionModel is not None:
@@ -340,6 +341,8 @@ class Study(object):
             return bool(cacheLikelihoods), cacheSize
 
         if isinstance(cacheLikelihoods, str) and cacheLikelihoods == 'auto':
+            if not self.observationModel.shouldCacheLikelihoodSequence():
+                return False, cacheSize
             if maxCacheSize is None:
                 return True, cacheSize
             if maxCacheSize < 0:

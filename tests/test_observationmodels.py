@@ -123,6 +123,60 @@ class TestNumPy:
 
 
 class TestBuiltin:
+    def test_prepared_grid_likelihoods_match_formulas(self):
+        x = np.array([1.25])
+
+        p_grid = [bl.oint(0, 1, 17)]
+        bernoulli = bl.om.Bernoulli('p', p_grid[0])
+        np.testing.assert_allclose(bernoulli.pdf(p_grid, np.array([1.])), p_grid[0])
+        np.testing.assert_allclose(bernoulli.pdf(p_grid, np.array([0.])), 1. - p_grid[0])
+
+        rate_grid = [bl.oint(0, 8, 31)]
+        poisson = bl.om.Poisson('rate', rate_grid[0])
+        expected = (rate_grid[0] ** 3.) * np.exp(-rate_grid[0]) / 6.
+        np.testing.assert_allclose(poisson.pdf(rate_grid, np.array([3.])), expected)
+
+        mean, std = np.meshgrid(bl.cint(-2, 2, 13), bl.oint(0.2, 3, 11), indexing='ij')
+        gaussian_grid = [mean, std]
+        gaussian = bl.om.Gaussian('mean', None, 'std', None)
+        expected = np.exp(-((x[0] - mean) ** 2.) / (2. * std ** 2.) - .5 * np.log(2. * np.pi * std ** 2.))
+        np.testing.assert_allclose(gaussian.pdf(gaussian_grid, x), expected)
+
+        laplace = bl.om.Laplace('mean', None, 'scale', None)
+        expected = np.exp(-np.abs(x[0] - mean) / std) / (2. * std)
+        np.testing.assert_allclose(laplace.pdf(gaussian_grid, x), expected)
+
+        noise_grid = [bl.oint(0.2, 3, 17)]
+        white_noise = bl.om.WhiteNoise('std', None)
+        expected = np.exp(-(x[0] ** 2.) / (2. * noise_grid[0] ** 2.) -
+                          .5 * np.log(2. * np.pi * noise_grid[0] ** 2.))
+        np.testing.assert_allclose(white_noise.pdf(noise_grid, x), expected)
+
+        rho, sigma = np.meshgrid(bl.oint(-.9, .9, 11), bl.oint(.2, 2, 13), indexing='ij')
+        ar_grid = [rho, sigma]
+        data_segment = np.array([1.1, .2])
+        ar1 = bl.om.AR1('rho', None, 'sigma', None)
+        expected = np.exp(-((data_segment[1] - rho * data_segment[0]) ** 2.) / (2. * sigma ** 2.) -
+                          .5 * np.log(2. * np.pi * sigma ** 2.))
+        np.testing.assert_allclose(ar1.pdf(ar_grid, data_segment), expected)
+
+        scaled_ar1 = bl.om.ScaledAR1('rho', None, 'sigma', None)
+        scaled_sigma = sigma * np.sqrt(1. - rho ** 2.)
+        expected = np.exp(-((data_segment[1] - rho * data_segment[0]) ** 2.) / (2. * scaled_sigma ** 2.) -
+                          .5 * np.log(2. * np.pi * scaled_sigma ** 2.))
+        np.testing.assert_allclose(scaled_ar1.pdf(ar_grid, data_segment), expected)
+
+    def test_prepared_grid_cache_updates_for_new_grid(self):
+        L = bl.om.Poisson('rate', None)
+        first_grid = [bl.oint(0, 4, 12)]
+        second_grid = [bl.oint(0, 8, 12)]
+
+        first = L.pdf(first_grid, np.array([2.]))
+        second = L.pdf(second_grid, np.array([2.]))
+
+        np.testing.assert_allclose(first, (first_grid[0] ** 2.) * np.exp(-first_grid[0]) / 2.)
+        np.testing.assert_allclose(second, (second_grid[0] ** 2.) * np.exp(-second_grid[0]) / 2.)
+
     def test_bernoulli(self):
         S = bl.Study()
         S.loadData(np.array([1, 0, 1, 0, 0]))

@@ -130,8 +130,9 @@ def run_baseline(case: BenchmarkCase) -> FitSnapshot:
 
 def run_cached(case: BenchmarkCase) -> tuple[FitSnapshot, float]:
     study = case.factory()
-    _quiet(lambda: study.fit(silent=True, cacheLikelihoods=True))
-    return _snapshot(study), study._estimateLikelihoodCacheSize()
+    _quiet(lambda: study.fit(silent=True, cacheLikelihoods="auto"))
+    use_cache, cache_mib = study._shouldCacheLikelihoods("auto", 512)
+    return _snapshot(study), cache_mib if use_cache else 0.0
 
 
 def time_case(case: BenchmarkCase, runner: Callable[[BenchmarkCase], object], repeats: int) -> tuple[list[float], object]:
@@ -486,7 +487,7 @@ def run_benchmarks(args: argparse.Namespace) -> dict[str, object]:
             "name": case.name,
             "description": case.description,
             "baseline": _duration_stats(baseline_durations),
-            "cached_likelihoods": _duration_stats(cached_durations),
+            "auto_likelihoods": _duration_stats(cached_durations),
             "speedup": statistics.median(baseline_durations) / statistics.median(cached_durations),
             "likelihood_cache_mib": cache_mib,
             "validation": compare_snapshots(baseline_snapshot, cached_snapshot),
@@ -523,7 +524,7 @@ def print_markdown(results: dict[str, object]) -> None:
 
     print("## Fit benchmarks")
     print()
-    print("| case | baseline median s | cached median s | speedup | cache MiB | log evidence diff |")
+    print("| case | baseline median s | auto median s | speedup | sequence cache MiB | log evidence diff |")
     print("| --- | ---: | ---: | ---: | ---: | ---: |")
     for case in results["cases"]:
         validation = case["validation"]
@@ -531,7 +532,7 @@ def print_markdown(results: dict[str, object]) -> None:
             "| {name} | {base:.4f} | {cached:.4f} | {speedup:.2f}x | {cache:.1f} | {diff:.3e} |".format(
                 name=case["name"],
                 base=case["baseline"]["median_s"],
-                cached=case["cached_likelihoods"]["median_s"],
+                cached=case["auto_likelihoods"]["median_s"],
                 speedup=case["speedup"],
                 cache=case["likelihood_cache_mib"],
                 diff=validation["log_evidence_abs_diff"],

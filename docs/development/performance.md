@@ -16,16 +16,16 @@ The benchmark harness lives in `benchmarks/performance_analysis.py`.
 
 The best first speedup is not Numba or a C extension. It is algorithmic reuse of observation likelihoods.
 
-`Study.fit` previously evaluated the same likelihood once in the forward pass and again in the backward pass. `HyperStudy.fit` amplified that cost by running the same observation likelihoods once per hyperparameter value. The implemented cached-likelihood path reproduces baseline results exactly and delivers 1.45x to 1.63x speedups for larger `Study` cases and 1.84x for the larger `HyperStudy` case.
+`Study.fit` previously evaluated the same likelihood once in the forward pass and again in the backward pass. `HyperStudy.fit` amplified that cost by running the same observation likelihoods once per hyperparameter value. The implemented cached-likelihood path reproduces baseline results exactly and still delivers 1.19x to 1.36x speedups for larger continuous-model cases after the observation models themselves were optimized.
 
 This first optimization is now implemented in core via `fit(..., cacheLikelihoods="auto", maxCacheSize=512)`.
 `cacheLikelihoods="auto"` is the default and caches full forward-backward fits only when the estimated likelihood
 cache is below the memory budget. Passing `cacheLikelihoods=True` forces the cache, while `False` preserves the
 previous on-demand behavior.
 
-The second-best speedup is model-specific NumPy optimization in built-in observation models. In microbenchmarks, a Gaussian likelihood implementation that precomputes parameter-grid invariants was 2.35x faster than the current likelihood loop, and caching repeated Poisson observation values was 25.84x faster than recomputing the same likelihood for every time step.
+The second-best speedup is model-specific NumPy optimization in built-in observation models. This is now implemented for the Gaussian-family built-ins via prepared grid invariants and for Bernoulli/Poisson via small repeated-value caches. Poisson and Bernoulli opt out of the full time-by-grid sequence cache in `auto` mode, because their own cache is smaller and faster for repeated discrete observations.
 
-Numba is useful as an optional tool for custom loop-heavy likelihood kernels, but it should not be the default route for the core built-ins. On the measured Gaussian likelihood kernel, Numba was 1.92x faster than the current code but slower than optimized NumPy. Most transition-model time is already inside SciPy C kernels, so Numba has little to compile there.
+Numba is useful as an optional tool for custom loop-heavy likelihood kernels, but it should not be the default route for the core built-ins. After the Gaussian grid-invariant cache, the measured Numba Gaussian loop was slower than the built-in NumPy path. Most transition-model time is already inside SciPy C kernels, so Numba has little to compile there.
 
 CPython/Cython extensions should be deferred. They would add packaging complexity and are unlikely to beat the cheaper wins above until bayesloop has a smaller, explicitly typed internal kernel API.
 
@@ -51,14 +51,14 @@ uv run --with-editable . python benchmarks/performance_analysis.py --case hyper_
 
 ## Fit Benchmark Results
 
-These timings compare the implemented core path with `cacheLikelihoods=False` versus `cacheLikelihoods=True`.
+These timings compare `cacheLikelihoods=False` with the implemented default `cacheLikelihoods="auto"` after the observation-model fast paths. The Poisson case reports `0.0` MiB because auto mode uses the model's repeated-value cache instead of a full time-by-grid likelihood cube.
 
-| case | baseline median s | cached median s | speedup | likelihood cache MiB | validation |
+| case | baseline median s | auto median s | speedup | sequence cache MiB | validation |
 | --- | ---: | ---: | ---: | ---: | --- |
-| `poisson_static_1d` | 0.1605 | 0.1068 | 1.50x | 47.7 | exact |
-| `gaussian_random_walk_2d` | 0.2247 | 0.1546 | 1.45x | 44.9 | exact |
-| `hyper_gaussian_random_walk_2d` | 0.8583 | 0.4655 | 1.84x | 12.4 | exact |
-| `ar1_static_2d` | 0.3763 | 0.2313 | 1.63x | 89.4 | exact |
+| `poisson_static_1d` | 0.0793 | 0.0708 | 1.12x | 0.0 | exact |
+| `gaussian_random_walk_2d` | 0.2036 | 0.1712 | 1.19x | 44.9 | exact |
+| `hyper_gaussian_random_walk_2d` | 0.8540 | 0.6380 | 1.34x | 12.4 | exact |
+| `ar1_static_2d` | 0.2783 | 0.2053 | 1.36x | 89.4 | exact |
 | `bivariate_random_walk_2d` quick | 0.0236 | 0.0212 | 1.11x | 1.1 | exact |
 
 Validation means zero measured difference in log evidence, posterior mean checksum, posterior final normalization, and HyperStudy entropy where applicable.
@@ -85,21 +85,21 @@ For `BivariateRandomWalk`, SciPy `convolve2d` dominates the profile. Likelihood 
 
 ## Likelihood Microbenchmarks
 
-Quick-mode likelihood generation benchmarks:
+Quick-mode likelihood generation benchmarks after built-in observation-model caches:
 
 | kernel | median s | speedup vs group baseline |
 | --- | ---: | ---: |
-| `gaussian_current_processedPdf_loop` | 0.0166 | 1.00x |
-| `gaussian_numpy_invariant_loop` | 0.0071 | 2.32x |
-| `gaussian_numpy_vectorized_all_time` | 0.0061 | 2.70x |
-| `numba_gaussian_loop_compile_excluded` | 0.0090 | 1.92x |
-| `poisson_current_processedPdf_loop` | 0.0432 | 1.00x |
-| `poisson_unique_observation_cache` | 0.0017 | 24.93x |
+| `gaussian_current_processedPdf_loop` | 0.0120 | 1.00x |
+| `gaussian_numpy_invariant_loop` | 0.0111 | 1.08x |
+| `gaussian_numpy_vectorized_all_time` | 0.0097 | 1.24x |
+| `numba_gaussian_loop_compile_excluded` | 0.0159 | 0.75x |
+| `poisson_current_processedPdf_loop` | 0.0098 | 1.00x |
+| `poisson_unique_observation_cache` | 0.0018 | 5.37x |
 
 Interpretation:
 
-- Gaussian, Laplace, AR1, and ScaledAR1 should precompute grid-only terms such as variance, inverse variance, and log-normalization once per grid.
-- Discrete observation models should cache likelihoods by unique data segment value. This is especially valuable for Poisson count data, where the number of unique observations is usually tiny compared with the number of time steps.
+- Gaussian, Laplace, WhiteNoise, AR1, and ScaledAR1 now precompute grid-only terms such as variance, inverse variance, and log-normalization once per grid.
+- Bernoulli and Poisson now cache likelihoods by unique data segment value. This is especially valuable for Poisson count data, where the number of unique observations is usually tiny compared with the number of time steps.
 - Full vectorization over time can be fastest, but it materializes the same large likelihood cube as the general cache. It should be gated by a memory budget.
 
 ## Recommended Implementation Plan
@@ -114,12 +114,12 @@ Phase 1: Adaptive likelihood cache (implemented)
 - `HyperStudy.fit` avoids repeating `movingWindow` inside every sub-fit.
 - The previous streaming implementation remains available through `cacheLikelihoods=False` and as the automatic fallback for large grids.
 
-Phase 2: Observation-model grid preparation
+Phase 2: Observation-model grid preparation (implemented)
 
-- Add a private hook such as `ObservationModel.prepareGrid(grid)` or a small bound-kernel object built in `Study.setObservationModel`.
-- Implement Gaussian-family invariant caches first.
-- Implement unique-value likelihood caches for Poisson and Bernoulli. The cache key should be the formatted data segment and must handle missing data cleanly.
-- Keep public observation model behavior unchanged.
+- `ObservationModel.prepareGrid(grid)` prepares model-specific grid caches from `Study.setObservationModel`.
+- Gaussian-family invariant caches are implemented for `Gaussian`, `Laplace`, `WhiteNoise`, `AR1`, and `ScaledAR1`.
+- Unique-value likelihood caches are implemented for `Poisson` and `Bernoulli`.
+- Public observation model behavior is unchanged.
 
 Phase 3: Transition-model cleanup
 
@@ -137,8 +137,8 @@ Phase 4: Optional compiler path
 
 The remaining optimal route is:
 
-1. Add built-in observation-model fast paths using NumPy and small per-grid/per-data caches.
-2. Re-profile transition models after those changes.
+1. Re-profile transition models after the likelihood changes.
+2. Investigate `GaussianRandomWalk` and `BivariateRandomWalk` kernel choices.
 3. Use Numba selectively for custom/user-defined likelihood kernels after the internal kernel API is cleaner.
 4. Defer Cython/CPython until profiling shows a remaining pure-Python inner loop that cannot be expressed well in NumPy/SciPy/Numba.
 
