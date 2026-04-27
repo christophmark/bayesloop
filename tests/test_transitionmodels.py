@@ -21,6 +21,30 @@ class TestBuiltin:
         expected = gaussian_filter1d(posterior, 0.2 / S.latticeConstant[0], axis=0)
         np.testing.assert_allclose(T.computeForwardPrior(posterior, 0), expected)
 
+    def test_gaussianrandomwalk_reuses_multiple_cached_kernels(self):
+        S = bl.Study()
+        S.loadData(np.array([1, 2, 3, 4, 5]))
+
+        L = bl.om.Poisson('rate', bl.oint(0, 6, 100))
+        T = bl.tm.GaussianRandomWalk('sigma', 0.1, target='rate')
+        S.set(L, T)
+
+        posterior = np.ones(S.gridSize)
+        posterior /= np.sum(posterior)
+
+        T.hyperParameterValues[0] = 0.1
+        T.computeForwardPrior(posterior, 0)
+        firstKernelKey = (float(0.1 / S.latticeConstant[0]), 0)
+        firstKernel = T.kernelCache[firstKernelKey]
+
+        T.hyperParameterValues[0] = 0.2
+        T.computeForwardPrior(posterior, 0)
+        T.hyperParameterValues[0] = 0.1
+        T.computeForwardPrior(posterior, 0)
+
+        assert len(T.kernelCache) == 2
+        assert T.kernelCache[firstKernelKey] is firstKernel
+
     def test_static(self):
         S = bl.Study()
         S.loadData(np.array([1, 2, 3, 4, 5]))

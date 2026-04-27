@@ -124,7 +124,7 @@ Phase 2: Observation-model grid preparation (implemented)
 Phase 3: Transition-model cleanup (partially implemented)
 
 - Bind transition models to the study once and cache target axis indices instead of resolving names on every time step.
-- `GaussianRandomWalk` now replaces repeated `gaussian_filter1d` kernel construction with a cached 1D kernel plus `scipy.ndimage.correlate1d`. The actual SciPy C correlation remains the main cost.
+- `GaussianRandomWalk` now replaces repeated `gaussian_filter1d` kernel construction with cached 1D kernels plus `scipy.ndimage.correlate1d`. Kernels are cached per normalized sigma and target axis, which also avoids rebuilding kernels during `OnlineStudy` hyperparameter scans.
 - For `BivariateRandomWalk`, focus on algorithm choice and SciPy kernel options rather than Python JIT. `convolve2d` dominates.
 
 Phase 4: Optional compiler path
@@ -137,7 +137,7 @@ Phase 4: Optional compiler path
 
 The remaining optimal route is:
 
-1. Re-profile transition models after the `GaussianRandomWalk` kernel-cache change.
+1. Re-profile `OnlineStudy` with large transition-model hypergrids after the per-sigma `GaussianRandomWalk` kernel cache.
 2. Investigate `BivariateRandomWalk` kernel choices.
 3. Use Numba selectively for custom/user-defined likelihood kernels after the internal kernel API is cleaner.
 4. Defer Cython/CPython until profiling shows a remaining pure-Python inner loop that cannot be expressed well in NumPy/SciPy/Numba.
