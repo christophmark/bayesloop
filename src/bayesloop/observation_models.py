@@ -81,8 +81,8 @@ class NumPy(ObservationModel):
         prior: custom prior distribution that may be passed as a NumPy array that has tha same shape as the parameter
             grid, as a(lambda) function or as a (list of) SymPy random variable(s)
 
-    Example:
-    ::
+    Example::
+
         # Assume that we have a data set of Gaussian random variates. We know the standard deviation for each random
         # variate, but not the mean value. The data has the form [[variate_1, std_1], [variate_2, std_2], ...]. We can
         # design an observation model to infer the mean value of the data taking into account the known standard
@@ -175,8 +175,8 @@ class SciPy(ObservationModel):
     See http://docs.scipy.org/doc/scipy/reference/stats.html for further information on the available distributions and
     the parameter notation.
 
-    Example:
-    ::
+    Example::
+
         import bayesloop as bl
         import scipy.stats
         L = bl.om.SciPy(scipy.stats.poisson, 'mu', bl.oint(0, 6, 1000), fixedParameters={'loc': 0})
@@ -301,8 +301,8 @@ class SymPy(ObservationModel):
     See http://docs.sympy.org/dev/modules/stats.html for further information on the available distributions and the
     parameter notation.
 
-    Example:
-    ::
+    Example::
+
         import bayesloop as bl
         from sympy import Symbol
         from sympy.stats import Normal
@@ -929,8 +929,10 @@ class AR1(ObservationModel):
 
 class ScaledAR1(ObservationModel):
     """
-    Scaled auto-regressive process of first order. Recusively defined as
+    Scaled auto-regressive process of first order, recursively defined as::
+
         d_t = r_t * d_(t-1) + s_t*sqrt(1 - (r_t)^2) * e_t,
+
     with r_t the correlation coefficient of subsequent data points and s_t being the standard deviation of the
     observations d_t. For the standard AR1 process, s_t defines the noise amplitude of the process. For uncorrelated
     data, the two observation models are equal.

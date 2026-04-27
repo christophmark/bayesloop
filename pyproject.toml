@@ -41,8 +41,12 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = [
+    "ipykernel",
+    "ipywidgets",
     "nbsphinx",
+    "pypandoc-binary",
     "sphinx",
+    "sphinx-rtd-theme",
 ]
 parallel = [
     "pathos>=0.3",

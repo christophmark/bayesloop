@@ -299,7 +299,7 @@ class Study(object):
             if key not in ['silent']:
                 raise TypeError("set() got an unexpected keyword argument '{}'".format(key))
 
-        # For Python 2 compatibility (no argument with default value after *args)
+        # Keep the legacy calling convention: S.set(model, silent=True).
         silent = kwargs.pop('silent', False)
 
         om = False
@@ -2527,7 +2527,7 @@ class OnlineStudy(HyperStudy):
 
     def getCTMP(self, transitionModel, local=False):
         """
-        See :meth:`.OnlineStudy.getCurrentTransitionModelProbability.
+        See :meth:`.OnlineStudy.getCurrentTransitionModelProbability`.
         """
         return self.getCurrentTransitionModelProbability(transitionModel, local=local)
 
@@ -2566,7 +2566,6 @@ class OnlineStudy(HyperStudy):
         Returns:
             ndarray: Array containing the posterior probability values for the specified transition model for all time
                 steps analyzed
-            transitionModel(str): Name of the transition model
         """
         if not self.storeHistory:
             raise PostProcessingError('To get past transition model distributions, Online Study must be called with '
@@ -2581,7 +2580,7 @@ class OnlineStudy(HyperStudy):
 
     def getTMPs(self, transitionModel, local=False):
         """
-        See :meth:`.OnlineStudy.getTransitionModelProbabilities.
+        See :meth:`.OnlineStudy.getTransitionModelProbabilities`.
         """
         return self.getTransitionModelProbabilities(transitionModel, local=local)
 
@@ -2823,7 +2822,7 @@ class OnlineStudy(HyperStudy):
 
     def getHPD(self, t, name, plot=False, **kwargs):
         """
-        See :meth:`.OnlineStudy.getHyperParameterDistribution.
+        See :meth:`.OnlineStudy.getHyperParameterDistribution`.
         """
         return self.getHyperParameterDistribution(t, name, plot=plot, **kwargs)
 
@@ -2882,7 +2881,7 @@ class OnlineStudy(HyperStudy):
 
     def getCHPD(self, name, plot=False, **kwargs):
         """
-        See :meth:`.OnlineStudy.getCurrentHyperParameterDistribution.
+        See :meth:`.OnlineStudy.getCurrentHyperParameterDistribution`.
         """
         return self.getCurrentHyperParameterDistribution(name, plot=plot, **kwargs)
 
@@ -2900,7 +2899,7 @@ class OnlineStudy(HyperStudy):
         """
         if not self.storeHistory:
             raise PostProcessingError('To get past hyper-parameter distributions, Online Study must be called with '
-                                      'flag "storeHistory=True". Use "getCurrentHyperParameterDistributions instead.')
+                                      'flag "storeHistory=True". Use "getCurrentHyperParameterDistribution" instead.')
 
         # determine indices of transition model and hyper-parameter
         hpIndex = -1
@@ -2936,7 +2935,7 @@ class OnlineStudy(HyperStudy):
 
     def getHPDs(self, name):
         """
-        See :meth:`.OnlineStudy.getHyperParameterDistributions.
+        See :meth:`.OnlineStudy.getHyperParameterDistributions`.
         """
         return self.getHyperParameterDistributions(name)
 

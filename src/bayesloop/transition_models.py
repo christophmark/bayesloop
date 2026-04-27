@@ -524,8 +524,8 @@ class Deterministic(TransitionModel):
             function, as a SymPy random variable, or directly as a Numpy array with probability values for each
             hyper-parameter value
 
-    Example:
-    ::
+    Example::
+
         def quadratic(t, a=0, b=0):
             return a*(t**2) + b*t
 
@@ -718,8 +718,8 @@ class SerialTransitionModel(TransitionModel):
         *args: Sequence of transition models and break-points/change-points (for n models, n-1
             break-points/change-points have to be provided)
 
-    Example:
-    ::
+    Example::
+
         T = bl.tm.SerialTransitionModel(bl.tm.Static(),
                                         bl.tm.BreakPoint('t_1', 50),
                                         bl.tm.RegimeSwitch('log10pMin', -7),
