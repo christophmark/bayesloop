@@ -6,6 +6,26 @@ import numpy as np
 import sympy.stats as stats
 
 
+def test_fit_likelihood_cache_matches_uncached():
+    def make_study():
+        S = bl.Study()
+        S.loadData(np.array([1, 2, 1, 3, 2, 4]), silent=True)
+        S.setOM(bl.om.Poisson('rate', bl.oint(0, 6, 120)), silent=True)
+        S.setTM(bl.tm.GaussianRandomWalk('sigma', 0.1, target='rate'), silent=True)
+        return S
+
+    uncached = make_study()
+    uncached.fit(silent=True, cacheLikelihoods=False)
+
+    cached = make_study()
+    cached.fit(silent=True, cacheLikelihoods=True)
+
+    np.testing.assert_allclose(cached.logEvidence, uncached.logEvidence)
+    np.testing.assert_allclose(cached.localEvidence, uncached.localEvidence)
+    np.testing.assert_allclose(cached.posteriorSequence, uncached.posteriorSequence)
+    np.testing.assert_allclose(cached.posteriorMeanValues, uncached.posteriorMeanValues)
+
+
 class TestOneParameterModel:
     def test_fit_0hp(self):
         # carry out fit

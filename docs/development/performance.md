@@ -16,7 +16,12 @@ The benchmark harness lives in `benchmarks/performance_analysis.py`.
 
 The best first speedup is not Numba or a C extension. It is algorithmic reuse of observation likelihoods.
 
-`Study.fit` currently evaluates the same likelihood once in the forward pass and again in the backward pass. `HyperStudy.fit` amplifies that cost by calling `Study.fit` once per hyperparameter value even though the observation likelihoods are identical across those fits. A cached-likelihood prototype reproduced the baseline results exactly and delivered 1.45x to 1.58x speedups for larger `Study` cases and 1.86x for the larger `HyperStudy` case.
+`Study.fit` previously evaluated the same likelihood once in the forward pass and again in the backward pass. `HyperStudy.fit` amplified that cost by running the same observation likelihoods once per hyperparameter value. The implemented cached-likelihood path reproduces baseline results exactly and delivers 1.45x to 1.63x speedups for larger `Study` cases and 1.84x for the larger `HyperStudy` case.
+
+This first optimization is now implemented in core via `fit(..., cacheLikelihoods="auto", maxCacheSize=512)`.
+`cacheLikelihoods="auto"` is the default and caches full forward-backward fits only when the estimated likelihood
+cache is below the memory budget. Passing `cacheLikelihoods=True` forces the cache, while `False` preserves the
+previous on-demand behavior.
 
 The second-best speedup is model-specific NumPy optimization in built-in observation models. In microbenchmarks, a Gaussian likelihood implementation that precomputes parameter-grid invariants was 2.35x faster than the current likelihood loop, and caching repeated Poisson observation values was 25.84x faster than recomputing the same likelihood for every time step.
 
@@ -46,14 +51,14 @@ uv run --with-editable . python benchmarks/performance_analysis.py --case hyper_
 
 ## Fit Benchmark Results
 
-These timings include likelihood precomputation in the cached-likelihood prototype.
+These timings compare the implemented core path with `cacheLikelihoods=False` versus `cacheLikelihoods=True`.
 
 | case | baseline median s | cached median s | speedup | likelihood cache MiB | validation |
 | --- | ---: | ---: | ---: | ---: | --- |
-| `poisson_static_1d` | 0.1688 | 0.1069 | 1.58x | 47.7 | exact |
-| `gaussian_random_walk_2d` | 0.2251 | 0.1553 | 1.45x | 44.9 | exact |
-| `hyper_gaussian_random_walk_2d` | 0.8682 | 0.4668 | 1.86x | 12.4 | exact |
-| `ar1_static_2d` | 0.3797 | 0.2407 | 1.58x | 89.4 | exact |
+| `poisson_static_1d` | 0.1605 | 0.1068 | 1.50x | 47.7 | exact |
+| `gaussian_random_walk_2d` | 0.2247 | 0.1546 | 1.45x | 44.9 | exact |
+| `hyper_gaussian_random_walk_2d` | 0.8583 | 0.4655 | 1.84x | 12.4 | exact |
+| `ar1_static_2d` | 0.3763 | 0.2313 | 1.63x | 89.4 | exact |
 | `bivariate_random_walk_2d` quick | 0.0236 | 0.0212 | 1.11x | 1.1 | exact |
 
 Validation means zero measured difference in log evidence, posterior mean checksum, posterior final normalization, and HyperStudy entropy where applicable.
@@ -62,19 +67,19 @@ Validation means zero measured difference in log evidence, posterior mean checks
 
 The larger `HyperStudy` baseline profile shows the main issue clearly:
 
-- `HyperStudy.fit`: 0.941 s total in the profiled run.
-- `Study.fit`: 10 calls, 0.737 s cumulative.
-- `ObservationModel.processedPdf`: 3600 calls, 0.417 s cumulative.
-- `Gaussian.pdf`: 0.408 s cumulative.
-- `GaussianRandomWalk.computeForwardPrior`: 3600 calls, 0.190 s cumulative.
-- SciPy `gaussian_filter1d`/`correlate1d`: 0.187 s cumulative.
+- `HyperStudy.fit`: 0.894 s total in the profiled run.
+- `_fitFormattedData`: 10 calls, 0.695 s cumulative.
+- `ObservationModel.processedPdf`: 3600 calls, 0.407 s cumulative.
+- `Gaussian.pdf`: 0.399 s cumulative.
+- `GaussianRandomWalk.computeForwardPrior`: 3600 calls, 0.180 s cumulative.
+- SciPy `gaussian_filter1d`/`correlate1d`: 0.177 s cumulative.
 
-The cached prototype changes the shape of the remaining work:
+The cached implementation changes the shape of the remaining work:
 
-- Total cached run: 0.569 s in the profiled run.
-- Cached `fit_study_with_cached_likelihoods`: 10 calls, 0.322 s cumulative.
-- `precompute_likelihoods`: 180 calls to `processedPdf`, 0.022 s cumulative.
-- Transition filtering is now the largest remaining kernel: 0.203 s cumulative.
+- Total cached run: 0.533 s in the profiled run.
+- `_fitFormattedData`: 10 calls, 0.297 s cumulative.
+- `_computeLikelihoodSequence`: 180 calls to `processedPdf`, 0.021 s cumulative.
+- Transition filtering is now the largest remaining kernel: 0.186 s cumulative.
 
 For `BivariateRandomWalk`, SciPy `convolve2d` dominates the profile. Likelihood caching only helped 1.11x in the quick case because the transition convolution is already the bottleneck.
 
@@ -84,12 +89,12 @@ Quick-mode likelihood generation benchmarks:
 
 | kernel | median s | speedup vs group baseline |
 | --- | ---: | ---: |
-| `gaussian_current_processedPdf_loop` | 0.0174 | 1.00x |
-| `gaussian_numpy_invariant_loop` | 0.0074 | 2.35x |
-| `gaussian_numpy_vectorized_all_time` | 0.0067 | 2.58x |
+| `gaussian_current_processedPdf_loop` | 0.0166 | 1.00x |
+| `gaussian_numpy_invariant_loop` | 0.0071 | 2.32x |
+| `gaussian_numpy_vectorized_all_time` | 0.0061 | 2.70x |
 | `numba_gaussian_loop_compile_excluded` | 0.0090 | 1.92x |
-| `poisson_current_processedPdf_loop` | 0.0446 | 1.00x |
-| `poisson_unique_observation_cache` | 0.0017 | 25.84x |
+| `poisson_current_processedPdf_loop` | 0.0432 | 1.00x |
+| `poisson_unique_observation_cache` | 0.0017 | 24.93x |
 
 Interpretation:
 
@@ -99,15 +104,15 @@ Interpretation:
 
 ## Recommended Implementation Plan
 
-Phase 1: Adaptive likelihood cache
+Phase 1: Adaptive likelihood cache (implemented)
 
-- Add an internal likelihood cache path to `Study.fit`.
-- API shape: `cacheLikelihoods="auto"`, `True`, or `False`, plus a maximum cache size.
-- For `Study.fit`, use the cache for full forward-backward fits when it fits the memory budget. Skip it for plain `evidenceOnly` or `forwardOnly` unless a caller explicitly asks for it.
-- For `HyperStudy.fit`, precompute likelihoods once and reuse them across hyperparameter values. This should also help `evidenceOnly` HyperStudy fits because observation likelihoods still repeat across hyperparameter settings.
-- In multiprocessing HyperStudy, start with one cache per worker shard. Shared-memory caches can be investigated later if large hypergrids make memory pressure visible.
-- Avoid repeating `movingWindow` inside every HyperStudy sub-fit.
-- Keep the current streaming implementation as the fallback for large grids.
+- `Study.fit` has an internal likelihood cache path.
+- API shape: `cacheLikelihoods="auto"`, `True`, or `False`, plus `maxCacheSize` in MiB.
+- `Study.fit` uses the cache for full forward-backward fits when it fits the memory budget.
+- `HyperStudy.fit` precomputes likelihoods once and reuses them across hyperparameter values.
+- Multiprocessing HyperStudy builds one cache per worker shard. Shared-memory caches can be investigated later if large hypergrids make memory pressure visible.
+- `HyperStudy.fit` avoids repeating `movingWindow` inside every sub-fit.
+- The previous streaming implementation remains available through `cacheLikelihoods=False` and as the automatic fallback for large grids.
 
 Phase 2: Observation-model grid preparation
 
@@ -130,13 +135,12 @@ Phase 4: Optional compiler path
 
 ## Decision
 
-The optimal route is:
+The remaining optimal route is:
 
-1. Implement adaptive likelihood reuse in core `Study` and `HyperStudy`.
-2. Add built-in observation-model fast paths using NumPy and small per-grid/per-data caches.
-3. Re-profile transition models after those changes.
-4. Use Numba selectively for custom/user-defined likelihood kernels after the internal kernel API is cleaner.
-5. Defer Cython/CPython until profiling shows a remaining pure-Python inner loop that cannot be expressed well in NumPy/SciPy/Numba.
+1. Add built-in observation-model fast paths using NumPy and small per-grid/per-data caches.
+2. Re-profile transition models after those changes.
+3. Use Numba selectively for custom/user-defined likelihood kernels after the internal kernel API is cleaner.
+4. Defer Cython/CPython until profiling shows a remaining pure-Python inner loop that cannot be expressed well in NumPy/SciPy/Numba.
 
 ## External References
 

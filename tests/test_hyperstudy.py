@@ -6,6 +6,43 @@ import numpy as np
 import sympy.stats as stats
 
 
+def make_cache_test_hyperstudy():
+    S = bl.HyperStudy()
+    S.loadData(np.array([1, 2, 3, 2, 1]), silent=True)
+    S.setOM(bl.om.Gaussian('mean', bl.cint(0, 5, 18), 'sigma', bl.oint(0, 2, 18),
+                           prior=lambda m, s: 1/s**3), silent=True)
+    S.setTM(bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 3), target='mean'), silent=True)
+    return S
+
+
+def test_fit_likelihood_cache_matches_uncached():
+    uncached = make_cache_test_hyperstudy()
+    uncached.fit(silent=True, cacheLikelihoods=False)
+
+    cached = make_cache_test_hyperstudy()
+    cached.fit(silent=True, cacheLikelihoods=True)
+
+    np.testing.assert_allclose(cached.logEvidence, uncached.logEvidence)
+    np.testing.assert_allclose(cached.localEvidence, uncached.localEvidence)
+    np.testing.assert_allclose(cached.posteriorSequence, uncached.posteriorSequence)
+    np.testing.assert_allclose(cached.posteriorMeanValues, uncached.posteriorMeanValues)
+    np.testing.assert_allclose(cached.hyperParameterDistribution, uncached.hyperParameterDistribution)
+    np.testing.assert_allclose(cached.logEvidenceList, uncached.logEvidenceList)
+
+
+def test_evidence_only_likelihood_cache_matches_uncached():
+    uncached = make_cache_test_hyperstudy()
+    uncached.fit(evidenceOnly=True, silent=True, cacheLikelihoods=False)
+
+    cached = make_cache_test_hyperstudy()
+    cached.fit(evidenceOnly=True, silent=True, cacheLikelihoods=True)
+
+    np.testing.assert_allclose(cached.logEvidence, uncached.logEvidence)
+    np.testing.assert_allclose(cached.localEvidence, uncached.localEvidence)
+    np.testing.assert_allclose(cached.hyperParameterDistribution, uncached.hyperParameterDistribution)
+    np.testing.assert_allclose(cached.logEvidenceList, uncached.logEvidenceList)
+
+
 class TestTwoParameterModel:
     def test_fit_0hp(self):
         # carry out fit (this test is designed to fall back on the fit method of the Study class)

@@ -3,8 +3,9 @@
 Performance harness for bayesloop v2 modernization work.
 
 The goal of this script is not to replace a proper benchmark suite. It is a
-focused analysis tool that measures representative bayesloop workloads and
-isolates candidate speedups before changing package internals.
+focused analysis tool that measures representative bayesloop workloads,
+compares the implemented likelihood cache against the streaming path, and
+isolates additional candidate speedups.
 
 Examples:
     uv run --with-editable . python benchmarks/performance_analysis.py --quick --micro
@@ -31,10 +32,8 @@ from typing import Callable
 
 import numpy as np
 import scipy
-from scipy.special import logsumexp
 
 import bayesloop as bl
-from bayesloop.core import HyperStudy
 from bayesloop.preprocessing import movingWindow
 
 
@@ -123,195 +122,16 @@ def precompute_likelihoods(
     return likelihoods, likelihoods.nbytes / 2**20
 
 
-def fit_study_with_cached_likelihoods(
-    study: object,
-    likelihoods: np.ndarray,
-    formatted_data: np.ndarray,
-    formatted_timestamps: np.ndarray,
-    *,
-    forward_only: bool = False,
-    evidence_only: bool = False,
-) -> None:
-    """Prototype Study.fit equivalent that consumes a precomputed likelihood cube."""
-    study._checkConsistency()
-    study.formattedData = formatted_data
-    study.formattedTimestamps = formatted_timestamps
-
-    n_time = len(formatted_data)
-    if not evidence_only:
-        study.posteriorSequence = np.empty([n_time] + study.gridSize)
-
-    study.logEvidence = 0
-    study.localEvidence = np.empty(n_time)
-    lattice_product = float(np.prod(study.latticeConstant))
-
-    alpha = study._computePrior(silent=True)
-    for i in range(n_time):
-        alpha *= likelihoods[i]
-        norm = np.sum(alpha)
-        if norm <= 0.0:
-            study.logEvidence = -np.inf
-            return
-
-        alpha /= norm
-        study.logEvidence += np.log(norm)
-        study.localEvidence[i] = norm * lattice_product
-
-        if not evidence_only:
-            study.posteriorSequence[i] = alpha
-
-        alpha = study.transitionModel.computeForwardPrior(alpha, formatted_timestamps[i])
-
-    study.logEvidence += np.log(lattice_product)
-
-    if not (forward_only or evidence_only):
-        beta = np.ones(study.gridSize)
-        beta /= np.sum(beta)
-
-        for i in range(n_time - 1, -1, -1):
-            study.posteriorSequence[i] *= beta
-            norm = np.sum(study.posteriorSequence[i])
-            if norm <= 0.0:
-                study.logEvidence = -np.inf
-                return
-
-            study.posteriorSequence[i] /= norm
-
-            likelihood = likelihoods[i]
-            with np.errstate(invalid="ignore", divide="ignore"):
-                study.localEvidence[i] = 1.0 / (
-                    np.sum(study.posteriorSequence[i] / likelihood) * lattice_product
-                )
-
-            beta = study.transitionModel.computeBackwardPrior(
-                beta * likelihood,
-                formatted_timestamps[i],
-            )
-            beta /= np.sum(beta)
-
-    if evidence_only:
-        study.posteriorMeanValues = []
-    else:
-        study.posteriorMeanValues = np.empty([len(study.grid), len(study.posteriorSequence)])
-        for i in range(len(study.grid)):
-            study.posteriorMeanValues[i] = np.array(
-                [np.sum(posterior * study.grid[i]) for posterior in study.posteriorSequence]
-            )
-
-
-def fit_hyperstudy_with_cached_likelihoods(
-    study: HyperStudy,
-    *,
-    forward_only: bool = False,
-    evidence_only: bool = False,
-) -> float:
-    """Prototype single-process HyperStudy.fit with observation likelihood reuse."""
-    study.fitWarningCounter = 0
-
-    study.formattedData, study.formattedTimestamps = _format_study_data(study)
-    study._createHyperGrid(silent=True)
-    study._checkConsistency()
-
-    likelihoods, cache_mib = precompute_likelihoods(study, study.formattedData)
-
-    if not evidence_only:
-        study.averagePosteriorSequence = np.zeros([len(study.formattedData)] + study.gridSize) - np.inf
-
-    study.logEvidenceList = []
-    study.localEvidenceList = []
-
-    if len(study.hyperGridValues) <= 1:
-        fit_study_with_cached_likelihoods(
-            study,
-            likelihoods,
-            study.formattedData,
-            study.formattedTimestamps,
-            forward_only=forward_only,
-            evidence_only=evidence_only,
-        )
-        return cache_mib
-
-    for i, hyper_param_values in enumerate(study.hyperGridValues):
-        study._setSelectedHyperParameters(hyper_param_values)
-        fit_study_with_cached_likelihoods(
-            study,
-            likelihoods,
-            study.formattedData,
-            study.formattedTimestamps,
-            forward_only=forward_only,
-            evidence_only=evidence_only,
-        )
-
-        study.logEvidenceList.append(study.logEvidence)
-        study.localEvidenceList.append(study.localEvidence.copy())
-
-        if (not evidence_only) and np.isfinite(study.logEvidence):
-            study.posteriorSequence[study.posteriorSequence < 10.0**-300] = 10.0**-300
-            study.averagePosteriorSequence = np.logaddexp(
-                study.averagePosteriorSequence,
-                np.log(study.posteriorSequence)
-                + study.logEvidence
-                + np.log(study.flatHyperPriorValues[i]),
-            )
-
-    if not evidence_only:
-        study.averagePosteriorSequence -= np.amax(study.averagePosteriorSequence)
-        study.averagePosteriorSequence = np.exp(study.averagePosteriorSequence)
-
-        normalization = np.array([np.sum(posterior) for posterior in study.averagePosteriorSequence])
-        for _ in range(len(study.grid)):
-            normalization = normalization[:, None]
-        study.averagePosteriorSequence /= normalization
-        study.posteriorSequence = study.averagePosteriorSequence
-
-    log_hyper_parameter_distribution = (
-        np.array(study.logEvidenceList)
-        + np.log(study.flatHyperPriorValues)
-        + np.sum(np.log(study.hyperGridConstant))
-    )
-    scaled = log_hyper_parameter_distribution - np.amax(log_hyper_parameter_distribution)
-    study.hyperParameterDistribution = np.exp(scaled)
-    study.hyperParameterDistribution /= np.sum(study.hyperParameterDistribution)
-    study.hyperParameterDistribution /= np.prod(study.hyperGridConstant)
-
-    study.logEvidence = logsumexp(log_hyper_parameter_distribution)
-    study.localEvidence = np.sum(
-        (np.array(study.localEvidenceList).T * study.flatHyperPriorValues).T,
-        axis=0,
-    )
-
-    if not evidence_only:
-        study.posteriorMeanValues = np.empty([len(study.grid), len(study.posteriorSequence)])
-        for i in range(len(study.grid)):
-            study.posteriorMeanValues[i] = np.array(
-                [np.sum(posterior * study.grid[i]) for posterior in study.posteriorSequence]
-            )
-
-    study.localEvidenceList = []
-    study._setAllHyperParameters(study.flatHyperParameters)
-    return cache_mib
-
-
-def fit_cached_total(study: object) -> tuple[FitSnapshot, float]:
-    if isinstance(study, HyperStudy):
-        cache_mib = fit_hyperstudy_with_cached_likelihoods(study)
-    else:
-        formatted_data, formatted_timestamps = _format_study_data(study)
-        likelihoods, cache_mib = precompute_likelihoods(study, formatted_data)
-        fit_study_with_cached_likelihoods(study, likelihoods, formatted_data, formatted_timestamps)
-
-    return _snapshot(study), cache_mib
-
-
 def run_baseline(case: BenchmarkCase) -> FitSnapshot:
     study = case.factory()
-    _quiet(lambda: study.fit(silent=True))
+    _quiet(lambda: study.fit(silent=True, cacheLikelihoods=False))
     return _snapshot(study)
 
 
 def run_cached(case: BenchmarkCase) -> tuple[FitSnapshot, float]:
     study = case.factory()
-    return _quiet(lambda: fit_cached_total(study))
+    _quiet(lambda: study.fit(silent=True, cacheLikelihoods=True))
+    return _snapshot(study), study._estimateLikelihoodCacheSize()
 
 
 def time_case(case: BenchmarkCase, runner: Callable[[BenchmarkCase], object], repeats: int) -> tuple[list[float], object]:
