@@ -877,7 +877,7 @@ class Study(object):
             ndarray, ndarray: The first array contains the parameter values, the second one the corresponding
                 probability (density) values
         """
-        if self.posteriorSequence == []:
+        if len(self.posteriorSequence) == 0:
             raise PostProcessingError('Cannot plot posterior sequence as it has not yet been computed. '
                                       'Run complete fit.')
 
