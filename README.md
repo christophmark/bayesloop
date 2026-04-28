@@ -92,7 +92,7 @@ python -m pip install -e ".[test]"
 *bayesloop* v2 supports Python 3.10 and newer. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and cloudpickle.
 
 ## Optional dependencies
-*bayesloop* supports multiprocessing for computationally expensive analyses, based on the [pathos](https://github.com/uqfoundation/pathos) module:
+*bayesloop* supports multiprocessing for computationally expensive analyses, based on the [joblib](https://joblib.readthedocs.io/) module:
 ```
 python -m pip install "bayesloop[parallel]"
 ```

@@ -3,6 +3,7 @@
 from __future__ import print_function, division
 import bayesloop as bl
 import numpy as np
+import pytest
 import sympy.stats as stats
 
 
@@ -41,6 +42,23 @@ def test_evidence_only_likelihood_cache_matches_uncached():
     np.testing.assert_allclose(cached.local_evidence, uncached.local_evidence)
     np.testing.assert_allclose(cached.hyper_parameter_distribution, uncached.hyper_parameter_distribution)
     np.testing.assert_allclose(cached.log_evidence_list, uncached.log_evidence_list)
+
+
+def test_joblib_parallel_fit_matches_single_process():
+    pytest.importorskip('joblib')
+
+    single_process = make_cache_test_hyperstudy()
+    single_process.fit(silent=True, n_jobs=1)
+
+    parallel = make_cache_test_hyperstudy()
+    parallel.fit(silent=True, n_jobs=2)
+
+    np.testing.assert_allclose(parallel.log_evidence, single_process.log_evidence)
+    np.testing.assert_allclose(parallel.local_evidence, single_process.local_evidence)
+    np.testing.assert_allclose(parallel.posterior_sequence, single_process.posterior_sequence)
+    np.testing.assert_allclose(parallel.posterior_mean_values, single_process.posterior_mean_values)
+    np.testing.assert_allclose(parallel.hyper_parameter_distribution, single_process.hyper_parameter_distribution)
+    np.testing.assert_allclose(parallel.log_evidence_list, single_process.log_evidence_list)
 
 
 class TestTwoParameterModel:

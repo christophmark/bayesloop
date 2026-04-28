@@ -49,7 +49,7 @@ docs = [
     "sphinx-rtd-theme",
 ]
 parallel = [
-    "pathos>=0.3",
+    "joblib>=1.4",
 ]
 speed = [
     "numba>=0.65",

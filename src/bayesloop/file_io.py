@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-The following functions save or load instances of all `Study` types using the Python package `dill`.
+The following functions save or load instances of all `Study` types using cloudpickle.
 """
 
 from __future__ import division, print_function

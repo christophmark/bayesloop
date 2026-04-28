@@ -35,7 +35,7 @@ Dependencies
 Optional dependencies
 ---------------------
 
-*bayesloop* supports multiprocessing for computationally expensive analyses, based on the `pathos <https://github.com/uqfoundation/pathos>`__ module:
+*bayesloop* supports multiprocessing for computationally expensive analyses, based on the `joblib <https://joblib.readthedocs.io/>`__ module:
 
 ::
 
