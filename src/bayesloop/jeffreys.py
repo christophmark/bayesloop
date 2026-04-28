@@ -10,11 +10,11 @@ import sympy.abc as abc
 from sympy.stats import density
 from sympy import Symbol, Matrix, simplify, diff, integrate, summation, lambdify
 from sympy import ln, sqrt
-from .helper import freeSymbols
+from .helper import free_symbols
 from .exceptions import ConfigurationError, PostProcessingError
 
 
-def getJeffreysPrior(rv):
+def get_jeffreys_prior(rv):
     """
     Uses SymPy to determine the Jeffreys prior of a random variable analytically.
 
@@ -27,7 +27,7 @@ def getJeffreysPrior(rv):
     Example:
         rate = Symbol('rate', positive=True)
         rv = stats.Exponential('exponential', rate)
-        print getJeffreysPrior(rv)
+        print get_jeffreys_prior(rv)
 
         >>> (1/rate, <function <lambda> at 0x0000000007F79AC8>)
     """
@@ -39,11 +39,11 @@ def getJeffreysPrior(rv):
         support = rv._sorted_args[1].distribution.set  # SymPy version >=1.1
 
     # get list of free parameters
-    parameters = freeSymbols(rv)
+    parameters = free_symbols(rv)
     x = abc.x
 
     # symbolic probability density function
-    symPDF = density(rv)(x)
+    sym_pdf = density(rv)(x)
 
     # compute Fisher information matrix
     dim = len(parameters)
@@ -52,23 +52,23 @@ def getJeffreysPrior(rv):
     func = summation if support.is_iterable else integrate
     for i in range(0, dim):
         for j in range(0, dim):
-            G[i, j] = func(simplify(symPDF *
-                                    diff(ln(symPDF), parameters[i]) *
-                                    diff(ln(symPDF), parameters[j])),
+            G[i, j] = func(simplify(sym_pdf *
+                                    diff(ln(sym_pdf), parameters[i]) *
+                                    diff(ln(sym_pdf), parameters[j])),
                            (x, support.inf, support.sup))
 
     # symbolic Jeffreys prior
-    symJeff = simplify(sqrt(G.det()))
+    sym_jeff = simplify(sqrt(G.det()))
 
     # check if computed Jeffreys prior is equal to 0 (happens e.g. for Cauchy distribution)
-    if symJeff == 0:
+    if sym_jeff == 0:
         raise Exception('Jeffreys prior could be computed correctly.')
 
     # return symbolic Jeffreys prior and corresponding lambda function
-    return symJeff, lambdify(parameters, symJeff, 'numpy')
+    return sym_jeff, lambdify(parameters, sym_jeff, 'numpy')
 
 
-def computeJeffreysPriorAR1(study, t=1):
+def compute_jeffreys_prior_ar1(study, t=1):
     """
     This function encodes the Jeffreys prior for the AR1 process as derived by Harald Uhlig in the work "On Jeffreys
     prior when using the exact likelihood function." (Econometric Theory 10 (1994): 633-633. Equation 31). Note that
@@ -82,9 +82,9 @@ def computeJeffreysPriorAR1(study, t=1):
     Returns:
         Array with prior probabilities.
     """
-    if str(study.observationModel) == 'Autoregressive process of first order (AR1)':
+    if str(study.observation_model) == 'Autoregressive process of first order (AR1)':
         r, s = study.grid
-    elif str(study.observationModel) == 'Scaled autoregressive process of first order (AR1)':
+    elif str(study.observation_model) == 'Scaled autoregressive process of first order (AR1)':
         r, s = study.grid
         s = s*np.sqrt(1 - r**2.)
     else:
@@ -96,12 +96,12 @@ def computeJeffreysPriorAR1(study, t=1):
         raise ConfigurationError('Jeffreys prior for auto-regressive process is only implemented for stationary '
                                  'processes. Values abs(r) >= 1 are not allowed for this implementation of the prior.')
 
-    if len(study.rawData) == 0:
+    if len(study.raw_data) == 0:
         raise ConfigurationError('Data must be loaded before computing the Jeffreys prior for the autoregressive '
                                  'process.')
 
-    d0 = study.rawData[t-1]  # first observation is accounted for in the prior
-    n = len(study.rawData)  # number of data points
+    d0 = study.raw_data[t-1]  # first observation is accounted for in the prior
+    n = len(study.raw_data)  # number of data points
 
     prior = (1/s**2.)*np.exp(-d0**2.*(1-r**2.)/(2*s**2.))*(4*(r**2.)/(1-r**2.)+2*(n+1))**.5
     prior /= np.sum(prior)

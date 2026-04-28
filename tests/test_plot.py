@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 class TestPlot:
     def test_plot_study(self):
         S = bl.Study()
-        S.loadData(np.array([1, 2, 3, 4, 5]))
+        S.load_data(np.array([1, 2, 3, 4, 5]))
 
         L = bl.om.Poisson('rate', bl.oint(0, 6, 100))
         T = bl.tm.Static()
@@ -25,7 +25,7 @@ class TestPlot:
 
     def test_plot_hyperstudy(self):
         S = bl.HyperStudy()
-        S.loadData(np.array([1, 2, 3, 4, 5]))
+        S.load_data(np.array([1, 2, 3, 4, 5]))
 
         L = bl.om.Poisson('rate', bl.oint(0, 6, 100))
         T = bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 5), target='rate')
@@ -44,7 +44,7 @@ class TestPlot:
 
     def test_plot_changepointstudy(self):
         S = bl.ChangepointStudy()
-        S.loadData(np.array([1, 2, 3, 4, 5]))
+        S.load_data(np.array([1, 2, 3, 4, 5]))
 
         L = bl.om.Poisson('rate', bl.oint(0, 6, 100))
         T = bl.tm.SerialTransitionModel(bl.tm.Static(),
@@ -65,14 +65,14 @@ class TestPlot:
         S.plot('sigma')
         plt.close()
 
-        S.getDD(['t1', 't2'], plot=True)
+        S.get_duration_distribution(['t1', 't2'], plot=True)
         plt.close()
 
     def test_plot_onlinestudy(self):
-        S = bl.OnlineStudy(storeHistory=True)
-        S.setOM(bl.om.Poisson('rate', bl.oint(0, 6, 50)))
-        S.add('gradual', bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 5), target='rate'))
-        S.add('static', bl.tm.Static())
+        S = bl.OnlineStudy(store_history=True)
+        S.set_observation_model(bl.om.Poisson('rate', bl.oint(0, 6, 50)))
+        S.add_transition_model('gradual', bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 5), target='rate'))
+        S.add_transition_model('static', bl.tm.Static())
 
         for d in np.arange(5):
             S.step(d)

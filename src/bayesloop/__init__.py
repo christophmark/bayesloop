@@ -11,7 +11,7 @@ from . import transition_models as tm  # short form
 
 # misc
 from .helper import cint, oint
-from .jeffreys import getJeffreysPrior, computeJeffreysPriorAR1
+from .jeffreys import get_jeffreys_prior, compute_jeffreys_prior_ar1
 from .file_io import save, load
 
 __all__ = [
@@ -25,8 +25,8 @@ __all__ = [
     "tm",
     "cint",
     "oint",
-    "getJeffreysPrior",
-    "computeJeffreysPriorAR1",
+    "get_jeffreys_prior",
+    "compute_jeffreys_prior_ar1",
     "save",
     "load",
 ]

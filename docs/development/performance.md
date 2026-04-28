@@ -18,9 +18,9 @@ The best first speedup is not Numba or a C extension. It is algorithmic reuse of
 
 `Study.fit` previously evaluated the same likelihood once in the forward pass and again in the backward pass. `HyperStudy.fit` amplified that cost by running the same observation likelihoods once per hyperparameter value. The implemented cached-likelihood path reproduces baseline results exactly and still delivers 1.21x to 1.50x speedups for larger continuous-model cases after the observation and transition models themselves were optimized.
 
-This first optimization is now implemented in core via `fit(..., cacheLikelihoods="auto", maxCacheSize=512)`.
-`cacheLikelihoods="auto"` is the default and caches full forward-backward fits only when the estimated likelihood
-cache is below the memory budget. Passing `cacheLikelihoods=True` forces the cache, while `False` preserves the
+This first optimization is now implemented in core via `fit(..., cache_likelihoods="auto", max_cache_size=512)`.
+`cache_likelihoods="auto"` is the default and caches full forward-backward fits only when the estimated likelihood
+cache is below the memory budget. Passing `cache_likelihoods=True` forces the cache, while `False` preserves the
 previous on-demand behavior.
 
 The second-best speedup is model-specific NumPy optimization in built-in observation models. This is now implemented for the Gaussian-family built-ins via prepared grid invariants and for Bernoulli/Poisson via small repeated-value caches. Poisson and Bernoulli opt out of the full time-by-grid sequence cache in `auto` mode, because their own cache is smaller and faster for repeated discrete observations.
@@ -51,7 +51,7 @@ uv run --with-editable . python benchmarks/performance_analysis.py --case hyper_
 
 ## Fit Benchmark Results
 
-These timings compare `cacheLikelihoods=False` with the implemented default `cacheLikelihoods="auto"` after the observation-model fast paths. The Poisson case reports `0.0` MiB because auto mode uses the model's repeated-value cache instead of a full time-by-grid likelihood cube.
+These timings compare `cache_likelihoods=False` with the implemented default `cache_likelihoods="auto"` after the observation-model fast paths. The Poisson case reports `0.0` MiB because auto mode uses the model's repeated-value cache instead of a full time-by-grid likelihood cube.
 
 | case | baseline median s | auto median s | speedup | sequence cache MiB | validation |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -68,17 +68,17 @@ Validation means zero measured difference in log evidence, posterior mean checks
 The larger `HyperStudy` baseline profile shows the main issue clearly:
 
 - `HyperStudy.fit`: 0.894 s total in the profiled run.
-- `_fitFormattedData`: 10 calls, 0.695 s cumulative.
-- `ObservationModel.processedPdf`: 3600 calls, 0.407 s cumulative.
+- `_fit_formatted_data`: 10 calls, 0.695 s cumulative.
+- `ObservationModel.processed_pdf`: 3600 calls, 0.407 s cumulative.
 - `Gaussian.pdf`: 0.399 s cumulative.
-- `GaussianRandomWalk.computeForwardPrior`: 3600 calls, 0.180 s cumulative.
+- `GaussianRandomWalk.compute_forward_prior`: 3600 calls, 0.180 s cumulative.
 - SciPy `gaussian_filter1d`/`correlate1d`: 0.177 s cumulative.
 
 The cached implementation changes the shape of the remaining work:
 
 - Total cached run: 0.533 s in the profiled run.
-- `_fitFormattedData`: 10 calls, 0.297 s cumulative.
-- `_computeLikelihoodSequence`: 180 calls to `processedPdf`, 0.021 s cumulative.
+- `_fit_formatted_data`: 10 calls, 0.297 s cumulative.
+- `_compute_likelihood_sequence`: 180 calls to `processed_pdf`, 0.021 s cumulative.
 - Transition filtering is now the largest remaining kernel: 0.186 s cumulative.
 
 For `BivariateRandomWalk`, SciPy `convolve2d` dominates the profile. Likelihood caching only helped 1.11x in the quick case because the transition convolution is already the bottleneck.
@@ -89,11 +89,11 @@ Quick-mode likelihood generation benchmarks after built-in observation-model cac
 
 | kernel | median s | speedup vs group baseline |
 | --- | ---: | ---: |
-| `gaussian_current_processedPdf_loop` | 0.0120 | 1.00x |
+| `gaussian_current_processed_pdf_loop` | 0.0120 | 1.00x |
 | `gaussian_numpy_invariant_loop` | 0.0111 | 1.08x |
 | `gaussian_numpy_vectorized_all_time` | 0.0097 | 1.24x |
 | `numba_gaussian_loop_compile_excluded` | 0.0159 | 0.75x |
-| `poisson_current_processedPdf_loop` | 0.0098 | 1.00x |
+| `poisson_current_processed_pdf_loop` | 0.0098 | 1.00x |
 | `poisson_unique_observation_cache` | 0.0018 | 5.37x |
 
 Interpretation:
@@ -107,16 +107,16 @@ Interpretation:
 Phase 1: Adaptive likelihood cache (implemented)
 
 - `Study.fit` has an internal likelihood cache path.
-- API shape: `cacheLikelihoods="auto"`, `True`, or `False`, plus `maxCacheSize` in MiB.
+- API shape: `cache_likelihoods="auto"`, `True`, or `False`, plus `max_cache_size` in MiB.
 - `Study.fit` uses the cache for full forward-backward fits when it fits the memory budget.
 - `HyperStudy.fit` precomputes likelihoods once and reuses them across hyperparameter values.
 - Multiprocessing HyperStudy builds one cache per worker shard. Shared-memory caches can be investigated later if large hypergrids make memory pressure visible.
-- `HyperStudy.fit` avoids repeating `movingWindow` inside every sub-fit.
-- The previous streaming implementation remains available through `cacheLikelihoods=False` and as the automatic fallback for large grids.
+- `HyperStudy.fit` avoids repeating `moving_window` inside every sub-fit.
+- The previous streaming implementation remains available through `cache_likelihoods=False` and as the automatic fallback for large grids.
 
 Phase 2: Observation-model grid preparation (implemented)
 
-- `ObservationModel.prepareGrid(grid)` prepares model-specific grid caches from `Study.setObservationModel`.
+- `ObservationModel.prepare_grid(grid)` prepares model-specific grid caches from `Study.set_observation_model`.
 - Gaussian-family invariant caches are implemented for `Gaussian`, `Laplace`, `WhiteNoise`, `AR1`, and `ScaledAR1`.
 - Unique-value likelihood caches are implemented for `Poisson` and `Bernoulli`.
 - Public observation model behavior is unchanged.

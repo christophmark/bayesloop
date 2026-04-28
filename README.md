@@ -39,7 +39,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 S = bl.HyperStudy()  # start new data study
-S.loadExampleData()  # load data array
+S.load_example_data()  # load data array
 
 # observed number of disasters is modeled by Poisson distribution
 L = bl.om.Poisson('rate')
@@ -55,7 +55,7 @@ plt.figure(figsize=(8, 3))
 
 plt.subplot2grid((1, 3), (0, 0), colspan=2)
 plt.xlim([1852, 1961])
-plt.bar(S.rawTimestamps, S.rawData, align='center', facecolor='r', alpha=.5)
+plt.bar(S.raw_timestamps, S.raw_data, align='center', facecolor='r', alpha=.5)
 S.plot('rate')
 plt.xlabel('year')
 

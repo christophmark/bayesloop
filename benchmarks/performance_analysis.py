@@ -34,7 +34,7 @@ import numpy as np
 import scipy
 
 import bayesloop as bl
-from bayesloop.preprocessing import movingWindow
+from bayesloop.preprocessing import moving_window
 
 
 StudyFactory = Callable[[], object]
@@ -71,19 +71,19 @@ def _duration_stats(durations: list[float]) -> dict[str, float]:
 
 
 def _snapshot(study: object) -> FitSnapshot:
-    posterior_mean_values = getattr(study, "posteriorMeanValues", None)
+    posterior_mean_values = getattr(study, "posterior_mean_values", None)
     if isinstance(posterior_mean_values, np.ndarray) and posterior_mean_values.size:
         posterior_mean_checksum = float(np.mean(posterior_mean_values))
     else:
         posterior_mean_checksum = None
 
-    posterior_sequence = getattr(study, "posteriorSequence", None)
+    posterior_sequence = getattr(study, "posterior_sequence", None)
     if isinstance(posterior_sequence, np.ndarray) and posterior_sequence.size:
         posterior_last_norm = float(np.sum(posterior_sequence[-1]))
     else:
         posterior_last_norm = None
 
-    hyper_distribution = getattr(study, "hyperParameterDistribution", None)
+    hyper_distribution = getattr(study, "hyper_parameter_distribution", None)
     if isinstance(hyper_distribution, np.ndarray) and hyper_distribution.size:
         positive = hyper_distribution[hyper_distribution > 0]
         hyper_entropy = float(-np.sum(positive * np.log(positive)))
@@ -91,7 +91,7 @@ def _snapshot(study: object) -> FitSnapshot:
         hyper_entropy = None
 
     return FitSnapshot(
-        log_evidence=float(getattr(study, "logEvidence")),
+        log_evidence=float(getattr(study, "log_evidence")),
         posterior_mean_checksum=posterior_mean_checksum,
         posterior_last_norm=posterior_last_norm,
         hyper_entropy=hyper_entropy,
@@ -99,8 +99,8 @@ def _snapshot(study: object) -> FitSnapshot:
 
 
 def _format_study_data(study: object) -> tuple[np.ndarray, np.ndarray]:
-    formatted_data = movingWindow(study.rawData, study.observationModel.segmentLength)
-    formatted_timestamps = study.rawTimestamps[study.observationModel.segmentLength - 1 :]
+    formatted_data = moving_window(study.raw_data, study.observation_model.segment_length)
+    formatted_timestamps = study.raw_timestamps[study.observation_model.segment_length - 1 :]
     return formatted_data, formatted_timestamps
 
 
@@ -112,9 +112,9 @@ def precompute_likelihoods(
     if formatted_data is None:
         formatted_data, _ = _format_study_data(study)
 
-    likelihoods = np.empty([len(formatted_data)] + study.gridSize, dtype=float)
+    likelihoods = np.empty([len(formatted_data)] + study.grid_size, dtype=float)
     for i, data_segment in enumerate(formatted_data):
-        likelihood = study.observationModel.processedPdf(study.grid, data_segment)
+        likelihood = study.observation_model.processed_pdf(study.grid, data_segment)
         if likelihood.dtype == object:
             likelihood = likelihood.astype(float)
         likelihoods[i] = likelihood
@@ -124,14 +124,14 @@ def precompute_likelihoods(
 
 def run_baseline(case: BenchmarkCase) -> FitSnapshot:
     study = case.factory()
-    _quiet(lambda: study.fit(silent=True, cacheLikelihoods=False))
+    _quiet(lambda: study.fit(silent=True, cache_likelihoods=False))
     return _snapshot(study)
 
 
 def run_cached(case: BenchmarkCase) -> tuple[FitSnapshot, float]:
     study = case.factory()
-    _quiet(lambda: study.fit(silent=True, cacheLikelihoods="auto"))
-    use_cache, cache_mib = study._shouldCacheLikelihoods("auto", 512)
+    _quiet(lambda: study.fit(silent=True, cache_likelihoods="auto"))
+    use_cache, cache_mib = study._should_cache_likelihoods("auto", 512)
     return _snapshot(study), cache_mib if use_cache else 0.0
 
 
@@ -177,17 +177,17 @@ def make_cases(quick: bool) -> list[BenchmarkCase]:
         rng = np.random.default_rng(101)
         data = rng.poisson(2.4, size=poisson_n).astype(float)
         study = bl.Study(silent=True)
-        study.loadData(data, silent=True)
-        study.setOM(bl.om.Poisson("rate", bl.oint(0, 8, poisson_grid)), silent=True)
-        study.setTM(bl.tm.Static(), silent=True)
+        study.load_data(data, silent=True)
+        study.set_observation_model(bl.om.Poisson("rate", bl.oint(0, 8, poisson_grid)), silent=True)
+        study.set_transition_model(bl.tm.Static(), silent=True)
         return study
 
     def gaussian_random_walk_2d() -> object:
         rng = np.random.default_rng(202)
         data = rng.normal(loc=0.15, scale=0.9, size=gaussian_n)
         study = bl.Study(silent=True)
-        study.loadData(data, silent=True)
-        study.setOM(
+        study.load_data(data, silent=True)
+        study.set_observation_model(
             bl.om.Gaussian(
                 "mean",
                 bl.cint(-2.2, 2.2, gaussian_grid),
@@ -196,15 +196,15 @@ def make_cases(quick: bool) -> list[BenchmarkCase]:
             ),
             silent=True,
         )
-        study.setTM(bl.tm.GaussianRandomWalk("sigma", 0.08, target="mean"), silent=True)
+        study.set_transition_model(bl.tm.GaussianRandomWalk("sigma", 0.08, target="mean"), silent=True)
         return study
 
     def hyper_gaussian_random_walk_2d() -> object:
         rng = np.random.default_rng(303)
         data = rng.normal(loc=0.1, scale=1.0, size=hyper_n)
         study = bl.HyperStudy(silent=True)
-        study.loadData(data, silent=True)
-        study.setOM(
+        study.load_data(data, silent=True)
+        study.set_observation_model(
             bl.om.Gaussian(
                 "mean",
                 bl.cint(-2.5, 2.5, hyper_grid),
@@ -213,7 +213,7 @@ def make_cases(quick: bool) -> list[BenchmarkCase]:
             ),
             silent=True,
         )
-        study.setTM(
+        study.set_transition_model(
             bl.tm.GaussianRandomWalk("sigma", bl.cint(0.0, 0.22, hyper_values), target="mean"),
             silent=True,
         )
@@ -226,8 +226,8 @@ def make_cases(quick: bool) -> list[BenchmarkCase]:
         for i in range(1, ar_n):
             data[i] = 0.72 * data[i - 1] + 0.65 * rng.normal()
         study = bl.Study(silent=True)
-        study.loadData(data, silent=True)
-        study.setOM(
+        study.load_data(data, silent=True)
+        study.set_observation_model(
             bl.om.AR1(
                 "rho",
                 bl.oint(-0.98, 0.98, ar_grid),
@@ -236,15 +236,15 @@ def make_cases(quick: bool) -> list[BenchmarkCase]:
             ),
             silent=True,
         )
-        study.setTM(bl.tm.Static(), silent=True)
+        study.set_transition_model(bl.tm.Static(), silent=True)
         return study
 
     def bivariate_random_walk() -> object:
         rng = np.random.default_rng(505)
         data = rng.normal(loc=0.0, scale=1.0, size=bivar_n)
         study = bl.Study(silent=True)
-        study.loadData(data, silent=True)
-        study.setOM(
+        study.load_data(data, silent=True)
+        study.set_observation_model(
             bl.om.Gaussian(
                 "mean",
                 bl.cint(-2.2, 2.2, bivar_grid),
@@ -253,7 +253,7 @@ def make_cases(quick: bool) -> list[BenchmarkCase]:
             ),
             silent=True,
         )
-        study.setTM(
+        study.set_transition_model(
             bl.tm.BivariateRandomWalk(
                 "sigma_mean",
                 0.08,
@@ -336,8 +336,8 @@ def run_likelihood_microbenchmarks(quick: bool, repeats: int, include_numba: boo
     data = rng.normal(loc=0.1, scale=0.9, size=n_time)
 
     gaussian_study = bl.Study(silent=True)
-    gaussian_study.loadData(data, silent=True)
-    gaussian_study.setOM(
+    gaussian_study.load_data(data, silent=True)
+    gaussian_study.set_observation_model(
         bl.om.Gaussian(
             "mean",
             bl.cint(-2.5, 2.5, grid_size),
@@ -346,7 +346,7 @@ def run_likelihood_microbenchmarks(quick: bool, repeats: int, include_numba: boo
         ),
         silent=True,
     )
-    gaussian_study.setTM(bl.tm.Static(), silent=True)
+    gaussian_study.set_transition_model(bl.tm.Static(), silent=True)
     gaussian_data, _ = _format_study_data(gaussian_study)
     mean_grid, std_grid = gaussian_study.grid
 
@@ -354,7 +354,7 @@ def run_likelihood_microbenchmarks(quick: bool, repeats: int, include_numba: boo
         return precompute_likelihoods(gaussian_study, gaussian_data)[0]
 
     def gaussian_invariant_loop() -> np.ndarray:
-        output = np.empty([len(gaussian_data)] + gaussian_study.gridSize, dtype=float)
+        output = np.empty([len(gaussian_data)] + gaussian_study.grid_size, dtype=float)
         std2 = std_grid * std_grid
         inv_two_std2 = 1.0 / (2.0 * std2)
         log_norm = -0.5 * np.log(2.0 * np.pi * std2)
@@ -370,7 +370,7 @@ def run_likelihood_microbenchmarks(quick: bool, repeats: int, include_numba: boo
         return np.exp(-((x[:, None, None] - mean_grid[None, :, :]) ** 2.0) * inv_two_std2[None, :, :] + log_norm)
 
     benchmarks = [
-        _time_callable("gaussian_current_processedPdf_loop", gaussian_current_loop, repeats),
+        _time_callable("gaussian_current_processed_pdf_loop", gaussian_current_loop, repeats),
         _time_callable("gaussian_numpy_invariant_loop", gaussian_invariant_loop, repeats),
         _time_callable("gaussian_numpy_vectorized_all_time", gaussian_vectorized_all, repeats),
     ]
@@ -378,9 +378,9 @@ def run_likelihood_microbenchmarks(quick: bool, repeats: int, include_numba: boo
     poisson_n, poisson_grid_size = (2500, 1800) if quick else (8000, 5000)
     poisson_data_values = rng.poisson(2.5, size=poisson_n).astype(float)
     poisson_study = bl.Study(silent=True)
-    poisson_study.loadData(poisson_data_values, silent=True)
-    poisson_study.setOM(bl.om.Poisson("rate", bl.oint(0, 8, poisson_grid_size)), silent=True)
-    poisson_study.setTM(bl.tm.Static(), silent=True)
+    poisson_study.load_data(poisson_data_values, silent=True)
+    poisson_study.set_observation_model(bl.om.Poisson("rate", bl.oint(0, 8, poisson_grid_size)), silent=True)
+    poisson_study.set_transition_model(bl.tm.Static(), silent=True)
     poisson_data, _ = _format_study_data(poisson_study)
 
     def poisson_current_loop() -> np.ndarray:
@@ -389,9 +389,9 @@ def run_likelihood_microbenchmarks(quick: bool, repeats: int, include_numba: boo
     def poisson_unique_value_cache() -> np.ndarray:
         values = poisson_data[:, 0].astype(int)
         unique_values, inverse = np.unique(values, return_inverse=True)
-        cache = np.empty([len(unique_values)] + poisson_study.gridSize, dtype=float)
+        cache = np.empty([len(unique_values)] + poisson_study.grid_size, dtype=float)
         for i, value in enumerate(unique_values):
-            cache[i] = poisson_study.observationModel.processedPdf(
+            cache[i] = poisson_study.observation_model.processed_pdf(
                 poisson_study.grid,
                 np.array([value], dtype=float),
             )
@@ -399,7 +399,7 @@ def run_likelihood_microbenchmarks(quick: bool, repeats: int, include_numba: boo
 
     benchmarks.extend(
         [
-            _time_callable("poisson_current_processedPdf_loop", poisson_current_loop, repeats),
+            _time_callable("poisson_current_processed_pdf_loop", poisson_current_loop, repeats),
             _time_callable("poisson_unique_observation_cache", poisson_unique_value_cache, repeats),
         ]
     )
