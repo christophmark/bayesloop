@@ -22,6 +22,7 @@ import sympy.stats
 from copy import copy, deepcopy
 from collections import OrderedDict
 from collections.abc import Iterable
+from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 from .helper import assign_nested_item, recursive_index, flatten, create_colormap, oint, cint, free_symbols
 from .preprocessing import moving_window
@@ -1338,12 +1339,6 @@ class HyperStudy(Study):
                 print('    + {} analyses to run.'.format(len(self.hyper_grid_values)))
 
             if n_jobs > 1:
-                try:
-                    from joblib import Parallel, delayed
-                except ImportError:
-                    raise ImportError('No module named joblib. This module represents an optional dependency of '
-                                      'bayesloop and is therefore not installed alongside bayesloop.')
-
                 # prepare parallel execution
                 if not silent:
                     print('    + Creating {} processes.'.format(n_jobs))

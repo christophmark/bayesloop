@@ -89,13 +89,7 @@ python -m pip install -e ".[test]"
 ```
 
 ## Dependencies
-*bayesloop* v2 supports Python 3.10 and newer. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and cloudpickle.
-
-## Optional dependencies
-*bayesloop* supports multiprocessing for computationally expensive analyses, based on the [joblib](https://joblib.readthedocs.io/) module:
-```
-python -m pip install "bayesloop[parallel]"
-```
+*bayesloop* v2 supports Python 3.10 and newer. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm, cloudpickle and joblib. Parallel computation for expensive `HyperStudy` and `ChangepointStudy` analyses is available with a normal install via `fit(n_jobs=...)`.
 
 ## License
 [The MIT License (MIT)](https://github.com/christophmark/bayesloop/blob/master/LICENSE)

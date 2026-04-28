@@ -3,7 +3,6 @@
 from __future__ import print_function, division
 import bayesloop as bl
 import numpy as np
-import pytest
 import sympy.stats as stats
 
 
@@ -45,8 +44,6 @@ def test_evidence_only_likelihood_cache_matches_uncached():
 
 
 def test_joblib_parallel_fit_matches_single_process():
-    pytest.importorskip('joblib')
-
     single_process = make_cache_test_hyperstudy()
     single_process.fit(silent=True, n_jobs=1)
 
