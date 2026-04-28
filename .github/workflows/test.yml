@@ -33,12 +33,3 @@ jobs:
       - name: run tests
         run: |
           python -m pytest --cov=bayesloop --cov-report=xml
-      
-      - name: upload coverage
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true

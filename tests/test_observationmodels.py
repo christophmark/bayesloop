@@ -18,12 +18,15 @@ class TestSymPy:
         poisson = sympy.stats.Poisson('poisson', rate)
         L = bl.om.SymPy(poisson, 'rate', bl.oint(0, 7, 100))
 
+        assert L.prior is not None
+        assert L.rv is poisson
+
         S.set_observation_model(L)
         S.set_transition_model(bl.tm.Static())
         S.fit()
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.log_evidence, -10.238278174965238, decimal=5,
+        np.testing.assert_almost_equal(S.log_evidence, -10.447907381964875, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
     def test_sympy_2p(self):
@@ -87,7 +90,7 @@ class TestNumPy:
         def likelihood(data, mu):
             x, std = data
 
-            pdf = np.exp((x - mu) ** 2. / (2 * std ** 2.)) / np.sqrt(2 * np.pi * std ** 2.)
+            pdf = np.exp(-((x - mu) ** 2.) / (2 * std ** 2.)) / np.sqrt(2 * np.pi * std ** 2.)
             return pdf
 
         L = bl.om.NumPy(likelihood, 'mu', bl.oint(0, 7, 100))
@@ -97,10 +100,10 @@ class TestNumPy:
         S.fit()
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.log_evidence, 148.92056578058387, decimal=5,
+        np.testing.assert_almost_equal(S.log_evidence, -14.458943931291486, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
-    def test_scipy_2p(self):
+    def test_numpy_2p(self):
         # carry out fit
         S = bl.Study()
         S.load_data(np.array([1, 2, 3, 4, 5]))
@@ -108,7 +111,7 @@ class TestNumPy:
         def likelihood(data, mu, std):
             x = data
 
-            pdf = np.exp((x - mu) ** 2. / (2 * std ** 2.)) / np.sqrt(2 * np.pi * std ** 2.)
+            pdf = np.exp(-((x - mu) ** 2.) / (2 * std ** 2.)) / np.sqrt(2 * np.pi * std ** 2.)
             return pdf
 
         L = bl.om.NumPy(likelihood, 'mu', bl.oint(0, 7, 100), 'std', bl.oint(1, 2, 100))
@@ -118,7 +121,7 @@ class TestNumPy:
         S.fit()
 
         # test model evidence value
-        np.testing.assert_almost_equal(S.log_evidence, 29.792823521784587, decimal=5,
+        np.testing.assert_almost_equal(S.log_evidence, -10.42509598627964, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
 
 

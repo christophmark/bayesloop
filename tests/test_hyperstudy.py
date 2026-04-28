@@ -41,6 +41,8 @@ def test_evidence_only_likelihood_cache_matches_uncached():
     np.testing.assert_allclose(cached.local_evidence, uncached.local_evidence)
     np.testing.assert_allclose(cached.hyper_parameter_distribution, uncached.hyper_parameter_distribution)
     np.testing.assert_allclose(cached.log_evidence_list, uncached.log_evidence_list)
+    assert cached.posterior_sequence == []
+    assert cached.posterior_mean_values == []
 
 
 def test_joblib_parallel_fit_matches_single_process():
@@ -56,6 +58,27 @@ def test_joblib_parallel_fit_matches_single_process():
     np.testing.assert_allclose(parallel.posterior_mean_values, single_process.posterior_mean_values)
     np.testing.assert_allclose(parallel.hyper_parameter_distribution, single_process.hyper_parameter_distribution)
     np.testing.assert_allclose(parallel.log_evidence_list, single_process.log_evidence_list)
+
+
+def test_list_hyperprior_matches_array_hyperprior():
+    def make_study(prior):
+        S = bl.HyperStudy(silent=True)
+        S.load_data(np.array([1, 2, 3, 4, 5]), silent=True)
+        S.set_observation_model(bl.om.Gaussian('mean', bl.cint(0, 6, 20), 'sigma', bl.oint(0, 2, 20),
+                                               prior=lambda m, s: 1/s**3), silent=True)
+        S.set_transition_model(bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 0.2, 2), target='mean',
+                                                        prior=prior), silent=True)
+        return S
+
+    array_prior = make_study(np.array([0.2, 0.8]))
+    array_prior.fit(silent=True)
+
+    list_prior = make_study([0.2, 0.8])
+    list_prior.fit(silent=True)
+
+    np.testing.assert_allclose(list_prior.log_evidence, array_prior.log_evidence)
+    np.testing.assert_allclose(list_prior.hyper_parameter_distribution, array_prior.hyper_parameter_distribution)
+    np.testing.assert_allclose(list_prior.posterior_sequence, array_prior.posterior_sequence)
 
 
 class TestTwoParameterModel:

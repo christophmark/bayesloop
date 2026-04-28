@@ -110,6 +110,7 @@ class Study(object):
             else:
                 if not silent:
                     print('! WARNING: Number of timestamps does not match number of data points. Omitting timestamps.')
+                self.raw_timestamps = np.arange(len(self.raw_data))
         else:  # set default timestamps (integer range)
             self.raw_timestamps = np.arange(len(self.raw_data))
 
@@ -141,13 +142,17 @@ class Study(object):
                     raise ConfigurationError('Could not estimate parameter values for "{}".'.format(n))
 
             v = np.array(v, dtype=float)  # inference algorithm needs floats
+            if len(v) == 0:
+                raise ConfigurationError('Parameter values for "{}" must not be empty.'.format(n))
 
             self.marginal_grid.append(v)
             self.grid_size.append(len(v))
             self.boundaries.append([v[0], v[-1]])
 
             # check if parameter values are equally spaced
-            if np.any(np.abs(np.diff(np.diff(v))) > 10 ** -10):
+            if len(v) == 1:
+                self.lattice_constant.append(1.)
+            elif np.any(np.abs(np.diff(np.diff(v))) > 10 ** -10):
                 print('! WARNING: Supplied parameter values for "{}" are not equally spaced. Assuming categorical '
                       'parameter.'.format(n))
                 self.lattice_constant.append(1.)
@@ -372,6 +377,8 @@ class Study(object):
         # initialize array for posterior distributions
         if not evidence_only:
             self.posterior_sequence = np.empty([len(self.formatted_data)] + self.grid_size)
+        else:
+            self.posterior_sequence = []
 
         # initialize array for computed evidence (marginal likelihood)
         self.log_evidence = 0
@@ -1236,7 +1243,7 @@ class HyperStudy(Study):
             elif isinstance(prior, Iterable):  # prior specified by list/array
                 if len(prior) != len(values):
                     raise ConfigurationError('Failed to set hyper-prior for "{}" from list/array.'.format(name))
-                prior_values = prior
+                prior_values = np.array(prior, dtype=float)
                 norm = np.sum(prior_values)
                 prior_values /= norm
                 prior_values /= grid_const
@@ -1322,6 +1329,11 @@ class HyperStudy(Study):
                                                  '"HyperStudy" for such cases.')
 
         self._check_consistency()
+
+        if evidence_only:
+            self.posterior_sequence = []
+            self.posterior_mean_values = []
+            self.average_posterior_sequence = None
 
         if not evidence_only:
             # The average posterior distribution is stored in log-space for numerical stability. This way, it can be
@@ -1557,7 +1569,7 @@ class HyperStudy(Study):
 
     def _unpack_hyper_priors(self, transition_model):
         """
-        Returns list of all hyper-priors, nested as the transition model.
+        Returns flat list of all hyper-priors in transition model order.
 
         Args:
             transition_model: An instance of a transition model
@@ -1569,14 +1581,39 @@ class HyperStudy(Study):
         # recursion step for sub-models
         if hasattr(transition_model, 'models'):
             for m in transition_model.models:
-                prior_list.append(self._unpack_hyper_priors(m))
+                prior_list.extend(self._unpack_hyper_priors(m))
 
         # append prior
         if hasattr(transition_model, 'prior'):
-            # only take prior if transition model has at least one hyper-parameter or is a break-point
-            # otherwise, the number of hyper-priors does not match the number of hyper-parameters
-            if (hasattr(transition_model, 'hyper_parameter_names') and len(transition_model.hyper_parameter_names) > 0) or\
-                    (str(transition_model) == 'Break-point'):
+            hyper_parameter_names = getattr(transition_model, 'hyper_parameter_names', [])
+            n_parameters = len(hyper_parameter_names)
+
+            # only take priors from transition models that define hyper-parameters. This includes the structural
+            # break parameters stored directly in SerialTransitionModel.
+            if n_parameters == 1:
+                prior = transition_model.prior
+                if isinstance(prior, (list, tuple)) and len(prior) == 1:
+                    first_prior = prior[0]
+                    if (first_prior is None or hasattr(first_prior, '__call__') or
+                            type(first_prior) is sympy.stats.rv.RandomSymbol or
+                            isinstance(first_prior, (list, tuple, np.ndarray))):
+                        prior = first_prior
+                prior_list.append(prior)
+            elif n_parameters > 1:
+                prior = transition_model.prior
+                if prior is None:
+                    prior_list.extend([None] * n_parameters)
+                elif isinstance(prior, Iterable) and not isinstance(prior, (str, np.ndarray)):
+                    if len(prior) != n_parameters:
+                        raise ConfigurationError(
+                            '{} priors are defined for transition model "{}", but model contains {} '
+                            'hyper-parameters.'.format(len(prior), transition_model, n_parameters))
+                    prior_list.extend(list(prior))
+                else:
+                    raise ConfigurationError(
+                        'Transition model "{}" contains {} hyper-parameters, but its hyper-prior is not a '
+                        'matching list or tuple.'.format(transition_model, n_parameters))
+            elif str(transition_model) == 'Break-point':
                 prior_list.append(transition_model.prior)
         return prior_list
 
@@ -1587,7 +1624,7 @@ class HyperStudy(Study):
         Returns:
             list: all hyper-priors of the current transition model
         """
-        return list(flatten(self._unpack_hyper_priors(self.transition_model)))
+        return self._unpack_hyper_priors(self.transition_model)
 
     def get_hyper_parameter_distribution(self, name, plot=False, **kwargs):
         """
@@ -2037,12 +2074,11 @@ class OnlineStudy(HyperStudy):
             name(str): a custom name for this transition model to identify it in post-processing methods
             transition_model: instance of a transition model class.
 
-        Example:
-            Here, 'S' denotes the OnlineStudy instance. In the first example, we assume a Poisson observation model and
-            add a Gaussian random walk with varying standard deviation to the rate parameter 'lambda':
+        Example::
 
-                S.set_observation_model(bl.om.Poisson('lambda', bl.oint(0, 6, 1000)))
-                S.add_transition_model(bl.tm.GaussianRandomWalk('sigma', [0, 0.1, 0.2, 0.3], target='lambda'))
+            S.set_observation_model(bl.om.Poisson('lambda', bl.oint(0, 6, 1000)))
+            T = bl.tm.GaussianRandomWalk('sigma', [0, 0.1, 0.2, 0.3], target='lambda')
+            S.add_transition_model('dynamic', T)
         """
         # extract hyper-parameter values and names
         self.set_transition_model(transition_model, silent=True)
@@ -2287,12 +2323,12 @@ class OnlineStudy(HyperStudy):
         self.formatted_timestamps = np.array(self.formatted_timestamps)
         self.posterior_sequence = np.array(self.posterior_sequence)
 
-        x, p = Study.get_parameter_distribution(self, t, name, plot=plot, density=density, **kwargs)
-
-        # re-transform arrays to lists, so online study may continue to append values
-        self.formatted_timestamps = list(self.formatted_timestamps)
-        self.posterior_sequence = list(self.posterior_sequence)
-        return x, p
+        try:
+            return Study.get_parameter_distribution(self, t, name, plot=plot, density=density, **kwargs)
+        finally:
+            # re-transform arrays to lists, so online study may continue to append values
+            self.formatted_timestamps = list(self.formatted_timestamps)
+            self.posterior_sequence = list(self.posterior_sequence)
 
     def get_current_parameter_distribution(self, name, plot=False, density=True, **kwargs):
         """
@@ -2366,12 +2402,12 @@ class OnlineStudy(HyperStudy):
         self.formatted_timestamps = np.array(self.formatted_timestamps)
         self.posterior_sequence = np.array(self.posterior_sequence)
 
-        x, p = Study.get_parameter_distributions(self, name, plot=plot, density=density, **kwargs)
-
-        # re-transform arrays to lists, so online study may continue to append values
-        self.formatted_timestamps = list(self.formatted_timestamps)
-        self.posterior_sequence = list(self.posterior_sequence)
-        return x, p
+        try:
+            return Study.get_parameter_distributions(self, name, plot=plot, density=density, **kwargs)
+        finally:
+            # re-transform arrays to lists, so online study may continue to append values
+            self.formatted_timestamps = list(self.formatted_timestamps)
+            self.posterior_sequence = list(self.posterior_sequence)
 
     def plot_parameter_evolution(self, name, color='b', gamma=0.5, **kwargs):
         """
@@ -2393,12 +2429,13 @@ class OnlineStudy(HyperStudy):
         self.posterior_mean_values = np.array(self.posterior_mean_values).T
         self.posterior_sequence = np.array(self.posterior_sequence)
 
-        Study.plot_parameter_evolution(self, name, color=color, gamma=gamma, **kwargs)
-
-        # re-transform arrays to lists, so online study may continue to append values
-        self.formatted_timestamps = list(self.formatted_timestamps)
-        self.posterior_mean_values = list(self.posterior_mean_values.T)
-        self.posterior_sequence = list(self.posterior_sequence)
+        try:
+            Study.plot_parameter_evolution(self, name, color=color, gamma=gamma, **kwargs)
+        finally:
+            # re-transform arrays to lists, so online study may continue to append values
+            self.formatted_timestamps = list(self.formatted_timestamps)
+            self.posterior_mean_values = list(self.posterior_mean_values.T)
+            self.posterior_sequence = list(self.posterior_sequence)
 
     def get_current_transition_model_distribution(self, local=False):
         """
@@ -2537,7 +2574,7 @@ class OnlineStudy(HyperStudy):
 
         parameter_distribution = self.posterior_sequence[time_index]
 
-        mean = np.sum(parameter_distribution[t] * self.grid[param_index])
+        mean = np.sum(parameter_distribution * self.grid[param_index])
         return mean
 
     def get_parameter_mean_values(self, name):

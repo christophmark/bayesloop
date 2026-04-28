@@ -99,7 +99,7 @@ class NumPy(ObservationModel):
             x, std = data
 
             # define Gaussian likelihood function (pdf) with known standard deviation
-            pdf = np.exp((x - mu)**2./(2*std**2.))/np.sqrt(2*np.pi*std**2.)
+            pdf = np.exp(-((x - mu)**2.)/(2*std**2.))/np.sqrt(2*np.pi*std**2.)
 
             return pdf
 
@@ -327,6 +327,7 @@ class SymPy(ObservationModel):
         except:
             raise ConfigurationError('SymPy observation model must contain SymPy random variable.')
         
+        self.rv = rv
         self.name = str(rv)  # user-defined name for random variable is used
 
         # get specified parameter names/values

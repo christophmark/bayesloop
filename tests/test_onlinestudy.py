@@ -3,7 +3,9 @@
 from __future__ import print_function, division
 import bayesloop as bl
 import numpy as np
+import pytest
 import sympy.stats as stats
+from bayesloop.exceptions import PostProcessingError
 
 
 class TestTwoParameterModel:
@@ -27,9 +29,19 @@ class TestTwoParameterModel:
                                    [0.96310103, 1.5065597, 2.00218465, 2.500366, 3.],
                                    rtol=1e-05, err_msg='Erroneous posterior mean values.')
 
+        for t, mean in zip(S.formatted_timestamps, S.get_parameter_mean_values('mean')):
+            np.testing.assert_allclose(S.get_parameter_mean_value(t, 'mean'), mean,
+                                       rtol=1e-12, err_msg='Erroneous posterior mean value.')
+
+        with pytest.raises(PostProcessingError):
+            S.get_parameter_distribution(999, 'mean')
+        assert isinstance(S.posterior_sequence, list)
+
         # test model evidence value
         np.testing.assert_almost_equal(S.log_evidence, -16.1946904707, decimal=5,
                                        err_msg='Erroneous log-evidence value.')
+        S.step(6)
+        assert len(S.posterior_sequence) == 6
 
     def test_step_add2TM_2hp_prior_hyperpriors_TMprior(self):
         # carry out fit

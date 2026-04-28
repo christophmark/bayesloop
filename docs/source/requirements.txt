@@ -2,6 +2,9 @@ numpy
 scipy
 sympy
 matplotlib
+cloudpickle
+joblib
+tqdm
 ipython
 ipykernel
 ipywidgets

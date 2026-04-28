@@ -3,7 +3,9 @@
 from __future__ import print_function, division
 import bayesloop as bl
 import numpy as np
+import pytest
 import sympy.stats as stats
+from bayesloop.exceptions import PostProcessingError
 
 
 def test_fit_likelihood_cache_matches_uncached():
@@ -24,6 +26,42 @@ def test_fit_likelihood_cache_matches_uncached():
     np.testing.assert_allclose(cached.local_evidence, uncached.local_evidence)
     np.testing.assert_allclose(cached.posterior_sequence, uncached.posterior_sequence)
     np.testing.assert_allclose(cached.posterior_mean_values, uncached.posterior_mean_values)
+
+
+def test_load_data_mismatched_timestamps_falls_back_to_default():
+    S = bl.Study(silent=True)
+    S.load_data(np.array([1, 2, 3]), timestamps=[10, 11], silent=True)
+
+    np.testing.assert_array_equal(S.raw_timestamps, np.arange(3))
+
+
+def test_evidence_only_fit_clears_posterior_state():
+    S = bl.Study(silent=True)
+    S.load_data(np.array([1, 2, 3]), silent=True)
+    S.set_observation_model(bl.om.Poisson('rate', bl.oint(0, 6, 60)), silent=True)
+    S.set_transition_model(bl.tm.Static(), silent=True)
+
+    S.fit(silent=True)
+    assert len(S.posterior_sequence) == 3
+
+    S.fit(evidence_only=True, silent=True)
+
+    assert S.posterior_sequence == []
+    assert S.posterior_mean_values == []
+    with pytest.raises(PostProcessingError):
+        S.get_parameter_distribution(0, 'rate')
+
+
+def test_single_point_parameter_grid_is_valid():
+    S = bl.Study(silent=True)
+    S.load_data(np.array([1, 1, 1]), silent=True)
+    S.set_observation_model(bl.om.Poisson('rate', [1.0]), silent=True)
+    S.set_transition_model(bl.tm.Static(), silent=True)
+    S.fit(silent=True)
+
+    assert S.grid_size == [1]
+    assert S.lattice_constant == [1.]
+    np.testing.assert_allclose(S.get_parameter_mean_values('rate'), [1., 1., 1.])
 
 
 class TestOneParameterModel:
