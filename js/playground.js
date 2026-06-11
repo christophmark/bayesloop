@@ -5,7 +5,7 @@
    ============================================================ */
 
 const PYODIDE_INDEX_URL = 'https://cdn.jsdelivr.net/pyodide/v0.28.2/full/';
-const WHEEL_URL = new URL('assets/bayesloop-2.0.0.dev0-py3-none-any.whl', window.location.href).href;
+const WHEEL_URL = new URL('assets/bayesloop-2.0.0-py3-none-any.whl', window.location.href).href;
 
 const DEFAULT_CODE = `import bayesloop as bl
 import matplotlib.pyplot as plt
