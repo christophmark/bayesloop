@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayesloop"
-version = "2.0.0.dev0"
+version = "2.0.0"
 description = "Grid-based Bayesian modeling for time series with time-varying parameters."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,7 +21,7 @@ keywords = [
     "marginal likelihood",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
