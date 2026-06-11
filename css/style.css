@@ -81,13 +81,14 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: 
 }
 .brand:hover { text-decoration: none; }
 
-.brand-mark { width: 30px; height: 30px; flex: none; }
+.brand-mark { width: 30px; height: 30px; flex: none; color: var(--accent-strong); }
 
 .brand-name {
   font-family: var(--font-mono);
   font-weight: 600;
   font-size: 1.15rem;
   letter-spacing: -0.02em;
+  color: var(--accent-strong);
 }
 
 .nav-links {
@@ -154,11 +155,10 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: 
 }
 
 .hero h1 {
-  font-size: clamp(2rem, 5.4vw, 3.4rem);
+  font-size: clamp(2rem, 4.3vw, 2.9rem);
   font-weight: 800;
   letter-spacing: -0.03em;
   margin: 0 auto 22px;
-  max-width: 21ch;
 }
 
 .hero h1 .accent {
@@ -517,6 +517,7 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: 
   font-family: var(--font-mono);
   font-weight: 600;
   font-size: 1.05rem;
+  color: var(--accent-strong);
 }
 .footer-brand .brand-mark { width: 26px; height: 26px; }
 
