@@ -24,7 +24,7 @@ S.fit()
 # Plot the data together with the inferred disaster rate:
 plt.figure(figsize=(9, 4))
 plt.bar(S.raw_timestamps, S.raw_data, align='center',
-        facecolor='#c7dcef', label='disasters per year')
+        facecolor='#e0605e', alpha=.6, label='disasters per year')
 S.plot('rate', color='#287fb9', label='inferred rate')
 plt.xlim([1851, 1962])
 plt.xlabel('year')
