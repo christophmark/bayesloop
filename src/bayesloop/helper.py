@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.colors as colors
 
 
-def assignNestedItem(lst, index, value):
+def assign_nested_item(lst, index, value):
     """
     Assign a value to an item of an arbitrarily nested list. The list is manipulated inplace.
 
@@ -23,20 +23,20 @@ def assignNestedItem(lst, index, value):
     x[index[-1]] = value
 
 
-def recursiveIndex(nestedList, query):
+def recursive_index(nested_list, query):
     """
     Find index of element (first occurrence) in an arbitrarily nested list.
 
     Args:
-        nestedList(list): list object to search in
+        nested_list(list): list object to search in
         query: target element to find
 
     Returns:
         list: Position indices
     """
-    for index, element in enumerate(nestedList):
+    for index, element in enumerate(nested_list):
         if isinstance(element, (list, tuple)):
-            path = recursiveIndex(element, query)
+            path = recursive_index(element, query)
             if path:
                 return [index] + path
         if element == query:
@@ -62,7 +62,7 @@ def flatten(lst):
             yield i
 
 
-def createColormap(color, min_factor=1.0, max_factor=0.95):
+def create_colormap(color, min_factor=1.0, max_factor=0.95):
     """
     Creates colormap with range 0-1 from white to arbitrary color.
 
@@ -119,7 +119,7 @@ def cint(start, stop, num):
     """
     return np.linspace(start, stop, num)
 
-def freeSymbols(rv):
+def free_symbols(rv):
     """
     Extracts the free symbols/parameters of a probability distribution from a SymPy random variable, independent of the
     SymPy version.

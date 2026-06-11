@@ -2,8 +2,15 @@ numpy
 scipy
 sympy
 matplotlib
+cloudpickle
+joblib
+tqdm
 ipython
+ipykernel
+ipywidgets
 sphinx
+sphinx-rtd-theme
 jupyter_client
 nbsphinx
-nbconvert==6.5.1
+nbconvert
+pypandoc-binary

@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bayesloop"
+version = "2.0.0.dev0"
+description = "Grid-based Bayesian modeling for time series with time-varying parameters."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Christoph Mark", email = "christoph.mark@fau.de" },
+]
+keywords = [
+    "bayes",
+    "inference",
+    "model selection",
+    "time series",
+    "time-varying",
+    "marginal likelihood",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "cloudpickle>=2.2",
+    "joblib>=1.4",
+    "matplotlib>=3.7",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "sympy>=1.11",
+    "tqdm>=4.64",
+]
+
+[project.optional-dependencies]
+docs = [
+    "ipykernel",
+    "ipywidgets",
+    "nbsphinx",
+    "pypandoc-binary",
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+speed = [
+    "numba>=0.65",
+]
+test = [
+    "pytest>=8",
+    "pytest-cov>=5",
+]
+
+[project.urls]
+Homepage = "http://bayesloop.com"
+Repository = "https://github.com/christophmark/bayesloop"
+Documentation = "http://docs.bayesloop.com"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["bayesloop"]

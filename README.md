@@ -2,7 +2,6 @@
 
 [![Build status](https://github.com/christophmark/bayesloop/workflows/Tests/badge.svg?branch=master)](https://github.com/christophmark/bayesloop/actions/workflows/test.yml)
 [![Documentation status](https://readthedocs.org/projects/bayesloop/badge/?version=latest)](http://docs.bayesloop.com) 
-[![Coverage Status](https://codecov.io/gh/christophmark/bayesloop/branch/master/graph/badge.svg?token=637W4M2RCE)](https://codecov.io/gh/christophmark/bayesloop)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![DOI](https://zenodo.org/badge/41474112.svg)](https://zenodo.org/badge/latestdoi/41474112)
 
@@ -39,7 +38,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 S = bl.HyperStudy()  # start new data study
-S.loadExampleData()  # load data array
+S.load_example_data()  # load data array
 
 # observed number of disasters is modeled by Poisson distribution
 L = bl.om.Poisson('rate')
@@ -55,7 +54,7 @@ plt.figure(figsize=(8, 3))
 
 plt.subplot2grid((1, 3), (0, 0), colspan=2)
 plt.xlim([1852, 1961])
-plt.bar(S.rawTimestamps, S.rawData, align='center', facecolor='r', alpha=.5)
+plt.bar(S.raw_timestamps, S.raw_data, align='center', facecolor='r', alpha=.5)
 S.plot('rate')
 plt.xlabel('year')
 
@@ -71,29 +70,46 @@ plt.show()
 
 This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the [documentation](http://docs.bayesloop.com) for further insights!
 
+## Backwards compatibility with bayesloop 1.x
+
+*bayesloop* 2.0 renames the entire API from camelCase to snake_case (e.g. `S.loadData(...)` becomes `S.load_data(...)`). Existing 1.x scripts can still be run without modification by importing the opt-in compatibility layer once, right after importing *bayesloop*:
+
+```python
+import bayesloop as bl
+import bayesloop.v1compat  # activates the 1.x API
+
+S = bl.HyperStudy()
+S.loadExampleData()  # 1.x method names work again
+```
+
+The compatibility layer restores:
+- all camelCase method, attribute and property names (`loadData`, `getParameterDistribution`, `logEvidence`, ...), including the 1.x shorthand aliases (`setOM`, `setTM`, `getPD`, ...)
+- camelCase keyword arguments (`forwardOnly`, `nJobs`, `storeHistory`, ...)
+- the 1.x module names `bayesloop.observationModels`, `bayesloop.transitionModels` and `bayesloop.fileIO`
+- custom observation/transition models that implement 1.x hooks (`computeForwardPrior`, `estimateParameterValues`, ...)
+- loading study files saved with *bayesloop* 1.x via `bl.load(...)` (attribute names are migrated on load)
+
+Every use of a 1.x name emits a `DeprecationWarning` that points to its snake_case replacement, so the layer doubles as a migration guide. Two things are **not** covered: the probability `Parser` and `Study.eval()` were removed in 2.0, and the default parameter names of some transition models changed (`'tChange'` → `'t_change'`, `'tBreak'` → `'t_break'`, `'log10pMin'` → `'log10p_min'`) — scripts that rely on these default names should pass the names explicitly.
+
 ## Installation
 The easiest way to install the latest release version of *bayesloop* is via `pip`:
 ```
 pip install bayesloop
 ```
-Alternatively, a zipped version can be downloaded [here](https://github.com/christophmark/bayesloop/releases). The module is installed by calling `python setup.py install`.
+Alternatively, a zipped version can be downloaded [here](https://github.com/christophmark/bayesloop/releases). The module is installed by calling `python -m pip install .` from the project root.
 
 ### Development version
-The latest development version of *bayesloop* can be installed from the master branch using pip (requires git):
+The latest development version of *bayesloop* can be installed from the `v2` branch using pip (requires git):
 ```
-pip install git+https://github.com/christophmark/bayesloop
+pip install git+https://github.com/christophmark/bayesloop@v2
 ```
-Alternatively, use this [zipped version](https://github.com/christophmark/bayesloop/zipball/master) or clone the repository.
+Alternatively, clone the repository and install it in editable mode:
+```
+python -m pip install -e ".[test]"
+```
 
 ## Dependencies
-*bayesloop* is tested on Python 3.8. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and cloudpickle. All except the last two are already included in the [Anaconda distribution](https://www.continuum.io/downloads) of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at [Christoph Gohlke's page](http://www.lfd.uci.edu/~gohlke/pythonlibs/).
-
-## Optional dependencies
-*bayesloop* supports multiprocessing for computationally expensive analyses, based on the [pathos](https://github.com/uqfoundation/pathos) module. The latest version can be obtained directly from GitHub using pip (requires git):
-```
-pip install git+https://github.com/uqfoundation/pathos
-```
-**Note**: Windows users need to install a C compiler *before* installing pathos. One possible solution for 64bit systems is to install [Microsoft Visual C++ 2008 SP1 Redistributable Package (x64)](http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092) and [Microsoft Visual C++ Compiler for Python 2.7](http://www.microsoft.com/en-us/download/details.aspx?id=44266).
+*bayesloop* v2 supports Python 3.10 and newer. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm, cloudpickle and joblib. Parallel computation for expensive `HyperStudy` and `ChangepointStudy` analyses is available with a normal install via `fit(n_jobs=...)`.
 
 ## License
 [The MIT License (MIT)](https://github.com/christophmark/bayesloop/blob/master/LICENSE)

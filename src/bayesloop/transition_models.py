@@ -10,19 +10,15 @@ time step.
 
 from __future__ import division, print_function
 import numpy as np
+from inspect import Parameter, signature
 from scipy.signal import fftconvolve
 from scipy.signal import convolve2d
-from scipy.ndimage.filters import gaussian_filter1d
-from scipy.ndimage.interpolation import shift
+from scipy.ndimage import correlate1d
+from scipy.ndimage import shift
 from scipy.stats import multivariate_normal
 from collections.abc import Iterable
 from copy import deepcopy
 from .exceptions import ConfigurationError, PostProcessingError
-
-try:
-    from inspect import getargspec
-except ImportError:
-    from inspect import getfullargspec as getargspec
 
 class TransitionModel:
     """
@@ -31,22 +27,33 @@ class TransitionModel:
     """
 
 
+def gaussian_kernel_1d(sigma, truncate=4.0):
+    """
+    Create the order-0 Gaussian kernel used by scipy.ndimage.gaussian_filter1d.
+    """
+    radius = int(truncate * float(sigma) + 0.5)
+    x = np.arange(-radius, radius + 1)
+    kernel = np.exp(-0.5 / float(sigma) ** 2. * x ** 2.)
+    kernel /= np.sum(kernel)
+    return kernel
+
+
 class Static(TransitionModel):
     """
     Constant parameters over time. This trivial model assumes no change of parameter values over time.
     """
     def __init__(self):
         self.study = None
-        self.latticeConstant = None
-        self.hyperParameterNames = []
-        self.hyperParameterValues = []
+        self.lattice_constant = None
+        self.hyper_parameter_names = []
+        self.hyper_parameter_values = []
         self.prior = None
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Static/constant parameter values'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -59,8 +66,8 @@ class Static(TransitionModel):
         """
         return posterior
 
-    def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t - 1)
+    def compute_backward_prior(self, posterior, t):
+        return self.compute_forward_prior(posterior, t - 1)
 
 
 class GaussianRandomWalk(TransitionModel):
@@ -80,12 +87,17 @@ class GaussianRandomWalk(TransitionModel):
             value = np.array(value)
 
         self.study = None
-        self.latticeConstant = None
-        self.hyperParameterNames = [name]
-        self.hyperParameterValues = [value]
+        self.lattice_constant = None
+        self.hyper_parameter_names = [name]
+        self.hyper_parameter_values = [value]
         self.prior = prior
-        self.selectedParameter = target
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.selected_parameter = target
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.kernel_cache = {}
+        self.kernel = None
+        self.kernel_parameters = None
+        self._axis_cache_key = None
+        self._axis_to_transform = None
 
         if target is None:
             raise ConfigurationError('No parameter set for transition model "GaussianRandomWalk"')
@@ -93,7 +105,28 @@ class GaussianRandomWalk(TransitionModel):
     def __str__(self):
         return 'Gaussian random walk'
 
-    def computeForwardPrior(self, posterior, t):
+    def _get_axis_to_transform(self):
+        parameter_names = self.study.observation_model.parameter_names
+        axis_cache_key = (id(parameter_names), self.selected_parameter)
+        if self._axis_cache_key != axis_cache_key:
+            self._axis_to_transform = parameter_names.index(self.selected_parameter)
+            self._axis_cache_key = axis_cache_key
+
+        return self._axis_to_transform
+
+    def _get_kernel(self, normed_sigma, axis_to_transform):
+        kernel_key = (float(normed_sigma), axis_to_transform)
+        try:
+            kernel = self.kernel_cache[kernel_key]
+        except KeyError:
+            kernel = gaussian_kernel_1d(normed_sigma)
+            self.kernel_cache[kernel_key] = kernel
+
+        self.kernel = kernel
+        self.kernel_parameters = kernel_key
+        return kernel
+
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -104,18 +137,19 @@ class GaussianRandomWalk(TransitionModel):
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-        normedSigma = self.hyperParameterValues[0]/self.latticeConstant[axisToTransform]
-        
-        if normedSigma > 0.:
-            newPrior = gaussian_filter1d(posterior, normedSigma, axis=axisToTransform)
-        else:
-            newPrior = posterior.copy()
-        
-        return newPrior
+        axis_to_transform = self._get_axis_to_transform()
+        normed_sigma = self.hyper_parameter_values[0] / self.lattice_constant[axis_to_transform]
 
-    def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t - 1)
+        if normed_sigma > 0.:
+            kernel = self._get_kernel(normed_sigma, axis_to_transform)
+            new_prior = correlate1d(posterior, kernel, axis=axis_to_transform, mode='reflect')
+        else:
+            new_prior = posterior.copy()
+
+        return new_prior
+
+    def compute_backward_prior(self, posterior, t):
+        return self.compute_forward_prior(posterior, t - 1)
 
 
 class AlphaStableRandomWalk(TransitionModel):
@@ -140,14 +174,14 @@ class AlphaStableRandomWalk(TransitionModel):
             value2 = np.array(value2)
 
         self.study = None
-        self.latticeConstant = None
-        self.hyperParameterNames = [name1, name2]
-        self.hyperParameterValues = [value1, value2]
+        self.lattice_constant = None
+        self.hyper_parameter_names = [name1, name2]
+        self.hyper_parameter_values = [value1, value2]
         self.prior = prior
-        self.selectedParameter = target
+        self.selected_parameter = target
         self.kernel = None
-        self.kernelParameters = None
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.kernel_parameters = None
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
         if target is None:
             raise ConfigurationError('No parameter set for transition model "AlphaStableRandomWalk"')
@@ -155,7 +189,7 @@ class AlphaStableRandomWalk(TransitionModel):
     def __str__(self):
         return 'Alpha-stable random walk'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -168,32 +202,32 @@ class AlphaStableRandomWalk(TransitionModel):
         """
 
         # if hyper-parameter values have changed, a new convolution kernel needs to be created
-        if not self.kernelParameters == self.hyperParameterValues:
-            normedC = []
-            for lc in self.latticeConstant:
-                normedC.append(self.hyperParameterValues[0] / lc)
-            alpha = [self.hyperParameterValues[1]] * len(normedC)
+        if not self.kernel_parameters == self.hyper_parameter_values:
+            normed_c = []
+            for lc in self.lattice_constant:
+                normed_c.append(self.hyper_parameter_values[0] / lc)
+            alpha = [self.hyper_parameter_values[1]] * len(normed_c)
 
-            axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
-            selectedC = normedC[axisToTransform]
-            normedC = [0.]*len(normedC)
-            normedC[axisToTransform] = selectedC
+            axis_to_transform = self.study.observation_model.parameter_names.index(self.selected_parameter)
+            selected_c = normed_c[axis_to_transform]
+            normed_c = [0.]*len(normed_c)
+            normed_c[axis_to_transform] = selected_c
 
-            self.kernel = self.createKernel(normedC[0], alpha[0], 0)
-            for i, (a, c) in enumerate(zip(alpha[1:], normedC[1:])):
-                self.kernel *= self.createKernel(c, a, i+1)
+            self.kernel = self.create_kernel(normed_c[0], alpha[0], 0)
+            for i, (a, c) in enumerate(zip(alpha[1:], normed_c[1:])):
+                self.kernel *= self.create_kernel(c, a, i+1)
 
             self.kernel = self.kernel.T
-            self.kernelParameters = deepcopy(self.hyperParameterValues)
+            self.kernel_parameters = deepcopy(self.hyper_parameter_values)
 
-        newPrior = self.convolve(posterior)
-        newPrior /= np.sum(newPrior)
-        return newPrior
+        new_prior = self.convolve(posterior)
+        new_prior /= np.sum(new_prior)
+        return new_prior
 
-    def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t - 1)
+    def compute_backward_prior(self, posterior, t):
+        return self.compute_forward_prior(posterior, t - 1)
 
-    def createKernel(self, c, alpha, axis):
+    def create_kernel(self, c, alpha, axis):
         """
         Create alpha-stable distribution on a grid as a kernel for convolution.
 
@@ -205,7 +239,7 @@ class AlphaStableRandomWalk(TransitionModel):
         Returns:
             ndarray: kernel
         """
-        gs = self.study.gridSize
+        gs = self.study.grid_size
         if len(gs) == 2:
             if axis == 1:
                 l1 = gs[1]
@@ -244,7 +278,7 @@ class AlphaStableRandomWalk(TransitionModel):
         Returns:
             ndarray: convolution
         """
-        gs = np.array(self.study.gridSize)
+        gs = np.array(self.study.grid_size)
         padded_distribution = np.zeros(3*np.array(gs))
         if len(gs) == 2:
             padded_distribution[gs[0]:2*gs[0], gs[1]:2*gs[1]] = distribution
@@ -263,30 +297,30 @@ class AlphaStableRandomWalk(TransitionModel):
 class ChangePoint(TransitionModel):
     """
     Abrupt parameter change at a specified time step. Parameter values are allowed to change only at a single point in
-    time, right after a specified time step (Hyper-parameter tChange). Note that a uniform parameter distribution is
+    time, right after a specified time step (Hyper-parameter t_change). Note that a uniform parameter distribution is
     used at this time step to achieve this "reset" of parameter values.
 
     Args:
-        name(str): custom name of the hyper-parameter tChange
+        name(str): custom name of the hyper-parameter t_change
         value(int, list, tuple, ndarray): Integer value(s) of the time step of the change point
         prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
             directly as a Numpy array with probability values for each hyper-parameter value
     """
-    def __init__(self, name='tChange', value=None, prior=None):
+    def __init__(self, name='t_change', value=None, prior=None):
         if isinstance(value, (list, tuple)):
             value = np.array(value)
 
         self.study = None
-        self.latticeConstant = None
-        self.hyperParameterNames = [name]
-        self.hyperParameterValues = [value]
+        self.lattice_constant = None
+        self.hyper_parameter_names = [name]
+        self.hyper_parameter_values = [value]
         self.prior = prior
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Change-point'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -297,24 +331,24 @@ class ChangePoint(TransitionModel):
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        if t == self.hyperParameterValues[0]:
+        if t == self.hyper_parameter_values[0]:
             # check if custom prior is used by observation model
-            if hasattr(self.study.observationModel.prior, '__call__'):
-                prior = self.study.observationModel.prior(*self.study.grid)
-            elif isinstance(self.study.observationModel.prior, np.ndarray):
-                prior = deepcopy(self.study.observationModel.prior)
+            if hasattr(self.study.observation_model.prior, '__call__'):
+                prior = self.study.observation_model.prior(*self.study.grid)
+            elif isinstance(self.study.observation_model.prior, np.ndarray):
+                prior = deepcopy(self.study.observation_model.prior)
             else:
-                prior = np.ones(self.study.gridSize)  # flat prior
+                prior = np.ones(self.study.grid_size)  # flat prior
 
             # normalize prior (necessary in case an improper prior is used)
             prior /= np.sum(prior)
-            prior *= np.prod(self.study.latticeConstant)
+            prior *= np.prod(self.study.lattice_constant)
             return prior
         else:
             return posterior
 
-    def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t - 1)
+    def compute_backward_prior(self, posterior, t):
+        return self.compute_forward_prior(posterior, t - 1)
 
 
 class Independent(TransitionModel):
@@ -327,16 +361,16 @@ class Independent(TransitionModel):
     """
     def __init__(self):
         self.study = None
-        self.latticeConstant = None
-        self.hyperParameterNames = []
-        self.hyperParameterValues = []
+        self.lattice_constant = None
+        self.hyper_parameter_names = []
+        self.hyper_parameter_values = []
         self.prior = None
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Independent observations model'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -348,19 +382,19 @@ class Independent(TransitionModel):
             ndarray: Prior parameter distribution for subsequent time step
         """
         # check if custom prior is used by observation model
-        if hasattr(self.study.observationModel.prior, '__call__'):
-            prior = self.study.observationModel.prior(*self.study.grid)
-        elif isinstance(self.study.observationModel.prior, np.ndarray):
-            prior = deepcopy(self.study.observationModel.prior)
+        if hasattr(self.study.observation_model.prior, '__call__'):
+            prior = self.study.observation_model.prior(*self.study.grid)
+        elif isinstance(self.study.observation_model.prior, np.ndarray):
+            prior = deepcopy(self.study.observation_model.prior)
         else:
-            prior = np.ones(self.study.gridSize)  # flat prior
+            prior = np.ones(self.study.grid_size)  # flat prior
 
         # normalize prior (necessary in case an improper prior is used)
         prior /= np.sum(prior)
         return prior
 
-    def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t - 1)
+    def compute_backward_prior(self, posterior, t):
+        return self.compute_forward_prior(posterior, t - 1)
 
 
 class RegimeSwitch(TransitionModel):
@@ -371,27 +405,27 @@ class RegimeSwitch(TransitionModel):
     realized in the next time step, effectively allowing abrupt parameter changes at every time step.
 
     Args:
-        name(str): custom name of the hyper-parameter log10pMin
+        name(str): custom name of the hyper-parameter log10p_min
         value(float, list, tuple, ndarray): Minimal probability density (log10 value) that is assigned to every
             parameter value
         prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
             directly as a Numpy array with probability values for each hyper-parameter value
     """
-    def __init__(self, name='log10pMin', value=None, prior=None):
+    def __init__(self, name='log10p_min', value=None, prior=None):
         if isinstance(value, (list, tuple)):
             value = np.array(value)
 
         self.study = None
-        self.latticeConstant = None
-        self.hyperParameterNames = [name]
-        self.hyperParameterValues = [value]
+        self.lattice_constant = None
+        self.hyper_parameter_names = [name]
+        self.hyper_parameter_values = [value]
         self.prior = prior
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Regime-switching model'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -402,17 +436,17 @@ class RegimeSwitch(TransitionModel):
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        newPrior = posterior.copy()
-        limit = (10.**self.hyperParameterValues[0])*np.prod(self.latticeConstant)  # convert prob. density to prob.
-        newPrior[newPrior < limit] = limit
+        new_prior = posterior.copy()
+        limit = (10.**self.hyper_parameter_values[0])*np.prod(self.lattice_constant)  # convert prob. density to prob.
+        new_prior[new_prior < limit] = limit
 
         # transformation above violates proper normalization; re-normalization needed
-        newPrior /= np.sum(newPrior)
+        new_prior /= np.sum(new_prior)
 
-        return newPrior
+        return new_prior
 
-    def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t - 1)
+    def compute_backward_prior(self, posterior, t):
+        return self.compute_forward_prior(posterior, t - 1)
 
 
 class NotEqual(TransitionModel):
@@ -424,7 +458,7 @@ class NotEqual(TransitionModel):
     detect time step when parameter distributions change significantly.
 
     Args:
-        name(str): custom name of the hyper-parameter log10pMin
+        name(str): custom name of the hyper-parameter log10p_min
         value(float, list, tuple, ndarray): Log10-value of the minimal probability that is set to all possible
             parameter values of the inverted parameter distribution
         prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
@@ -433,21 +467,21 @@ class NotEqual(TransitionModel):
     Note:
         Mostly used with an instance of OnlineStudy.
     """
-    def __init__(self, name='log10pMin', value=None, prior=None):
+    def __init__(self, name='log10p_min', value=None, prior=None):
         if isinstance(value, (list, tuple)):
             value = np.array(value)
 
         self.study = None
-        self.latticeConstant = None
-        self.hyperParameterNames = [name]
-        self.hyperParameterValues = [value]
+        self.lattice_constant = None
+        self.hyper_parameter_names = [name]
+        self.hyper_parameter_values = [value]
         self.prior = prior
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Not-Equal model'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -458,20 +492,20 @@ class NotEqual(TransitionModel):
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        newPrior = posterior.copy()
-        limit = (10**self.hyperParameterValues[0])*np.prod(self.latticeConstant)  # convert prob. density to prob.
+        new_prior = posterior.copy()
+        limit = (10**self.hyper_parameter_values[0])*np.prod(self.lattice_constant)  # convert prob. density to prob.
 
-        newPrior = np.amax(newPrior) - newPrior
-        newPrior /= np.sum(newPrior)
-        newPrior[newPrior < limit] = limit
+        new_prior = np.amax(new_prior) - new_prior
+        new_prior /= np.sum(new_prior)
+        new_prior[new_prior < limit] = limit
 
         # transformation above violates proper normalization; re-normalization needed
-        newPrior /= np.sum(newPrior)
+        new_prior /= np.sum(new_prior)
 
-        return newPrior
+        return new_prior
 
-    def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t - 1)
+    def compute_backward_prior(self, posterior, t):
+        return self.compute_forward_prior(posterior, t - 1)
 
 
 class Deterministic(TransitionModel):
@@ -490,54 +524,63 @@ class Deterministic(TransitionModel):
             function, as a SymPy random variable, or directly as a Numpy array with probability values for each
             hyper-parameter value
 
-    Example:
-    ::
+    Example::
+
         def quadratic(t, a=0, b=0):
             return a*(t**2) + b*t
 
         S = bl.Study()
         ...
-        S.setObservationModel(bl.om.WhiteNoise('std', bl.oint(0, 3, 1000)))
-        S.setTransitionModel(bl.tm.Deterministic(quadratic, target='signal'))
+        S.set_observation_model(bl.om.WhiteNoise('std', bl.oint(0, 3, 1000)))
+        S.set_transition_model(bl.tm.Deterministic(quadratic, target='signal'))
     """
     def __init__(self, function=None, target=None, prior=None):
         self.study = None
-        self.latticeConstant = None
+        self.lattice_constant = None
         self.function = function
-        self.selectedParameter = target
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.selected_parameter = target
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
         if target is None:
             raise ConfigurationError('No parameter set for transition model "Deterministic"')
 
         # create ordered dictionary of hyper-parameters from keyword-arguments of function
-        argspec = getargspec(self.function)
+        function_parameters = [
+            p for p in signature(self.function).parameters.values()
+            if p.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+        ]
+        defaults = [p.default for p in function_parameters[1:]]
 
         # only keyword arguments are allowed
-        if not len(argspec.args) == len(argspec.defaults)+1:
+        if (
+            len(function_parameters) == 0
+            or any(default is Parameter.empty for default in defaults)
+            or function_parameters[0].default is not Parameter.empty
+        ):
             raise ConfigurationError('Function to define deterministic transition model can only contain one '
                                      'non-keyword argument (time; first argument) and keyword-arguments '
                                      '(hyper-parameters) with default values.')
 
         # define hyper-parameters of transition model
-        self.hyperParameterNames = []
-        self.hyperParameterValues = []
-        for arg, default in zip(argspec.args[1:], argspec.defaults):
+        self.hyper_parameter_names = []
+        self.hyper_parameter_values = []
+        for parameter, default in zip(function_parameters[1:], defaults):
             if isinstance(default, (list, tuple)):
                 default = np.array(default)
-            self.hyperParameterNames.append(arg)
-            self.hyperParameterValues.append(default)
+            self.hyper_parameter_names.append(parameter.name)
+            self.hyper_parameter_values.append(default)
 
         if prior is None:
             # provide as many "None"-priors as there are hyper-parameters
-            self.prior = [None]*len(argspec.defaults)
+            self.prior = [None]*len(defaults)
         else:
             # if list of priors is supplied, check length
-            if isinstance(prior, Iterable):
-                if not len(prior) == len(argspec.defaults):
+            if isinstance(prior, Iterable) and not isinstance(prior, str):
+                if not len(prior) == len(defaults):
                     raise ConfigurationError('{} priors are defined for transition model "{}", but model contains {}'
                                              'hyper-parameters.'
-                                             .format(len(prior), self.function.__name__, len(argspec.defaults)))
+                                             .format(len(prior), self.function.__name__, len(defaults)))
+                self.prior = prior
             # if single prior is defined, pack it in a list
             else:
                 self.prior = [prior]
@@ -545,7 +588,7 @@ class Deterministic(TransitionModel):
     def __str__(self):
         return 'Deterministic model ({})'.format(self.function.__name__)
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -557,53 +600,53 @@ class Deterministic(TransitionModel):
             ndarray: Prior parameter distribution for subsequent time step
         """
         # determine grid axis along which to shift the distribution
-        axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+        axis_to_transform = self.study.observation_model.parameter_names.index(self.selected_parameter)
 
         # compute offset to shift parameter grid
-        params = {name: value for (name, value) in zip(self.hyperParameterNames, self.hyperParameterValues)}
-        ftp1 = self.function(t + 1 - self.tOffset, **params)
-        ft = self.function(t-self.tOffset, **params)
+        params = {name: value for (name, value) in zip(self.hyper_parameter_names, self.hyper_parameter_values)}
+        ftp1 = self.function(t + 1 - self.t_offset, **params)
+        ft = self.function(t-self.t_offset, **params)
         d = ftp1-ft
 
         # normalize offset with respect to lattice constant of parameter grid
-        d /= self.latticeConstant[axisToTransform]
+        d /= self.lattice_constant[axis_to_transform]
 
         # build list for all axes of parameter grid (setting only the selected axis to a non-zero value)
-        dAll = [0] * len(self.latticeConstant)
-        dAll[axisToTransform] = d
+        d_all = [0] * len(self.lattice_constant)
+        d_all[axis_to_transform] = d
 
         # shift interpolated version of distribution
-        newPrior = shift(posterior, dAll, order=3, mode='nearest')
+        new_prior = shift(posterior, d_all, order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
-        newPrior /= np.sum(newPrior)
+        new_prior /= np.sum(new_prior)
 
-        return newPrior
+        return new_prior
 
-    def computeBackwardPrior(self, posterior, t):
+    def compute_backward_prior(self, posterior, t):
         # determine grid axis along which to shift the distribution
-        axisToTransform = self.study.observationModel.parameterNames.index(self.selectedParameter)
+        axis_to_transform = self.study.observation_model.parameter_names.index(self.selected_parameter)
 
         # compute offset to shift parameter grid
-        params = {name: value for (name, value) in zip(self.hyperParameterNames, self.hyperParameterValues)}
-        ftm1 = self.function(t - 1 - self.tOffset, **params)
-        ft = self.function(t - self.tOffset, **params)
+        params = {name: value for (name, value) in zip(self.hyper_parameter_names, self.hyper_parameter_values)}
+        ftm1 = self.function(t - 1 - self.t_offset, **params)
+        ft = self.function(t - self.t_offset, **params)
         d = ftm1 - ft
 
         # normalize offset with respect to lattice constant of parameter grid
-        d /= self.latticeConstant[axisToTransform]
+        d /= self.lattice_constant[axis_to_transform]
 
         # build list for all axes of parameter grid (setting only the selected axis to a non-zero value)
-        dAll = [0] * len(self.latticeConstant)
-        dAll[axisToTransform] = d
+        d_all = [0] * len(self.lattice_constant)
+        d_all[axis_to_transform] = d
 
         # shift interpolated version of distribution
-        newPrior = shift(posterior, dAll, order=3, mode='nearest')
+        new_prior = shift(posterior, d_all, order=3, mode='nearest')
 
         # transformation above may violate proper normalization; re-normalization needed
-        newPrior /= np.sum(newPrior)
+        new_prior /= np.sum(new_prior)
 
-        return newPrior
+        return new_prior
 
 
 class CombinedTransitionModel(TransitionModel):
@@ -617,9 +660,9 @@ class CombinedTransitionModel(TransitionModel):
     """
     def __init__(self, *args):
         self.study = None
-        self.latticeConstant = None
+        self.lattice_constant = None
         self.models = args
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
         # check if any sub-model is a break-point and raise error if so
         if np.any([str(arg) == 'Break-point' for arg in args]):
@@ -629,7 +672,7 @@ class CombinedTransitionModel(TransitionModel):
     def __str__(self):
         return 'Combined transition model'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -640,26 +683,26 @@ class CombinedTransitionModel(TransitionModel):
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        newPrior = posterior.copy()
+        new_prior = posterior.copy()
 
         for m in self.models:
-            m.latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated to sub-models
+            m.lattice_constant = self.lattice_constant  # lattice_constant needs to be propagated to sub-models
             m.study = self.study  # study needs to be propagated to sub-models
-            m.tOffset = self.tOffset
-            newPrior = m.computeForwardPrior(newPrior, t)
+            m.t_offset = self.t_offset
+            new_prior = m.compute_forward_prior(new_prior, t)
 
-        return newPrior
+        return new_prior
 
-    def computeBackwardPrior(self, posterior, t):
-        newPrior = posterior.copy()
+    def compute_backward_prior(self, posterior, t):
+        new_prior = posterior.copy()
 
         for m in self.models:
-            m.latticeConstant = self.latticeConstant
+            m.lattice_constant = self.lattice_constant
             m.study = self.study
-            m.tOffset = self.tOffset
-            newPrior = m.computeBackwardPrior(newPrior, t)
+            m.t_offset = self.t_offset
+            new_prior = m.compute_backward_prior(new_prior, t)
 
-        return newPrior
+        return new_prior
 
 
 class SerialTransitionModel(TransitionModel):
@@ -675,11 +718,11 @@ class SerialTransitionModel(TransitionModel):
         *args: Sequence of transition models and break-points/change-points (for n models, n-1
             break-points/change-points have to be provided)
 
-    Example:
-    ::
+    Example::
+
         T = bl.tm.SerialTransitionModel(bl.tm.Static(),
                                         bl.tm.BreakPoint('t_1', 50),
-                                        bl.tm.RegimeSwitch('log10pMin', -7),
+                                        bl.tm.RegimeSwitch('log10p_min', -7),
                                         bl.tm.BreakPoint('t_2', 100),
                                         bl.tm.GaussianRandomWalk('sigma', 0.2, target='x'))
 
@@ -689,71 +732,71 @@ class SerialTransitionModel(TransitionModel):
     """
     def __init__(self, *args):
         self.study = None
-        self.latticeConstant = None
+        self.lattice_constant = None
 
         # determine time steps of structural breaks and other sub-models
-        self.hyperParameterNames = []
-        self.hyperParameterValues = []
+        self.hyper_parameter_names = []
+        self.hyper_parameter_values = []
         self.prior = []
         self.models = []
-        self.changePointMask = []
+        self.change_point_mask = []
         for arg in args:
             if str(arg) == 'Break-point':
-                self.hyperParameterNames.append(arg.name)
+                self.hyper_parameter_names.append(arg.name)
                 self.prior.append(arg.prior)
 
                 # exclude 'all' case, conversion to list is needed to avoid future warning about element-wise comparison
                 if isinstance(arg.value, str) and arg.value == 'all':  # 'all' is passed without type change
-                    self.hyperParameterValues.append(arg.value)
+                    self.hyper_parameter_values.append(arg.value)
                 elif isinstance(arg.value, Iterable):  # convert list/tuple in numpy array
-                    self.hyperParameterValues.append(np.array(arg.value))
+                    self.hyper_parameter_values.append(np.array(arg.value))
                 else:  # single values are passed without type change
-                    self.hyperParameterValues.append(arg.value)
-                self.changePointMask.append(0)
+                    self.hyper_parameter_values.append(arg.value)
+                self.change_point_mask.append(0)
             elif str(arg) == 'Change-point':
-                name = arg.hyperParameterNames[0]
-                value = arg.hyperParameterValues[0]
-                self.hyperParameterNames.append(name)
+                name = arg.hyper_parameter_names[0]
+                value = arg.hyper_parameter_values[0]
+                self.hyper_parameter_names.append(name)
                 self.prior.append(arg.prior)
 
                 # exclude 'all' case, conversion to list is needed to avoid future warning about element-wise comparison
                 if isinstance(value, str) and value == 'all':  # 'all' is passed without type change
-                    self.hyperParameterValues.append(value)
+                    self.hyper_parameter_values.append(value)
                 elif isinstance(value, Iterable):  # convert list/tuple in numpy array
-                    self.hyperParameterValues.append(np.array(value))
+                    self.hyper_parameter_values.append(np.array(value))
                 else:  # single values are passed without type change
-                    self.hyperParameterValues.append(value)
-                self.changePointMask.append(1)
+                    self.hyper_parameter_values.append(value)
+                self.change_point_mask.append(1)
             else:  # sub-model
                 self.models.append(arg)
 
-        self.changePointMask = np.array(self.changePointMask).astype(bool)
+        self.change_point_mask = np.array(self.change_point_mask).astype(bool)
 
         # check: break times have to be passed in monotonically increasing order
         # since multiple values can be passed for one break-point at init, we check first values only
-        firstValues = []
-        for v in self.hyperParameterValues:
+        first_values = []
+        for v in self.hyper_parameter_values:
             if isinstance(v, str) and v == 'all':
-                firstValues.append(v)
+                first_values.append(v)
             elif isinstance(v, Iterable):
-                firstValues.append(v[0])
+                first_values.append(v[0])
             else:
-                firstValues.append(v)
+                first_values.append(v)
 
         if not all(x < y if not ((isinstance(x, str) and x == 'all') or (isinstance(y, str) and y == 'all')) else True
-                   for x, y in zip(firstValues, firstValues[1:])):
+                   for x, y in zip(first_values, first_values[1:])):
             raise ConfigurationError('Time steps for structural breaks and/or change-points have to be passed in '
                                      'monotonically increasing order.')
 
         # check: n models require n-1 break times
-        if not (len(self.models)-1 == len(self.hyperParameterValues)):
+        if not (len(self.models)-1 == len(self.hyper_parameter_values)):
             raise ConfigurationError('Wrong number of structural breaks/change-points and models. For n models, n-1 '
                                      'structural breaks/change-points are required.')
 
     def __str__(self):
         return 'Serial transition model'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -765,27 +808,27 @@ class SerialTransitionModel(TransitionModel):
             ndarray: Prior parameter distribution for subsequent time step
         """
         # the index of the model to choose at time t is given by the number of break times <= t
-        modelIndex = np.sum(np.array(self.hyperParameterValues) <= t)
+        model_index = np.sum(np.array(self.hyper_parameter_values) <= t)
 
-        self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
-        self.models[modelIndex].study = self.study  # study needs to be propagated
-        self.models[modelIndex].tOffset = self.hyperParameterValues[modelIndex-1] if modelIndex > 0 else 0
-        newPrior = self.models[modelIndex].computeForwardPrior(posterior, t)
-        newPrior = self._forwardChangePointCheck(newPrior, t)
-        return newPrior
+        self.models[model_index].lattice_constant = self.lattice_constant  # lattice_constant needs to be propagated
+        self.models[model_index].study = self.study  # study needs to be propagated
+        self.models[model_index].t_offset = self.hyper_parameter_values[model_index-1] if model_index > 0 else 0
+        new_prior = self.models[model_index].compute_forward_prior(posterior, t)
+        new_prior = self._forward_change_point_check(new_prior, t)
+        return new_prior
 
-    def computeBackwardPrior(self, posterior, t):
+    def compute_backward_prior(self, posterior, t):
         # the index of the model to choose at time t is given by the number of break times <= t
-        modelIndex = np.sum(np.array(self.hyperParameterValues) <= t-1)
+        model_index = np.sum(np.array(self.hyper_parameter_values) <= t-1)
 
-        self.models[modelIndex].latticeConstant = self.latticeConstant  # latticeConstant needs to be propagated
-        self.models[modelIndex].study = self.study  # study needs to be propagated
-        self.models[modelIndex].tOffset = self.hyperParameterValues[modelIndex-1] if modelIndex > 0 else 0
-        newPrior = self.models[modelIndex].computeBackwardPrior(posterior, t)
-        newPrior = self._backwardChangePointCheck(newPrior, t)
-        return newPrior
+        self.models[model_index].lattice_constant = self.lattice_constant  # lattice_constant needs to be propagated
+        self.models[model_index].study = self.study  # study needs to be propagated
+        self.models[model_index].t_offset = self.hyper_parameter_values[model_index-1] if model_index > 0 else 0
+        new_prior = self.models[model_index].compute_backward_prior(posterior, t)
+        new_prior = self._backward_change_point_check(new_prior, t)
+        return new_prior
 
-    def _forwardChangePointCheck(self, posterior, t):
+    def _forward_change_point_check(self, posterior, t):
         """
         This function checks if a change-point is set to the current time step and replaces the posterior with the prior
         distribution, just like the change-point transition model. This allows to use change-points in serial transition
@@ -798,24 +841,24 @@ class SerialTransitionModel(TransitionModel):
         Returns:
             ndarray: Prior parameter distribution for subsequent time step
         """
-        if t in np.array(self.hyperParameterValues)[self.changePointMask]:
+        if t in np.array(self.hyper_parameter_values)[self.change_point_mask]:
             # check if custom prior is used by observation model
-            if hasattr(self.study.observationModel.prior, '__call__'):
-                prior = self.study.observationModel.prior(*self.study.grid)
-            elif isinstance(self.study.observationModel.prior, np.ndarray):
-                prior = deepcopy(self.study.observationModel.prior)
+            if hasattr(self.study.observation_model.prior, '__call__'):
+                prior = self.study.observation_model.prior(*self.study.grid)
+            elif isinstance(self.study.observation_model.prior, np.ndarray):
+                prior = deepcopy(self.study.observation_model.prior)
             else:
-                prior = np.ones(self.study.gridSize)  # flat prior
+                prior = np.ones(self.study.grid_size)  # flat prior
 
             # normalize prior (necessary in case an improper prior is used)
             prior /= np.sum(prior)
-            prior *= np.prod(self.study.latticeConstant)
+            prior *= np.prod(self.study.lattice_constant)
             return prior
         else:
             return posterior
 
-    def _backwardChangePointCheck(self, posterior, t):
-        return self._forwardChangePointCheck(posterior, t - 1)
+    def _backward_change_point_check(self, posterior, t):
+        return self._forward_change_point_check(posterior, t - 1)
 
 
 class BreakPoint(TransitionModel):
@@ -823,12 +866,12 @@ class BreakPoint(TransitionModel):
     Break-point. This class can only be used to specify break-point within a SerialTransitionModel instance.
 
     Args:
-        name(str): custom name of the hyper-parameter tBreak
+        name(str): custom name of the hyper-parameter t_break
         value(int, list, tuple, ndarray): Value(s) of the time step(s) of the break point
         prior: hyper-prior distribution that may be passed as a(lambda) function, as a SymPy random variable, or
             directly as a Numpy array with probability values for each hyper-parameter value
     """
-    def __init__(self, name='tBreak', value=None, prior=None):
+    def __init__(self, name='t_break', value=None, prior=None):
         if isinstance(value, (list, tuple)):
             value = np.array(value)
 
@@ -858,18 +901,18 @@ class BivariateRandomWalk(TransitionModel):
             value2 = np.array(value3)
 
         self.study = None
-        self.latticeConstant = None
-        self.hyperParameterNames = [name1, name2, name3]
-        self.hyperParameterValues = [value1, value2, value3]
+        self.lattice_constant = None
+        self.hyper_parameter_names = [name1, name2, name3]
+        self.hyper_parameter_values = [value1, value2, value3]
         self.prior = prior
         self.kernel = None
-        self.kernelParameters = None
-        self.tOffset = 0  # is set to the time of the last Breakpoint by SerialTransition model
+        self.kernel_parameters = None
+        self.t_offset = 0  # is set to the time of the last Breakpoint by SerialTransition model
 
     def __str__(self):
         return 'Bivariate random walk'
 
-    def computeForwardPrior(self, posterior, t):
+    def compute_forward_prior(self, posterior, t):
         """
         Compute new prior from old posterior (moving forwards in time).
 
@@ -882,22 +925,22 @@ class BivariateRandomWalk(TransitionModel):
         """
 
         # if hyper-parameter values have changed, a new convolution kernel needs to be created
-        if not self.kernelParameters == self.hyperParameterValues:
-            normedSigma1 = self.hyperParameterValues[0] / self.latticeConstant[0]
-            normedSigma2 = self.hyperParameterValues[1] / self.latticeConstant[1]
+        if not self.kernel_parameters == self.hyper_parameter_values:
+            normed_sigma1 = self.hyper_parameter_values[0] / self.lattice_constant[0]
+            normed_sigma2 = self.hyper_parameter_values[1] / self.lattice_constant[1]
 
-            self.kernel = self.createKernel(normedSigma1, normedSigma2, self.hyperParameterValues[2])
-            self.kernelParameters = deepcopy(self.hyperParameterValues)
+            self.kernel = self.create_kernel(normed_sigma1, normed_sigma2, self.hyper_parameter_values[2])
+            self.kernel_parameters = deepcopy(self.hyper_parameter_values)
 
-        newPrior = convolve2d(posterior, self.kernel, mode='same')
-        newPrior /= np.sum(newPrior)
-        return newPrior
+        new_prior = convolve2d(posterior, self.kernel, mode='same')
+        new_prior /= np.sum(new_prior)
+        return new_prior
 
-    def computeBackwardPrior(self, posterior, t):
-        return self.computeForwardPrior(posterior, t - 1)
+    def compute_backward_prior(self, posterior, t):
+        return self.compute_forward_prior(posterior, t - 1)
 
     @staticmethod
-    def createKernel(sigma1, sigma2, rho):
+    def create_kernel(sigma1, sigma2, rho):
         rv = multivariate_normal(cov=[[sigma1 ** 2., rho * sigma1 * sigma2],
                                       [rho * sigma1 * sigma2, sigma2 ** 2.]])
 

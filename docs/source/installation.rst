@@ -10,33 +10,24 @@ The easiest way to install the latest release version of *bayesloop* is via ``pi
 
     pip install bayesloop
 
-Alternatively, a zipped version can be downloaded `here <https://github.com/christophmark/bayesloop/releases>`__. The module is installed by calling ``python setup.py install``.
+Alternatively, a zipped version can be downloaded `here <https://github.com/christophmark/bayesloop/releases>`__. The module is installed by calling ``python -m pip install .`` from the project root.
 
 Development version
 -------------------
 
-The latest development version of *bayesloop* can be installed from the master branch using pip (requires git):
+The latest development version of *bayesloop* can be installed from the ``v2`` branch using pip (requires git):
 
 ::
 
-    pip install git+https://github.com/christophmark/bayesloop
+    pip install git+https://github.com/christophmark/bayesloop@v2
 
-Alternatively, use this `zipped version <https://github.com/christophmark/bayesloop/zipball/master>`__ or clone the repository.
+Alternatively, clone the repository and install it in editable mode:
+
+::
+
+    python -m pip install -e ".[test]"
 
 Dependencies
 ------------
 
-*bayesloop* is tested on Python 2.7, 3.5 and 3.6. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm and dill. All except the last two are already included in the `Anaconda distribution <https://www.continuum.io/downloads>`__ of Python. Windows users may also take advantage of pre-compiled binaries for all dependencies, which can be found at `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`__.
-
-Optional dependencies
----------------------
-
-*bayesloop* supports multiprocessing for computationally expensive analyses, based on the `pathos <https://github.com/uqfoundation/pathos>`__ module. The latest version can be obtained directly from GitHub using pip (requires git):
-
-::
-
-    pip install git+https://github.com/uqfoundation/pathos
-
-.. note::
-    
-    Windows users need to install a C compiler *before* installing pathos. One possible solution for 64bit systems is to install `Microsoft Visual C++ 2008 SP1 Redistributable Package (x64) <http://www.microsoft.com/en-us/download/confirmation.aspx?id=2092>`__ and `Microsoft Visual C++ Compiler for Python 2.7 <http://www.microsoft.com/en-us/download/details.aspx?id=44266>`__.
+*bayesloop* v2 supports Python 3.10 and newer. It depends on NumPy, SciPy, SymPy, matplotlib, tqdm, cloudpickle and joblib. Parallel computation for expensive ``HyperStudy`` and ``ChangepointStudy`` analyses is available with a normal install via ``fit(n_jobs=...)``.

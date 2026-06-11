@@ -13,5 +13,5 @@ class ConfigurationError(Exception):
 
 class PostProcessingError(Exception):
     """
-    Raised if function for post-processing fails, e.g. plotParameterEvolution() or getHyperParameterDistribution().
+    Raised if function for post-processing fails, e.g. plot_parameter_evolution() or get_hyper_parameter_distribution().
     """
