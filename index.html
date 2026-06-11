@@ -1,352 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bayesloop — Bayesian time series analysis with time-varying parameters</title>
+  <meta name="description" content="bayesloop is a Python library for fitting time series models with time-varying parameters and model selection based on Bayesian inference — fast, grid-based, no MCMC. Try it live in your browser.">
+  <link rel="icon" href="img/favicon.ico">
 
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="bayesloop is a probabilistic programming framework to facilitate model selection, parameter inference and forecasting with time-varying parameters.">
-    <meta name="author" content="Christoph Mark">
-    <link rel="shortcut icon" href="img/favicon.ico"/>
+  <meta property="og:title" content="bayesloop — Bayesian time series analysis">
+  <meta property="og:description" content="Fit time series models with time-varying parameters, detect change-points and compare models by evidence. Try it live in your browser.">
+  <meta property="og:image" content="http://bayesloop.com/img/logo.png">
+  <meta property="og:url" content="http://bayesloop.com/">
+  <meta property="og:type" content="website">
 
-    <title>bayesloop - Probabilistic programming framework</title>
-
-    <!-- Bootstrap Core CSS -->
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Theme CSS -->
-    <link href="css/style.css" rel="stylesheet">
-
-    <!-- Custom Fonts -->
-    <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
-
-    <!-- Syntax highlighting -->
-    <link href="css/highlight-github.css" rel="stylesheet">
-
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
+<body>
 
-<body id="page-top" class="index">
-    <!-- Navigation -->
-    <nav id="mainNav" class="navbar navbar-default navbar-fixed-top navbar-custom">
-        <div class="container">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header page-scroll">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span> Menu <i class="fa fa-bars"></i>
-                </button>
-                <a class="navbar-brand" href="#page-top">bayesloop</a>
-            </div>
-
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav navbar-right">
-                    <li class="hidden">
-                        <a href="#page-top"></a>
-                    </li>
-                    <li class="page-scroll">
-                        <a href="#applications">APPLICATIONS</a>
-                    </li>
-                    <li class="page-scroll">
-                        <a href="#features">FEATURES</a>
-                    </li>
-                    <li class="page-scroll">
-                        <a href="#gettingstarted">GETTING STARTED</a>
-                    </li>
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
-        </div>
-        <!-- /.container-fluid -->
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#top">
+      <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="31" fill="#287fb9"/>
+        <circle cx="32" cy="32" r="25" fill="none" stroke="#fff" stroke-width="3"/>
+        <path d="M10.5 44 C 22 44 25 17 32 17 C 39 17 42 44 53.5 44 Z" fill="#287fb9" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">bayesloop</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#playground">Playground</a>
+      <a href="#science">Science</a>
+      <a href="http://docs.bayesloop.com" target="_blank" rel="noopener">Docs</a>
+      <a class="nav-github" href="https://github.com/christophmark/bayesloop" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>GitHub</span>
+      </a>
     </nav>
+  </div>
+</header>
 
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12">
-                    <img class="img-responsive" src="img/logo.png" alt="">
-                    <div class="intro-text">
-                        <span class="name">bayesloop</span>
-                        <span class="description">A probabilistic programming framework that facilitates model selection, parameter inference and forecasting with time-varying parameters.</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+<main id="top">
 
-    <!-- applications Grid Section -->
-    <section id="applications">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12 applications-item">
-                    <a href="http://docs.bayesloop.com/en/stable/examples/stockmarketfluctuations.html" class="applications-link" data-toggle="modal">
-                        <div class="caption img-rounded">
-                            <div class="caption-content">
-                                <i class="fa fa-flask fa-2x"></i>
-                                <p>learn more...</p>
-                            </div>
-                        </div>
-                        <img src="img/applications/stockmarket.png" class="img-responsive img-rounded" alt="">
-                    </a>
-                </div>
-                <div class="col-lg-12 applications-item">
-                    <a href="http://docs.bayesloop.com/en/stable/tutorials.html" class="applications-link" data-toggle="modal">
-                        <div class="caption img-rounded">
-                            <div class="caption-content">
-                                <i class="fa fa-flask fa-2x"></i>
-                                <p>learn more...</p>
-                            </div>
-                        </div>
-                        <img src="img/applications/policy.png" class="img-responsive img-rounded" alt="">
-                    </a>
-                </div>
-                <div class="col-lg-12 applications-item">
-                    <a href="http://docs.bayesloop.com/en/stable/examples/anomalousdiffusion.html" class="applications-link" data-toggle="modal">
-                        <div class="caption img-rounded">
-                            <div class="caption-content">
-                                <i class="fa fa-flask fa-2x"></i>
-                                <p>learn more...</p>
-                            </div>
-                        </div>
-                        <img src="img/applications/diffusion.png" class="img-responsive img-rounded" alt="">
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="divider">
-        <div class="row">
-            <div class="col-lg-4 col-lg-offset-3 h1 text-center">
-                <p>Need help to analyze a particular data set or need a custom extension to bayesloop's functionality?</p>
-            </div>
-            <div class="col-lg-2 h1 text-center">
-                <a href="mailto:bayesloop@gmail.com" class="btn btn-lg btn-outline">
-                  <i class="fa fa-envelope"></i> Contact us!
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section id="features">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <h2>features</h2>
-                </div>
-            </div>
-
-            <div class="row features-item">
-                <div class="col-lg-4 col-lg-offset-2 text-center">
-                    <p>In contrast to MCMC methods and the Variational Bayes approach, bayesloop uses a discrete, regular grid to represent parameter distributions.</p>
-                    <p>Computing the model evidence for hypothesis testing then reduces to a simple sum over all lattice points on this grid!</p>
-                </div>
-                <div class="col-lg-4">
-                    <img class="img-responsive center-block" src="img/features/feature1.png" alt="">
-                </div>
-            </div>
-
-            <hr/>
-
-            <div class="row features-item">
-                <div class="col-lg-6">
-                    <img class="img-responsive center-block" src="img/features/feature2.png" alt="">
-                </div>
-                <div class="col-lg-4 text-center">
-                    <p>By inferring parameter distributions sequentially, time step by time step, bayesloop effectively breaks down one high-dimensional inference problem into many low-dimensional ones.</p>
-                    <p>This efficient approach can be employed for both retrospective and online analyses!</p>
-                </div>
-            </div>
-
-            <hr/>
-
-            <div class="row features-item">
-                <div class="col-lg-4  col-lg-offset-1 text-center">
-                    <p>bayesloop serves a specific niche of statistical models: We focus on well-known, simple statistical models with only few parameters, and extend these parameters to be time-varying.</p>
-                    <p>The resulting time-varying parameter models rest on a well-known statistical foundation and yet offer new insights into complex systems like invasive cancer cells or financial markets!</p>
-                </div>
-                <div class="col-lg-6">
-                    <img class="img-responsive center-block" src="img/features/feature3.png" alt="">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Getting Started Section -->
-    <section id="gettingstarted">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <h2>getting started</h2>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-8 col-lg-offset-2">
-                    <p>bayesloop is a Python module and the latest stable version is most easily added to your existing Python distribution via the built-in package manager:</p>
-                    <pre><code>pip install bayesloop</code></pre>
-                    <p>Alternatively, a zipped version can be downloaded <a href="https://github.com/christophmark/bayesloop/releases">here</a>. In that case, the module is installed by calling<p>
-                    <pre><code>python setup.py install</code></pre>
-                    <p>Further information about the installation of bayesloop and troubleshooting can be found in the <a href="http://docs.bayesloop.com/en/stable/installation.html">documentation</a>.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Minimal Example Section -->
-    <section id="minimalexample">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12 text-center">
-                    <h2>minimal example</h2>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-8 col-lg-offset-2">
-                    <p>The following code provides a minimal example of an analysis carried out using bayesloop. The data here consists of the number of coal mining disasters in the UK per year from 1851 to 1962 (see this <a href="http://www.dima.unige.it/%7Ericcomag/Teaching/ProcessiStocastici/coal-mining-disaster-original%20paper.pdf" target="_blank">article</a> for further information).</p>
-                    <pre><code class="Python">import bayesloop as bl
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-S = bl.HyperStudy()  # start new data study
-S.loadExampleData()  # load data array
-
-# observed number of disasters is modeled by Poisson distribution
-L = bl.om.Poisson('rate')
-
-# disaster rate itself may change gradually over time
-T = bl.tm.GaussianRandomWalk('sigma', bl.cint(0, 1.0, 20), target='rate')
-
-S.set(L, T)
-S.fit()  # inference
-
-# plot data together with inferred parameter evolution
-plt.figure(figsize=(8, 3))
-
-plt.subplot2grid((1, 3), (0, 0), colspan=2)
-plt.xlim([1852, 1961])
-plt.bar(S.rawTimestamps, S.rawData, align='center', facecolor='r', alpha=.5)
-S.plot('rate')
-plt.xlabel('year')
-
-# plot hyper-parameter distribution
-plt.subplot2grid((1, 3), (0, 2))
-plt.xlim([0, 1])
-S.plot('sigma', facecolor='g', alpha=0.7, lw=1, edgecolor='k')
-plt.tight_layout()
-plt.show()
-                        </code></pre>
-                        <img class="img-responsive img-rounded center-block" src="https://raw.githubusercontent.com/christophmark/bayesloop/master/docs/images/example.png" alt="">
-                        <p>This analysis indicates a significant improvement of safety conditions between 1880 and 1900. Check out the documentation for further insights into this dataset!</p>
-                        <p>The documentation further provides a detailed description of all features of bayesloop, including inference and hypothesis testing for time-varying parameter models, the detection of change-points and structural breaks in time series data, the prediction of future parameter values, the handling of missing data points, custom models based on the statistics modules of SymPy and SciPy, and model selection for online data streams.</p>
-                    </div>
-                    <div class="col-lg-8 col-lg-offset-2 text-center">
-                        <a href="http://docs.bayesloop.com" class="btn btn-lg btn-outline" id="documentation">
-                            <i class="fa fa-wrench"></i> Documentation
-                        </a>
-                    </div>
-                </div>
-            </div>
-    </section>
-    
-    <section class="divider">
-        <div class="row">
-            <div class="col-lg-4 col-lg-offset-3 h1 text-center">
-                <p>bayesloop is completely open-source. To contribute to the ongoing development, visit the GitHub repository!</p>
-            </div>
-            <div class="col-lg-2 h1 text-center">
-                <a href="https://github.com/christophmark/bayesloop" class="btn btn-lg btn-outline">
-                  <i class="fa fa-fw fa-github"></i> View on GitHub
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="text-center">
-        <div class="footer-above">
-            <div class="container">
-                <div class="row">
-
-                    <div class="footer-col col-md-4">
-                        <h4>License</h4>
-                        <p class="small">bayesloop is released under the <a href="https://github.com/christophmark/bayesloop/blob/master/LICENSE">MIT License</a>, a permissive free software license.</p>
-                    </div>
-
-                    <div class="footer-col col-md-4">
-                        <h4>Around the Web</h4>
-                        <ul class="list-inline">
-                            <li>
-                                <a target="_blank" href="https://github.com/christophmark/bayesloop" class="btn-social btn-outline"><i class="fa fa-fw fa-github"></i></a>
-                            </li>
-                            <li>
-                                <a target="_blank" href="http://stackoverflow.com/search?q=bayesloop" class="btn-social btn-outline"><i class="fa fa-fw fa-stack-overflow"></i></a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="footer-col col-md-4">
-                        <h4>About this site</h4>
-                        <p class="small">bayesloop is maintained by <a target="_blank" href="https://github.com/christophmark">christophmark</a>. This site is based on the Bootstrap theme <a target="_blank" href="https://startbootstrap.com/template-overviews/freelancer/">Freelancer</a> and is published with <a target="_blank" href="https://pages.github.com/">GitHub Pages</a>.</p>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-        <div class="footer-below">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-12">
-                        Copyright &copy; Christoph Mark 2017
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Scroll to Top Button (Only visible on small and extra-small screen sizes) -->
-    <div class="scroll-top page-scroll hidden-sm hidden-xs hidden-lg hidden-md">
-        <a class="btn btn-primary" href="#page-top">
-            <i class="fa fa-chevron-up"></i>
-        </a>
+  <!-- ============================== Hero ============================== -->
+  <section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <svg class="hero-waves" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 260 C 200 260 260 60 380 60 C 500 60 540 260 720 260 C 900 260 960 120 1200 120" fill="none" stroke="#287fb9" stroke-width="2" opacity="0.25"/>
+      <path d="M0 280 C 240 280 320 140 460 140 C 600 140 660 280 840 280 C 1020 280 1080 200 1200 200" fill="none" stroke="#5fb0dd" stroke-width="2" opacity="0.12"/>
+    </svg>
+    <div class="container hero-inner">
+      <p class="hero-kicker">bayesloop <span class="version-pill">2.0</span></p>
+      <h1>Time series models with parameters<br class="wide-only"> that <span class="accent">change over time</span></h1>
+      <p class="hero-sub">
+        bayesloop is a Python library for Bayesian inference on time series. It tracks time-varying
+        parameters, detects change-points and structural breaks, and objectively compares competing
+        models via the marginal likelihood — using fast grid-based computation instead of MCMC sampling.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#playground">Try it in your browser</a>
+        <a class="btn btn-ghost" href="http://docs.bayesloop.com" target="_blank" rel="noopener">Read the docs</a>
+      </div>
+      <div class="install-line">
+        <code id="pip-cmd">pip install bayesloop</code>
+        <button class="copy-btn" data-copy="pip install bayesloop" title="Copy to clipboard" aria-label="Copy install command">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M9 9h10v12H9z M5 15H3V3h12v2"/></svg>
+        </button>
+      </div>
     </div>
+  </section>
 
-    <!-- jQuery -->
-    <script src="vendor/jquery/jquery.min.js"></script>
+  <!-- ============================ New in 2.0 ============================ -->
+  <section class="v2-strip">
+    <div class="container v2-grid">
+      <div class="v2-item">
+        <h3>Clean snake_case API</h3>
+        <p>Consistent, modern Python naming across the entire library.</p>
+      </div>
+      <div class="v2-item">
+        <h3>Faster fits</h3>
+        <p>Adaptive likelihood caching and optimized built-in models.</p>
+      </div>
+      <div class="v2-item">
+        <h3>Parallel hyper-studies</h3>
+        <p><code>HyperStudy</code> and <code>ChangepointStudy</code> fan out across cores via joblib.</p>
+      </div>
+      <div class="v2-item">
+        <h3>Painless migration</h3>
+        <p><code>import bayesloop.v1compat</code> runs your 1.x scripts unchanged.</p>
+      </div>
+    </div>
+  </section>
 
-    <!-- Activate syntax highlighting -->
-    <script src="js/highlight.min.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
+  <!-- ============================= Features ============================= -->
+  <section id="features" class="section">
+    <div class="container">
+      <h2>Why bayesloop?</h2>
+      <p class="section-lead">
+        Real-world systems rarely keep their statistical properties constant. bayesloop embraces that:
+        it treats model parameters as dynamic quantities and infers how they evolve — together with the
+        evidence you need to decide between competing hypotheses.
+      </p>
+      <div class="feature-grid">
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M2 24 C 8 24 9 8 14 8 C 19 8 18 18 22 18 C 26 18 27 12 30 12"/></svg>
+          <h3>Time-varying parameters</h3>
+          <p>Infer full posterior distributions of model parameters at every single time step — not just point estimates.</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 26 V14 M16 26 V6 M26 26 V18"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 29 h26"/></svg>
+          <h3>Model selection</h3>
+          <p>Compare hypotheses about parameter dynamics on objective grounds, via the marginal likelihood (model evidence).</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M11 6 L4 16 L11 26 M21 6 L28 16 L21 26"/></svg>
+          <h3>Custom models</h3>
+          <p>Build observation models from SymPy random variables, SciPy distributions or plain NumPy functions.</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M2 24 H12 V8 H30"/><circle cx="12" cy="16" r="2.2" fill="currentColor" stroke="none"/></svg>
+          <h3>Change-point detection</h3>
+          <p>Locate abrupt changes and structural breaks — including full uncertainty about when they happened.</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 16 h14 M14 8 l8 8 -8 8"/><circle cx="27" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <h3>Online studies</h3>
+          <p>Feed in data point by point and run real-time model selection on streaming data.</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4" d="M2 20 C 8 20 10 10 16 10 C 22 10 24 20 30 20"/></svg>
+          <h3>Missing data</h3>
+          <p>NaN values are handled natively by the inference algorithm — no imputation gymnastics required.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- Bootstrap Core JavaScript -->
-    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+  <!-- ============================ Playground ============================ -->
+  <section id="playground" class="section section-alt">
+    <div class="container">
+      <h2>Try it — right here, right now</h2>
+      <p class="section-lead">
+        This playground runs a complete bayesloop analysis <strong>entirely in your browser</strong> via
+        <a href="https://pyodide.org" target="_blank" rel="noopener">Pyodide</a> (Python compiled to WebAssembly).
+        Nothing is sent to a server. The example below analyses the classic UK coal mining disaster record:
+        did mine safety really improve at the end of the 19th century — and how quickly?
+        Edit the code, press <em>Run</em>, and find out.
+      </p>
+      <p class="playground-note">First run downloads the Python runtime (~40&nbsp;MB) — subsequent runs are instant.</p>
 
-    <!-- Plugin JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+      <div class="playground">
+        <div class="editor-card">
+          <div class="editor-head">
+            <span class="dot" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+            <span class="editor-title">analysis.py</span>
+            <span class="editor-hint">Ctrl/Cmd + Enter to run</span>
+          </div>
+          <textarea id="code"></textarea>
+          <div class="toolbar">
+            <button id="run-btn" class="btn btn-primary btn-run">
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M4 2 L13 8 L4 14 Z"/></svg>
+              Run
+            </button>
+            <button id="reset-btn" class="btn btn-ghost btn-small">Reset example</button>
+            <span id="py-status" class="status"></span>
+          </div>
+        </div>
 
-    <!-- Theme JavaScript -->
-    <script src="js/freelancer.min.js"></script>
-    
-    <!-- Google Analytics -->
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+        <div class="output-grid">
+          <div class="console-card">
+            <div class="output-label">Console</div>
+            <pre id="console" class="console"><span class="console-placeholder">Output will appear here…</span></pre>
+          </div>
+          <div class="figure-card">
+            <div class="output-label">Figures</div>
+            <div id="figures" class="figures">
+              <div class="figure-placeholder">
+                <img src="img/example.png" alt="Pre-rendered example: inferred coal mining disaster rate over time">
+                <p>Pre-rendered result — press <em>Run</em> to compute it live in your browser.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        ga('create', 'UA-88435297-1', 'auto');
-        ga('send', 'pageview');
-    </script>
+  <!-- ============================= Science ============================= -->
+  <section id="science" class="section">
+    <div class="container">
+      <h2>Built for research</h2>
+      <p class="section-lead">
+        bayesloop has been employed in cancer research (migration paths of invasive tumor cells),
+        financial risk assessment, climate research and accident analysis.
+      </p>
+      <div class="paper-grid">
+        <a class="card paper" href="https://www.nature.com/articles/s41467-018-04241-5" target="_blank" rel="noopener">
+          <p class="paper-journal">Nature Communications 9:1803 (2018)</p>
+          <h3>Bayesian model selection for complex dynamic systems</h3>
+          <p class="paper-authors">Mark C., Metzner C., Lautscham L., Strissel P.L., Strick R., Fabry B.</p>
+        </a>
+        <a class="card paper" href="https://www.nature.com/articles/ncomms8516" target="_blank" rel="noopener">
+          <p class="paper-journal">Nature Communications 6:7516 (2015)</p>
+          <h3>Superstatistical analysis and modelling of heterogeneous random walks</h3>
+          <p class="paper-authors">Metzner C., Mark C., Steinwachs J., Lautscham L., Stadler F., Fabry B.</p>
+        </a>
+      </div>
+    </div>
+  </section>
 
+</main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="31" fill="#287fb9"/>
+        <circle cx="32" cy="32" r="25" fill="none" stroke="#fff" stroke-width="3"/>
+        <path d="M10.5 44 C 22 44 25 17 32 17 C 39 17 42 44 53.5 44 Z" fill="#287fb9" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+      </svg>
+      <span>bayesloop</span>
+    </div>
+    <nav class="footer-links">
+      <a href="http://docs.bayesloop.com" target="_blank" rel="noopener">Documentation</a>
+      <a href="https://github.com/christophmark/bayesloop" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://pypi.org/project/bayesloop/" target="_blank" rel="noopener">PyPI</a>
+      <a href="https://github.com/christophmark/bayesloop/blob/master/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    </nav>
+    <p class="footer-note">
+      Questions, suggestions or comments? Write to
+      <a href="mailto:&#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;">&#098;&#097;&#121;&#101;&#115;&#108;&#111;&#111;&#112;&#064;&#103;&#109;&#097;&#105;&#108;&#046;&#099;&#111;&#109;</a>
+      &nbsp;·&nbsp; © <span id="year">2026</span> Christoph Mark
+    </p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.js" defer></script>
+<script src="js/playground.js" defer></script>
 </body>
-
 </html>
