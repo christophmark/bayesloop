@@ -32,9 +32,10 @@
       <span class="brand-name">bayesloop</span>
     </a>
     <nav class="nav-links">
-      <a href="#features">Features</a>
+      <a href="#science">Research</a>
+      <a href="#production">Applications</a>
       <a href="#playground">Playground</a>
-      <a href="#science">Science</a>
+      <a href="#features">Features</a>
       <a href="http://docs.bayesloop.com" target="_blank" rel="noopener">Docs</a>
       <a class="nav-github" href="https://github.com/christophmark/bayesloop" target="_blank" rel="noopener">
         <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -99,47 +100,75 @@
     </div>
   </section>
 
-  <!-- ============================= Features ============================= -->
-  <section id="features" class="section">
+  <!-- ============================= Science ============================= -->
+  <section id="science" class="section">
     <div class="container">
-      <h2>Why bayesloop?</h2>
+      <h2>Built for research</h2>
       <p class="section-lead">
-        Real-world systems rarely keep their statistical properties constant. bayesloop embraces that:
-        it treats model parameters as dynamic quantities and infers how they evolve — together with the
-        evidence you need to decide between competing hypotheses.
+        bayesloop has been employed in cancer research (migration paths of invasive tumor cells),
+        financial risk assessment, climate research and accident analysis.
       </p>
-      <div class="feature-grid">
-        <div class="card">
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M2 24 C 8 24 9 8 14 8 C 19 8 18 18 22 18 C 26 18 27 12 30 12"/></svg>
-          <h3>Time-varying parameters</h3>
-          <p>Infer full posterior distributions of model parameters at every single time step — not just point estimates.</p>
-        </div>
-        <div class="card">
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 26 V14 M16 26 V6 M26 26 V18"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 29 h26"/></svg>
-          <h3>Model selection</h3>
-          <p>Compare hypotheses about parameter dynamics on objective grounds, via the marginal likelihood (model evidence).</p>
-        </div>
-        <div class="card">
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M11 6 L4 16 L11 26 M21 6 L28 16 L21 26"/></svg>
-          <h3>Custom models</h3>
-          <p>Build observation models from SymPy random variables, SciPy distributions or plain NumPy functions.</p>
-        </div>
-        <div class="card">
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M2 24 H12 V8 H30"/><circle cx="12" cy="16" r="2.2" fill="currentColor" stroke="none"/></svg>
-          <h3>Change-point detection</h3>
-          <p>Locate abrupt changes and structural breaks — including full uncertainty about when they happened.</p>
-        </div>
-        <div class="card">
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 16 h14 M14 8 l8 8 -8 8"/><circle cx="27" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-          <h3>Online studies</h3>
-          <p>Feed in data point by point and run real-time model selection on streaming data.</p>
-        </div>
-        <div class="card">
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4" d="M2 20 C 8 20 10 10 16 10 C 22 10 24 20 30 20"/></svg>
-          <h3>Missing data</h3>
-          <p>NaN values are handled natively by the inference algorithm — no imputation gymnastics required.</p>
-        </div>
+      <div class="paper-grid">
+        <a class="card paper" href="https://www.nature.com/articles/s41467-018-04241-5" target="_blank" rel="noopener">
+          <p class="paper-journal">Nature Communications 9:1803 (2018)</p>
+          <h3>Bayesian model selection for complex dynamic systems</h3>
+          <p class="paper-authors">Mark C., Metzner C., Lautscham L., Strissel P.L., Strick R., Fabry B.</p>
+        </a>
+        <a class="card paper" href="https://www.nature.com/articles/ncomms8516" target="_blank" rel="noopener">
+          <p class="paper-journal">Nature Communications 6:7516 (2015)</p>
+          <h3>Superstatistical analysis and modelling of heterogeneous random walks</h3>
+          <p class="paper-authors">Metzner C., Mark C., Steinwachs J., Lautscham L., Stadler F., Fabry B.</p>
+        </a>
+        <a class="card paper" href="https://www.pnas.org/doi/abs/10.1073/pnas.2524427123" target="_blank" rel="noopener">
+          <p class="paper-journal">PNAS 123(11):e2524427123 (2026)</p>
+          <h3>Immune cells employ intermittent integrin-mediated traction forces for 3D migration</h3>
+          <p class="paper-authors">Czerwinski T., Bischof L., Böhringer D., Kara S., Strissel P.L., Strick R., Huhn N., Winterl A., Gerum R., Wittmann E., Schneider M., Beckmann M.W., Nusser G., Wiesinger M., Budday S., Lux A., Voskens C., Fabry B., Mark C.</p>
+        </a>
+        <a class="card paper" href="https://www.nature.com/articles/nmeth.3685" target="_blank" rel="noopener">
+          <p class="paper-journal">Nature Methods 13:171–176 (2016)</p>
+          <h3>Three-dimensional force microscopy of cells in biopolymer networks</h3>
+          <p class="paper-authors">Steinwachs J., Metzner C., Skodzek K., Lang N., Thievessen I., Mark C., Münster S., Aifantis K.E., Fabry B.</p>
+        </a>
       </div>
+    </div>
+  </section>
+
+  <!-- ========================= Used in production ========================= -->
+  <section id="production" class="section">
+    <div class="container">
+      <h2>Used in production</h2>
+      <p class="section-lead">
+        The same inference engine runs live in systematic investing — continuously re-estimating
+        how market regimes change over time.
+      </p>
+      <div class="paper-grid">
+        <a class="card paper prod" href="https://barudion.com" target="_blank" rel="noopener">
+          <div class="prod-brand">
+            <svg viewBox="0 0 39.687 6.6146" fill="currentColor" role="img" aria-label="Barudion">
+              <path d="m6.2895 3.7336-6.0833 1.9461 0.59686 0.29146 0.38086-0.17983c0.34371-0.2057 1.0583-0.44083 1.8397-0.67024v0.76429l-0.58291 0.13333v0.26097h1.8159v-0.26097l-0.58291-0.13333v-0.95136c0.39513-0.12436 0.79408-0.2345 1.1968-0.33125 0.29322-0.070874 0.48558-0.10814 0.57671-0.10904l0.37207-0.055811z"/>
+              <path d="m5.0834 1.9497s-0.49458 0.00197-0.49458 0.0079c0 0.10362 0.19782 0.41448 0.19782 0.5181 0 0.077047-0.25454 0.25678-0.42427 0.4023-0.084891 0.10007-0.14856 0.18837-0.14856 0.24136 0 0.20628-0.016871 0.82514-0.016871 1.0314 0 0.00494 1.7543-0.56594 1.7543-0.56594s0.00173-0.2592 0.00173-0.46548c0-0.052945-0.063673-0.14128-0.14856-0.24136-0.16972-0.14551-0.42427-0.32525-0.42427-0.40229 0-0.10362 0.19782-0.41448 0.19782-0.5181 0-0.00592-0.49458-0.0079-0.49458-0.0079z"/>
+              <path d="m1.3768 3.1558s-0.49458 0.00197-0.49458 0.0079c0 0.10362 0.19782 0.41448 0.19782 0.51811 0 0.077047-0.25454 0.25677-0.42427 0.40229-0.08488 0.10007-0.14855 0.18837-0.14855 0.24136 0 0.20628-0.016871 0.82515-0.016871 1.0314 0 0.00494 1.7531-0.5544 1.7531-0.5544s0.00291-0.27075 0.00291-0.47703c0-0.052945-0.063673-0.14128-0.14856-0.24136-0.16972-0.14551-0.42426-0.32525-0.42426-0.40228 0-0.10363 0.19782-0.41449 0.19782-0.51811 0-0.00592-0.49458-0.0079-0.49458-0.0079z"/>
+              <path d="m5.795 0.24546-1.2097 0.27389 0.24701 0.26252-1.3457 0.90951-1.1669-0.57671c-0.64375 0.3947-1.506 0.86209-2.1497 1.2568l0.64337 0.12402c0.37862-0.35305 0.98131-0.69727 1.4717-0.9741l1.1793 0.64234c0.78867-0.63872 0.96336-0.80571 1.634-1.0992l0.19947 0.21187 0.49713-1.0309z"/>
+              <path d="m11.514 2.7752q0-0.41928-0.26247-0.61016-0.26247-0.1909-0.85219-0.1909h-0.70561v1.7282h0.74652q0.55222 0 0.81128-0.21815 0.26247-0.21816 0.26247-0.70902zm0.34428 2.1611q0-0.48063-0.32042-0.70221-0.32042-0.22497-1.026-0.22497h-0.8181v1.9225q0.47041 0.020447 1.0022 0.020447 0.5829 0 0.87264-0.24542 0.28974-0.24884 0.28974-0.77038zm-3.4087 1.3021v-0.18066l0.5863-0.092062v-4.0291l-0.5863-0.088604v-0.18066h2.0896q0.86923 0 1.2715 0.25906 0.40223 0.25566 0.40223 0.81469 0 0.40225-0.24884 0.68516-0.24543 0.28293-0.69198 0.37838 0.61698 0.064798 0.95445 0.36132 0.33747 0.29315 0.33747 0.75674 0 0.65788-0.45677 0.99877-0.45336 0.33747-1.326 0.33747l-1.4589-0.020447z"/>
+              <path d="m14.254 6.0907v0.14781h-1.2299v-0.14781l0.42392-0.075269 1.2746-3.5476h0.52991l1.3248 3.5476 0.47413 0.075269v0.14781h-1.5813v-0.14781l0.50201-0.075269-0.37092-1.0793h-1.4726l-0.37651 1.0793zm0.59964-3.2213-0.64147 1.8156h1.3025zm3.4863 1.7292v1.4168l0.56616 0.075269v0.14782h-1.5479v-0.14782l0.44345-0.075269v-3.2966l-0.47971-0.072504v-0.14782h1.6148q0.70282 0 1.0375 0.23707 0.33467 0.23706 0.33467 0.76138 0 0.37373-0.20359 0.64705-0.2036 0.27053-0.56337 0.37651l1.0124 1.4949 0.4044 0.075269v0.14781h-0.89526l-1.0514-1.6399zm1.414-1.0626q0-0.42671-0.20917-0.60522-0.20638-0.18128-0.72792-0.18128h-0.47691v1.5981h0.49365q0.49923 0 0.7084-0.18407 0.21196-0.18686 0.21196-0.62751zm4.5099-0.81717-0.50201-0.072503v-0.14782h1.2746v0.14782l-0.47971 0.072504v2.234q0 0.67214-0.37093 1.0068-0.36815 0.33467-1.071 0.33467-0.74465 0-1.1156-0.33467-0.36815-0.33747-0.36815-0.95384v-2.287l-0.47971-0.072504v-0.14782h1.4949v0.14782l-0.4797 0.072504v2.2451q0 1.018 0.99009 1.018 0.53548 0 0.81996-0.25379 0.28726-0.25379 0.28726-0.75303zm4.27 1.6232q0-0.7837-0.42393-1.1881-0.42112-0.4044-1.2048-0.4044h-0.50201v3.2268q0.33467 0.022324 0.79485 0.022324 0.6861 0 1.0096-0.40441 0.3263-0.4044 0.3263-1.2522zm-1.4503-1.8435q1.0347 0 1.5339 0.46296 0.49924 0.46019 0.49924 1.3861 0 0.9371-0.4825 1.4196-0.4797 0.48249-1.4363 0.48249l-1.3331-0.011162h-0.4797v-0.14781l0.4797-0.075269v-3.2966l-0.4797-0.072503v-0.14781zm3.5477 3.5169 0.47971 0.075269v0.14782h-1.4949v-0.14782l0.47972-0.075269v-3.2966l-0.47972-0.072504v-0.14782h1.4949v0.14782l-0.47971 0.072504zm1.5619-1.6511q0 0.90084 0.3012 1.3052 0.30122 0.4044 0.94268 0.4044 0.63867 0 0.94267-0.4044 0.30399-0.40441 0.30399-1.3052 0-0.89525-0.30399-1.2885-0.30121-0.39603-0.94267-0.39603-0.64425 0-0.94547 0.39603-0.29842 0.39326-0.29842 1.2885zm-0.58289 0q0-1.9077 1.8268-1.9077 0.90363 0 1.3666 0.48529 0.46296 0.48249 0.46296 1.4224 0 0.95383-0.46854 1.4419-0.46855 0.48806-1.361 0.48806-0.88969 0-1.3582-0.48528-0.46854-0.48806-0.46854-1.4447zm7.1761-1.6455-0.50201-0.072503v-0.14782h1.2746v0.14782l-0.4797 0.072504v3.5197h-0.27053l-2.3065-3.3635v3.1404l0.50201 0.075269v0.14782h-1.2746v-0.14782l0.4797-0.075269v-3.2966l-0.4797-0.072504v-0.14782h1.1323l1.9244 2.7695z"/>
+            </svg>
+          </div>
+          <h3>Dynamic ETF model portfolios</h3>
+          <p class="paper-authors">bayesloop is the statistical backbone of Barudion's adaptive multi-asset
+          model portfolios — investors replicate them in their own brokerage account.</p>
+          <p class="prod-link">barudion.com →</p>
+        </a>
+        <a class="card paper prod" href="https://markets.vontobel.com/de-de/produkte/themen/strategische-zertifikate/DE000VJ1AWY5" target="_blank" rel="noopener">
+          <div class="prod-brand">
+            <img src="img/vontobel-logo.png" alt="Vontobel" height="22">
+          </div>
+          <h3>Fortezza Artifact Multi-Asset Growth Index</h3>
+          <p class="paper-authors">The regime-adaptive strategy behind this actively managed certificate
+          at Vontobel (ISIN&nbsp;DE000VJ1AWY5) runs on bayesloop.</p>
+          <p class="prod-link">markets.vontobel.com →</p>
+        </a>
+      </div>
+      <p class="prod-note">Links are informational, not investment advice. Capital at risk.</p>
     </div>
   </section>
 
@@ -183,8 +212,8 @@
             <div class="output-label">Figures</div>
             <div id="figures" class="figures">
               <div class="figure-placeholder">
-                <img src="img/example.png" alt="Pre-rendered example: inferred coal mining disaster rate over time">
-                <p>Pre-rendered result — press <em>Run</em> to compute it live in your browser.</p>
+                <img src="img/example.png" alt="UK coal mining disasters per year, 1852–1961">
+                <p>Press <em>Run</em> to infer the disaster rate using bayesloop.</p>
               </div>
             </div>
           </div>
@@ -193,35 +222,46 @@
     </div>
   </section>
 
-  <!-- ============================= Science ============================= -->
-  <section id="science" class="section">
+  <!-- ============================= Features ============================= -->
+  <section id="features" class="section">
     <div class="container">
-      <h2>Built for research</h2>
+      <h2>Why bayesloop?</h2>
       <p class="section-lead">
-        bayesloop has been employed in cancer research (migration paths of invasive tumor cells),
-        financial risk assessment, climate research and accident analysis.
+        Real-world systems rarely keep their statistical properties constant. bayesloop embraces that:
+        it treats model parameters as dynamic quantities and infers how they evolve — together with the
+        evidence you need to decide between competing hypotheses.
       </p>
-      <div class="paper-grid">
-        <a class="card paper" href="https://www.nature.com/articles/s41467-018-04241-5" target="_blank" rel="noopener">
-          <p class="paper-journal">Nature Communications 9:1803 (2018)</p>
-          <h3>Bayesian model selection for complex dynamic systems</h3>
-          <p class="paper-authors">Mark C., Metzner C., Lautscham L., Strissel P.L., Strick R., Fabry B.</p>
-        </a>
-        <a class="card paper" href="https://www.nature.com/articles/ncomms8516" target="_blank" rel="noopener">
-          <p class="paper-journal">Nature Communications 6:7516 (2015)</p>
-          <h3>Superstatistical analysis and modelling of heterogeneous random walks</h3>
-          <p class="paper-authors">Metzner C., Mark C., Steinwachs J., Lautscham L., Stadler F., Fabry B.</p>
-        </a>
-        <a class="card paper" href="https://www.pnas.org/doi/abs/10.1073/pnas.2524427123" target="_blank" rel="noopener">
-          <p class="paper-journal">PNAS 123(11):e2524427123 (2026)</p>
-          <h3>Immune cells employ intermittent integrin-mediated traction forces for 3D migration</h3>
-          <p class="paper-authors">Czerwinski T., Bischof L., Böhringer D., Kara S., Strissel P.L., Strick R., Huhn N., Winterl A., Gerum R., Wittmann E., Schneider M., Beckmann M.W., Nusser G., Wiesinger M., Budday S., Lux A., Voskens C., Fabry B., Mark C.</p>
-        </a>
-        <a class="card paper" href="https://www.nature.com/articles/nmeth.3685" target="_blank" rel="noopener">
-          <p class="paper-journal">Nature Methods 13:171–176 (2016)</p>
-          <h3>Three-dimensional force microscopy of cells in biopolymer networks</h3>
-          <p class="paper-authors">Steinwachs J., Metzner C., Skodzek K., Lang N., Thievessen I., Mark C., Münster S., Aifantis K.E., Fabry B.</p>
-        </a>
+      <div class="feature-grid">
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M2 24 C 8 24 9 8 14 8 C 19 8 18 18 22 18 C 26 18 27 12 30 12"/></svg>
+          <h3>Time-varying parameters</h3>
+          <p>Infer full posterior distributions of model parameters at every single time step — not just point estimates.</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 26 V14 M16 26 V6 M26 26 V18"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 29 h26"/></svg>
+          <h3>Model selection</h3>
+          <p>Compare hypotheses about parameter dynamics on objective grounds, via the marginal likelihood (model evidence).</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M11 6 L4 16 L11 26 M21 6 L28 16 L21 26"/></svg>
+          <h3>Custom models</h3>
+          <p>Build observation models from SymPy random variables, SciPy distributions or plain NumPy functions.</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M2 24 H12 V8 H30"/><circle cx="12" cy="16" r="2.2" fill="currentColor" stroke="none"/></svg>
+          <h3>Change-point detection</h3>
+          <p>Locate abrupt changes and structural breaks — including full uncertainty about when they happened.</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 16 h14 M14 8 l8 8 -8 8"/><circle cx="27" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <h3>Online studies</h3>
+          <p>Feed in data point by point and run real-time model selection on streaming data.</p>
+        </div>
+        <div class="card">
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4" d="M2 20 C 8 20 10 10 16 10 C 22 10 24 20 30 20"/></svg>
+          <h3>Missing data</h3>
+          <p>NaN values are handled natively by the inference algorithm — no imputation gymnastics required.</p>
+        </div>
       </div>
     </div>
   </section>
