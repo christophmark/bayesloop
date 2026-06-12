@@ -44,7 +44,6 @@ dependencies = [
 docs = [
     "ipykernel",
     "ipywidgets",
-    "myst-parser",
     "nbsphinx",
     "pypandoc-binary",
     "sphinx",

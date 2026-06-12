@@ -39,7 +39,6 @@ sys.path.insert(0, os.path.abspath('../../src'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'myst_parser',
     'nbsphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -51,9 +50,6 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting'
 ]
 
-# MyST-Parser renders the Markdown case-study reports under examples/casestudies/.
-myst_heading_anchors = 3
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -62,7 +58,6 @@ templates_path = ['_templates']
 # source_suffix = ['.rst', '.md']
 source_suffix = {
     '.rst': 'restructuredtext',
-    '.md': 'markdown',
 }
 
 # The encoding of source files.
@@ -101,7 +96,7 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['**.ipynb_checkpoints']
+exclude_patterns = ['**.ipynb_checkpoints', 'examples/data/**']
 
 nbsphinx_execute = 'never'
 

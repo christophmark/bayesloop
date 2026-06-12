@@ -4,31 +4,27 @@
 Examples
 ********
 
-This section collects worked applications of *bayesloop*, from short step-by-step
-walk-throughs to a set of in-depth case studies on real data.
-
-Worked examples
-===============
-
-Two annotated, end-to-end notebooks that walk through a complete analysis,
-including the code and resulting figures:
+Each example below is a self-contained, end-to-end analysis — the code, the inferred
+parameters and the resulting figures, with commentary that walks through how the model is
+built and what it reveals. The first two use illustrative datasets as a gentle
+introduction; the rest apply *bayesloop* to real, openly-available data from a range of
+scientific fields — epidemiology, seismology, climatology, macroeconomics, sports, solar
+physics, neuroscience, finance, energy and movement ecology — with several comparing it
+head-to-head against the standard model in their field.
 
 .. toctree::
     :maxdepth: 1
 
     examples/anomalousdiffusion.ipynb
     examples/stockmarketfluctuations.ipynb
-
-Case studies
-============
-
-Eleven self-contained case studies that apply *bayesloop* to real, openly-available
-data from ten research fields — epidemiology, seismology, climatology,
-macroeconomics, sports analytics, solar physics, neuroscience, finance, energy and
-movement ecology. Each is sourced from the scientific literature and framed against
-the established model in its field, with a genuine, citable finding.
-
-.. toctree::
-    :maxdepth: 1
-
-    examples/casestudies/index
+    examples/measles.ipynb
+    examples/earthquakes.ipynb
+    examples/hurricanes.ipynb
+    examples/greatmoderation.ipynb
+    examples/baseball.ipynb
+    examples/sunspots.ipynb
+    examples/seizuredetection.ipynb
+    examples/covidforecasting.ipynb
+    examples/marketvolatility.ipynb
+    examples/energydemand.ipynb
+    examples/animalmovement.ipynb
