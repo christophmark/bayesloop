@@ -15,11 +15,11 @@ Alternatively, a zipped version can be downloaded `here <https://github.com/chri
 Development version
 -------------------
 
-The latest development version of *bayesloop* can be installed from the ``v2`` branch using pip (requires git):
+The latest development version of *bayesloop* can be installed directly from the ``master`` branch using pip (requires git):
 
 ::
 
-    pip install git+https://github.com/christophmark/bayesloop@v2
+    pip install git+https://github.com/christophmark/bayesloop
 
 Alternatively, clone the repository and install it in editable mode:
 
