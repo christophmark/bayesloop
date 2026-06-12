@@ -1,0 +1,14 @@
+{
+ "snapshots": [
+  {
+   "url": "https://raw.githubusercontent.com/orrski/baseballdatabank/master/core/Teams.csv",
+   "file": "00.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://raw.githubusercontent.com/cbwinslow/baseballdatabank/master/core/Teams.csv",
+   "file": "00.gz",
+   "gzip": true
+  }
+ ]
+}

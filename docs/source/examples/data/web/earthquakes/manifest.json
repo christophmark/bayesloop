@@ -1,0 +1,69 @@
+{
+ "snapshots": [
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1900-01-01&endtime=1909-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "00.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1910-01-01&endtime=1919-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "01.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1920-01-01&endtime=1929-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "02.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1930-01-01&endtime=1939-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "03.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1940-01-01&endtime=1949-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "04.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1950-01-01&endtime=1959-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "05.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1960-01-01&endtime=1969-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "06.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1970-01-01&endtime=1979-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "07.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1980-01-01&endtime=1989-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "08.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=1990-01-01&endtime=1999-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "09.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=2000-01-01&endtime=2009-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "10.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=2010-01-01&endtime=2019-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "11.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=2020-01-01&endtime=2025-12-31&minmagnitude=7.0&orderby=time-asc",
+   "file": "12.gz",
+   "gzip": true
+  }
+ ]
+}

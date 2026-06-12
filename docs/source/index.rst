@@ -12,6 +12,10 @@ Welcome to bayesloop's documentation!
 
 **Probabilistic programming framework that facilitates objective model selection for time-varying parameter models.**
 
+The tutorials and examples in this documentation can be run directly in the browser.
+Selecting the run button on a code cell starts a Python session in which the code of
+that page can be executed and freely modified, without a local installation.
+
 .. seealso::
 
     If you want to contribute to the project or just browse the source code, visit the `Github repository <https://github.com/christophmark/bayesloop>`__ of *bayesloop*.

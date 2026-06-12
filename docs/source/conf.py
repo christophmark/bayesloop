@@ -162,7 +162,13 @@ html_favicon = '../images/favicon.ico'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
+html_static_path = ['_static']
+
+# In-browser execution of notebook code cells via Pyodide. The runner only
+# activates on the pages allowlisted in live-code.js and downloads nothing
+# until a run button is clicked.
+html_css_files = ['live-code.css']
+html_js_files = ['live-code.js']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -315,3 +321,18 @@ texinfo_documents = [
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
 }
+
+
+def _copy_example_data(app, exception):
+    """Ship the example data files so live-code cells can fetch them."""
+    if exception is not None or app.builder.name != 'html':
+        return
+    import shutil
+    src = os.path.join(app.srcdir, 'examples', 'data')
+    dst = os.path.join(str(app.outdir), 'examples', 'data')
+    if os.path.isdir(src):
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+
+
+def setup(app):
+    app.connect('build-finished', _copy_example_data)

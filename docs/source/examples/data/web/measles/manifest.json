@@ -1,0 +1,9 @@
+{
+ "snapshots": [
+  {
+   "url": "https://ourworldindata.org/grapher/number-of-measles-cases.csv?csvType=full",
+   "file": "00.gz",
+   "gzip": true
+  }
+ ]
+}

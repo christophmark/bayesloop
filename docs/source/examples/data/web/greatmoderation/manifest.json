@@ -1,0 +1,9 @@
+{
+ "snapshots": [
+  {
+   "url": "https://raw.githubusercontent.com/datasets/gdp-us/main/data/quarter.csv",
+   "file": "01.gz",
+   "gzip": true
+  }
+ ]
+}

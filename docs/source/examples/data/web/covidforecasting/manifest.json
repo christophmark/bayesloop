@@ -1,0 +1,9 @@
+{
+ "snapshots": [
+  {
+   "url": "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/cases_deaths/full_data.csv",
+   "file": "00.gz",
+   "gzip": true
+  }
+ ]
+}

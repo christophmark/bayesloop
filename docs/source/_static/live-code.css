@@ -1,0 +1,179 @@
+/*
+ * live-code: in-browser execution of notebook code cells via Pyodide.
+ *
+ * Adds a run button to each code cell and a floating session-status pill;
+ * everything else reuses the existing nbsphinx markup and styling.
+ */
+
+/* the button hangs off div.nbinput (which never scrolls), NOT div.input_area:
+   nbsphinx gives the input area overflow:auto, so anything overhanging it
+   would create a scrollbar on one-line cells and drift with horizontal
+   scrolling of long code lines */
+body.live-page div.nbinput {
+    position: relative;
+}
+
+/* keep code from running underneath the run button */
+body.live-page div.nbinput div.input_area pre {
+    padding-right: 2.4em;
+}
+
+/* offsets are relative to div.nbinput, whose 5px top padding precedes the
+   input area's border box: 9px/4px yields a uniform 4px visual inset from
+   the cell border on top and right, and also bottom for one-line cells
+   (29px box height - 21px button = 2 x 4px) */
+.live-run-btn {
+    position: absolute;
+    top: 9px;
+    right: 4px;
+    width: 21px;
+    height: 21px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(41, 128, 185, 0.4);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #2980b9;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+    z-index: 5;
+}
+
+.live-run-btn:hover,
+.live-run-btn:focus {
+    opacity: 1;
+    background: #fff;
+}
+
+.live-run-btn.live-state-queued { opacity: 0.85; }
+.live-run-btn.live-state-running { opacity: 1; }
+
+.live-run-btn.live-state-done {
+    color: #1e8449;
+    border-color: rgba(30, 132, 73, 0.4);
+}
+
+.live-run-btn.live-state-error {
+    color: #c0392b;
+    border-color: rgba(192, 57, 43, 0.5);
+    opacity: 1;
+}
+
+.live-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(41, 128, 185, 0.25);
+    border-top-color: #2980b9;
+    border-radius: 50%;
+    animation: live-spin 0.8s linear infinite;
+}
+
+@keyframes live-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* original (static) outputs are hidden while live results are shown */
+.live-hidden { display: none !important; }
+
+/* editable cells (enabled once the session is ready) */
+body.live-page div.nbinput div.input_area pre[contenteditable] { outline: none; }
+
+body.live-page div.nbinput div.input_area pre[contenteditable]:focus {
+    box-shadow: inset 0 0 0 1px rgba(41, 128, 185, 0.5);
+}
+
+/* live outputs mirror the nbsphinx output structure; only errors get extra styling */
+.live-output .live-traceback pre {
+    background: #fdf3f2;
+    border-left: 3px solid #c0392b;
+}
+
+.live-output img {
+    max-width: 100%;
+}
+
+.live-output .live-html {
+    overflow-x: auto;
+}
+
+/* General docs fix (all pages, independent of live execution): nbsphinx cell
+   containers have margin-bottom 0 and RTD-theme headings have margin-top 0,
+   so a code cell that ends a section sits flush against the next heading.
+   Restore the normal paragraph rhythm (24px) in that case. */
+.rst-content div.nblast.container + section,
+.rst-content div.nblast.container + h1,
+.rst-content div.nblast.container + h2,
+.rst-content div.nblast.container + h3,
+.rst-content div.nblast.container + h4,
+.rst-content section:has(> div.nblast.container:last-child) + section {
+    margin-top: 24px;
+}
+
+/* floating session status pill (bottom offset clears the RTD version flyout) */
+#live-status {
+    position: fixed;
+    right: 18px;
+    bottom: 64px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 360px;
+    background: #fff;
+    border: 1px solid #d4d4d4;
+    border-radius: 999px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    padding: 6px 12px;
+    font-size: 12.5px;
+    color: #404040;
+    z-index: 1000;
+}
+
+#live-status .live-dot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #999;
+}
+
+#live-status .live-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#live-status.live-booting .live-dot,
+#live-status.live-running .live-dot {
+    background: #e67e22;
+    animation: live-pulse 1.2s ease infinite;
+}
+
+#live-status.live-ready .live-dot { background: #27ae60; }
+#live-status.live-error .live-dot { background: #c0392b; }
+
+@keyframes live-pulse {
+    50% { opacity: 0.3; }
+}
+
+#live-status .live-restart {
+    flex: none;
+    border: none;
+    background: none;
+    padding: 0 0 0 4px;
+    color: #2980b9;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+#live-status .live-restart:hover { text-decoration: underline; }
+
+/* the runtime is too heavy for most mobile devices */
+@media (max-width: 768px) {
+    .live-run-btn,
+    #live-status { display: none !important; }
+}

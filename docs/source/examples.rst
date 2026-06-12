@@ -12,6 +12,11 @@ scientific fields — epidemiology, seismology, climatology, macroeconomics, spo
 physics, neuroscience, finance, energy and movement ecology — with several comparing it
 head-to-head against the standard model in their field.
 
+As with the tutorials, the code cells of each example can be run directly in the browser.
+Selecting the run button on a cell starts a Python session, and the code may then be
+modified and executed again. Two of the examples depend on compiled packages that the
+in-browser Python cannot load, and note this at the top.
+
 .. toctree::
     :maxdepth: 1
 

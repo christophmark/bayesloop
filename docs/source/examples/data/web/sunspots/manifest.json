@@ -1,0 +1,14 @@
+{
+ "snapshots": [
+  {
+   "url": "https://www.sidc.be/SILSO/INFO/snytotcsv.php",
+   "file": "00.gz",
+   "gzip": true
+  },
+  {
+   "url": "https://www.sidc.be/silso/INFO/snytotcsv.php",
+   "file": "00.gz",
+   "gzip": true
+  }
+ ]
+}
