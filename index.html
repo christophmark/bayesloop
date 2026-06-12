@@ -47,29 +47,32 @@
 <main id="top">
 
   <!-- ============================== Hero ============================== -->
-  <section class="hero">
+  <section class="hero" id="hero">
     <div class="hero-glow" aria-hidden="true"></div>
     <svg class="hero-waves" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
       <path d="M0 260 C 200 260 260 60 380 60 C 500 60 540 260 720 260 C 900 260 960 120 1200 120" fill="none" stroke="#287fb9" stroke-width="2" opacity="0.25"/>
       <path d="M0 280 C 240 280 320 140 460 140 C 600 140 660 280 840 280 C 1020 280 1080 200 1200 200" fill="none" stroke="#5fb0dd" stroke-width="2" opacity="0.12"/>
     </svg>
+    <div class="hero-canvas" id="hero-canvas" aria-hidden="true"></div>
     <div class="container hero-inner">
-      <p class="hero-kicker">bayesloop <span class="version-pill">2.0</span></p>
-      <h1>Time series models with parameters that<br> <span class="accent">change over time</span></h1>
-      <p class="hero-sub">
-        bayesloop is a Python library for Bayesian inference on time series. It tracks time-varying
-        parameters, detects change-points and structural breaks, and objectively compares competing
-        models via the marginal likelihood — using fast grid-based computation instead of MCMC sampling.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="#playground">Try it in your browser</a>
-        <a class="btn btn-ghost" href="http://docs.bayesloop.com" target="_blank" rel="noopener">Read the docs</a>
-      </div>
-      <div class="install-line">
-        <code id="pip-cmd">pip install bayesloop</code>
-        <button class="copy-btn" data-copy="pip install bayesloop" title="Copy to clipboard" aria-label="Copy install command">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M9 9h10v12H9z M5 15H3V3h12v2"/></svg>
-        </button>
+      <div class="hero-copy">
+        <p class="hero-kicker">bayesloop <span class="version-pill">2.0</span></p>
+        <h1>Time series models with parameters that<br> <span class="accent">change over time</span></h1>
+        <p class="hero-sub">
+          bayesloop is a Python library for Bayesian inference on time series. It tracks time-varying
+          parameters, detects change-points and structural breaks, and objectively compares competing
+          models via the marginal likelihood — using fast grid-based computation instead of MCMC sampling.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#playground">Try it in your browser</a>
+          <a class="btn btn-ghost" href="http://docs.bayesloop.com" target="_blank" rel="noopener">Read the docs</a>
+        </div>
+        <div class="install-line">
+          <code id="pip-cmd">pip install bayesloop</code>
+          <button class="copy-btn" data-copy="pip install bayesloop" title="Copy to clipboard" aria-label="Copy install command">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M9 9h10v12H9z M5 15H3V3h12v2"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -252,5 +255,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.js" defer></script>
 <script src="js/playground.js" defer></script>
+<script src="js/hero-surface.js" defer></script>
 </body>
 </html>
