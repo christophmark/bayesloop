@@ -409,6 +409,9 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: 
 }
 .CodeMirror-gutters { background: #161b22 !important; border-right: 1px solid var(--border) !important; }
 
+/* material-darker's #616161 comments are illegible on this background */
+.cm-s-material-darker span.cm-comment { color: #8aa0b8; }
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -534,6 +537,46 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: 
 .paper h3 { font-size: 1.08rem; margin: 0 0 10px; }
 
 .paper-authors { color: var(--muted); font-size: 0.88rem; margin: 0; }
+
+/* ----------------------------- production ----------------------------- */
+
+/* sits directly under "Built for research" — pull it closer than the
+   default section rhythm, the two tell one story */
+#production { padding-top: 24px; }
+
+.prod {
+  border-color: rgba(240, 150, 70, 0.55);
+  background:
+    linear-gradient(165deg, rgba(240, 150, 70, 0.18), rgba(240, 150, 70, 0.04) 60%),
+    var(--bg-card);
+}
+.prod:hover { border-color: rgba(245, 165, 90, 0.9); }
+
+.prod-brand {
+  height: 22px;
+  margin-bottom: 16px;
+  color: #e6edf6;
+}
+
+.prod-brand svg,
+.prod-brand img {
+  height: 100%;
+  width: auto;
+  display: block;
+}
+
+.prod-link {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: #f5a45c;
+  margin: 14px 0 0;
+}
+
+.prod-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 20px 0 0;
+}
 
 /* ----------------------------- footer ----------------------------- */
 
