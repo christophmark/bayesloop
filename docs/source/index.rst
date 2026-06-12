@@ -24,6 +24,7 @@ Contents
    :maxdepth: 3
    
    installation
+   migration
    tutorials
    examples
    api
