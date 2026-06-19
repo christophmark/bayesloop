@@ -106,6 +106,7 @@ function initHeroSurface() {
   const hero = document.getElementById('hero');
   const holder = document.getElementById('hero-canvas');
   const copy = document.querySelector('.hero-copy');
+  const surfaceSlot = document.querySelector('.hero-surface-slot');
   if (!hero || !holder || !copy) return;
 
   /* No WebGL -> keep the static fallback. */
@@ -245,12 +246,26 @@ function initHeroSurface() {
         targetW = Math.min(sideSpace * 1.08, 1.75 * h);
         centerX = sideSpace / 2;
         yShift = 0;
+        camTarget.y = CAM_TARGET_Y;
       } else {
-        /* centered overlay: sheet sits in the lower part of the hero so the
-           headline stays over dark background */
-        targetW = Math.min(w * 0.95, 1.4 * h);
-        centerX = w / 2;
-        yShift = -Math.round(h * 0.2);
+        const heroRect = hero.getBoundingClientRect();
+        const slotRect = surfaceSlot ? surfaceSlot.getBoundingClientRect() : null;
+        const hasSurfaceSlot = Boolean(slotRect && slotRect.height > 0);
+
+        if (hasSurfaceSlot) {
+          const slotCenterY = slotRect.top - heroRect.top + slotRect.height / 2;
+          targetW = Math.min(w * 0.88, slotRect.width * 1.02, slotRect.height * 1.38);
+          centerX = w / 2;
+          yShift = Math.round(h / 2 - slotCenterY);
+          camTarget.y = 0.35;
+        } else {
+          /* centered overlay: sheet sits in the lower part of the hero so the
+             headline stays over dark background */
+          targetW = Math.min(w * 0.95, 1.4 * h);
+          centerX = w / 2;
+          yShift = -Math.round(h * 0.2);
+          camTarget.y = CAM_TARGET_Y;
+        }
       }
       camDist = baseDist * Math.min(2.6, Math.max(0.8,
         (SHEET_PX_PER_H * h) / Math.max(targetW, 1) ));
