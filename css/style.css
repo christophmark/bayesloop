@@ -175,6 +175,8 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: 
 .hero--live.hero--wide .hero-sub { margin-left: 0; margin-right: 0; }
 .hero--live.hero--wide .hero-actions { justify-content: flex-start; }
 
+.hero-surface-slot { display: none; }
+
 .hero-kicker {
   font-family: var(--font-mono);
   font-weight: 600;
@@ -626,6 +628,13 @@ h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: 
   .feature-grid { grid-template-columns: 1fr; }
   .v2-grid { grid-template-columns: 1fr; }
   .hero { padding: 70px 0 60px; }
+  .hero--live:not(.hero--wide) .hero-sub { margin-bottom: 16px; }
+  .hero--live:not(.hero--wide) .hero-canvas { opacity: 1; }
+  .hero--live:not(.hero--wide) .hero-surface-slot {
+    display: block;
+    height: clamp(180px, 50vw, 230px);
+    margin: -4px 0 18px;
+  }
   .wide-only { display: none; }
   .section { padding: 60px 0; }
   .editor-hint { display: none; }
